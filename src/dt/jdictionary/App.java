@@ -1,9 +1,14 @@
+package dt.jdictionary;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
 import java.util.List;
 
 import javax.swing.*;
+
+import dt.jdictionary.ui.UiConstants;
+import dt.jdictionary.ui.UiSingleChar;
+import dt.jdictionary.ui.UiUtils;
 
 public class App
 {
@@ -29,7 +34,7 @@ public class App
 	private static void generateEntry(JPanel root, JFrame window)
 	{
 		final JTextField entry = new JTextField(20);
-		entry.setFont(Utils.generateFont(entry, UiConstants.FONT_MEDIUM));
+		entry.setFont(UiUtils.generateFont(entry, UiConstants.FONT_MEDIUM));
 
 		final GridBagConstraints entryConstraints = new GridBagConstraints();
 		entry.setBorder(UiConstants.TRACER);

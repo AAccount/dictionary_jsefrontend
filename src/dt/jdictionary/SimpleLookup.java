@@ -1,3 +1,4 @@
+package dt.jdictionary;
 import java.util.List;
 
 public class SimpleLookup 

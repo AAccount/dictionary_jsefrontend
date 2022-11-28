@@ -1,5 +1,9 @@
+package dt.jdictionary.ui;
 import java.util.List;
 import javax.swing.JPanel;
+
+import dt.jdictionary.SimpleLookup;
+import dt.jdictionary.ZhLookup;
 
 import java.awt.*;
 import javax.swing.*;
@@ -46,7 +50,7 @@ public class UiSingleChar
 		 * Still sharing the same column with the big chinese character.
 		 * Don't ruin its column with auto expanding.
 		 */
-		parent.add(filler, Utils.generateGridConstraint(lastRow, 0, false, true, UiConstants.nopadding));
+		parent.add(filler, UiUtils.generateGridConstraint(lastRow, 0, false, true, UiConstants.nopadding));
 	}
 
 	private int renderDictionaryResults(JComponent parent, ZhLookup dictionaryResult)
@@ -81,16 +85,16 @@ public class UiSingleChar
 	private void renderLabelValue(JComponent parent, String label, String value, int row)
 	{
 		final int LABEL_COL = 1;
-		Utils.renderLabelToGrid(parent, label, row, LABEL_COL, false);
+		UiUtils.renderLabelToGrid(parent, label, row, LABEL_COL, false);
 
 		final int VALUE_COL = 2;
-		Utils.renderLabelToGrid(parent, Utils.wordWrapHack(value), row, VALUE_COL, true);
+		UiUtils.renderLabelToGrid(parent, UiUtils.wordWrapHack(value), row, VALUE_COL, true);
 	}
 
 	private void renderZhCharBig(String zhchar, JPanel target, int height)
 	{
 		final JLabel zhLabel = new JLabel(zhchar);
-		zhLabel.setFont(Utils.generateFont(zhLabel, UiConstants.FONT_LARGE));
+		zhLabel.setFont(UiUtils.generateFont(zhLabel, UiConstants.FONT_LARGE));
 
 		final GridBagConstraints constraints = new GridBagConstraints();
 		constraints.gridx = 0;

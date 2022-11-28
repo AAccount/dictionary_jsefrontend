@@ -1,9 +1,10 @@
+package dt.jdictionary.ui;
 import java.awt.*;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-public class Utils 
+public class UiUtils 
 {
 	public static Font generateFont(Component target, int size)
 	{

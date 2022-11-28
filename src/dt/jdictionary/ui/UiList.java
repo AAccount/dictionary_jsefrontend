@@ -1,3 +1,4 @@
+package dt.jdictionary.ui;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,6 +9,8 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+
+import dt.jdictionary.SimpleLookup;
 
 import java.awt.GridBagLayout;
 import java.text.Normalizer;
@@ -41,7 +44,7 @@ public class UiList implements ItemListener
 
 		final JPanel flagCheckboxes = new JPanel();
 		flagCheckboxes.setBorder(UiConstants.TRACER);
-		root.add(flagCheckboxes, Utils.generateGridConstraint(0, 0, true, false, UiConstants.nopadding));
+		root.add(flagCheckboxes, UiUtils.generateGridConstraint(0, 0, true, false, UiConstants.nopadding));
 
 		final JPanel dbResultPanel = new JPanel(new GridBagLayout());
 		dbResultPanel.setBorder(UiConstants.TRACER);
@@ -53,7 +56,7 @@ public class UiList implements ItemListener
 			SimpleLookup dbresult = dbResults.get(row);
 			renderSimpleLookup(dbresult, dbResultPanel, row);
 		}
-		root.add(scrollPane, Utils.generateGridConstraint(1, 0, true, true, UiConstants.nopadding));
+		root.add(scrollPane, UiUtils.generateGridConstraint(1, 0, true, true, UiConstants.nopadding));
 
 		renderFlagCheckboxes(flagCheckboxes);
 		return root;
@@ -62,14 +65,14 @@ public class UiList implements ItemListener
 	private void renderSimpleLookup(SimpleLookup dbresult, JComponent parent, int row)
 	{
 		final int COL_ZH = 0;
-		JComponent zhLabel = Utils.renderLabelToGrid(parent, dbresult.getZh(), row, COL_ZH, false);
+		JComponent zhLabel = UiUtils.renderLabelToGrid(parent, dbresult.getZh(), row, COL_ZH, false);
 		
 		final int COL_PINYIN = 1;
-		JComponent pinyinLabel = Utils.renderLabelToGrid(parent, dbresult.getPinyin(), row, COL_PINYIN, false);
+		JComponent pinyinLabel = UiUtils.renderLabelToGrid(parent, dbresult.getPinyin(), row, COL_PINYIN, false);
 		
 		final int COL_DEF = 2;
 		final String definition = String.join(", ", dbresult.getDefinitions()).toLowerCase();
-		JComponent defLabel = Utils.renderLabelToGrid(parent, definition, row, COL_DEF, true);
+		JComponent defLabel = UiUtils.renderLabelToGrid(parent, definition, row, COL_DEF, true);
 
 		final String flag = flagDbResult(dbresult);
 		if(flag.equals(FLAG_NONE))

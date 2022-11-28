@@ -1,3 +1,4 @@
+package dt.jdictionary.ui;
 import javax.swing.BorderFactory;
 import javax.swing.border.Border;
 import java.awt.Color;
