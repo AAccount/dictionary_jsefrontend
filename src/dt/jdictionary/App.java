@@ -1,39 +1,53 @@
 package dt.jdictionary;
-import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.GridBagConstraints;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.Component;
 
-import javax.swing.*;
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
 
 import dt.jdictionary.ui.UiConstants;
 import dt.jdictionary.ui.UiSingleChar;
 import dt.jdictionary.ui.UiUtils;
 
-public class App
+public class App implements ActionListener
 {
 	public static void main(String[] args) throws Exception 
 	{
-		launchUI();
+		new App().launchUI();
 	}
 
-	private static void launchUI()
+	private final String UI_ROOT = "root";
+	private final String UI_ENTRY = "entry";
+	private final String UI_RESULT = "result";
+
+	public void launchUI()
 	{
 		final JFrame window = new JFrame("Dictionary");
 		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		final JPanel root = new JPanel(new GridBagLayout());
+		root.setName(UI_ROOT);
 
-		generateEntry(root, window);
-		
+		renderEntry(root);
 
 		window.add(root);
 		window.pack();
 		window.setVisible(true);
 	}
 
-	private static void generateEntry(JPanel root, JFrame window)
+	private void renderEntry(JPanel root)
 	{
 		final JTextField entry = new JTextField(20);
+		entry.setName(UI_ENTRY);
 		entry.setFont(UiUtils.generateFont(entry, UiConstants.FONT_MEDIUM));
 
 		final GridBagConstraints entryConstraints = new GridBagConstraints();
@@ -45,38 +59,47 @@ public class App
 		entryConstraints.anchor = GridBagConstraints.NORTH;
 		entryConstraints.fill = GridBagConstraints.HORIZONTAL;
 		entryConstraints.insets = new Insets(10, 10, 5, 10);
-
-		Action action = new AbstractAction()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				final String received = entry.getText().trim();
-				System.out.println(received);
-
-				final GridBagConstraints constraints = new GridBagConstraints();
-				constraints.gridx = 0;
-				constraints.gridy = 1;
-				constraints.weightx = 1;
-				constraints.weighty = 1;
-				constraints.anchor = GridBagConstraints.NORTH;
-				constraints.fill = GridBagConstraints.BOTH;
-				constraints.insets = new Insets(10, 10, 10, 10);
-
-				JComponent result = new UiSingleChar().render(getPlaceholder(received), getRelatedPlacholder(), getRelatedPlacholder());
-				root.add(result, constraints);
-
-				root.revalidate();
-				root.repaint();
-				window.revalidate();
-				window.repaint();
-			}
-		};
-		entry.addActionListener(action);
+		entry.addActionListener(this);
 		root.add(entry, entryConstraints);
 	}
 
-	private static ZhLookup getPlaceholder(String checkText)
+	@Override
+	public void actionPerformed(ActionEvent arg0)
+	{
+		System.out.println("asdf");
+		final JTextField entry = (JTextField)arg0.getSource();
+		final JPanel root = (JPanel)entry.getParent();
+		final String received = entry.getText().trim();
+		System.out.println(received);
+
+		final GridBagConstraints constraints = new GridBagConstraints();
+		constraints.gridx = 0;
+		constraints.gridy = 1;
+		constraints.weightx = 1;
+		constraints.weighty = 1;
+		constraints.anchor = GridBagConstraints.NORTH;
+		constraints.fill = GridBagConstraints.BOTH;
+		constraints.insets = new Insets(10, 10, 10, 10);
+
+		final Component[] uiElements = (Component[])root.getComponents();
+		for(final Component uiElement : uiElements)
+		{
+			if(uiElement.getName().equals(UI_RESULT))
+			{
+				root.remove(uiElement);
+				break;
+			}
+		}
+
+		final JComponent result = new UiSingleChar().render(getPlaceholder(received), getRelatedPlacholder(), getRelatedPlacholder());
+		result.setName(UI_RESULT);
+		root.add(result, constraints);
+
+		root.revalidate();
+		root.repaint();
+	}
+
+	private ZhLookup getPlaceholder(String checkText)
 	{
 		List<String> definitions = new ArrayList<String>();
 		definitions.add("definition 1");
@@ -96,7 +119,7 @@ public class App
 	}
 
 
-	private static List<SimpleLookup> getRelatedPlacholder()
+	private List<SimpleLookup> getRelatedPlacholder()
 	{
 		final List<String> definitions = new ArrayList<String>();
 		definitions.add("variant of");
