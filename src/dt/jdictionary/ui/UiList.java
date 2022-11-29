@@ -6,7 +6,6 @@ import java.util.Map;
 
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
@@ -15,10 +14,8 @@ import dt.jdictionary.SimpleLookup;
 import java.awt.GridBagLayout;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
-import java.awt.GridBagConstraints;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.awt.Insets;
 
 public class UiList implements ItemListener
 {
@@ -36,12 +33,11 @@ public class UiList implements ItemListener
 	{
 		flag2Ui = new HashMap<>();
 		root = new JPanel(new GridBagLayout());
+		root.setBorder(UiConstants.TRACER);
 	}
 
 	public JComponent render(List<SimpleLookup> dbResults)
 	{
-		root.setBorder(UiConstants.TRACER);
-
 		final JPanel flagCheckboxes = new JPanel();
 		flagCheckboxes.setBorder(UiConstants.TRACER);
 		root.add(flagCheckboxes, UiUtils.generateGridConstraint(0, 0, true, false, UiConstants.nopadding));
@@ -53,8 +49,7 @@ public class UiList implements ItemListener
 
 		for(int row = 0; row < dbResults.size(); row++)
 		{
-			SimpleLookup dbresult = dbResults.get(row);
-			renderSimpleLookup(dbresult, dbResultPanel, row);
+			renderSimpleLookup(dbResults.get(row), dbResultPanel, row);
 		}
 		root.add(scrollPane, UiUtils.generateGridConstraint(1, 0, true, true, UiConstants.nopadding));
 

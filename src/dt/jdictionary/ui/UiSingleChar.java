@@ -56,7 +56,7 @@ public class UiSingleChar
 	private int renderDictionaryResults(JComponent parent, FullLookup dictionaryResult)
 	{
 		int row = 0;
-		for(String pinyin : dictionaryResult.getResults().keySet())
+		for(final String pinyin : dictionaryResult.getResults().keySet())
 		{
 			renderLabelValue(parent, "Pinyin", pinyin, row);
 			row++;
