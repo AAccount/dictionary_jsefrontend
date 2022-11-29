@@ -2,14 +2,14 @@ package dt.jdictionary;
 import java.util.List;
 import java.util.Map;
 
-public class ZhLookup 
+public class FullLookup 
 {
 	private final String zh;
 	private final Map<String, List<String>> results;
 	private final String simplified;
 	private final List<String> measureWords;
 
-	public ZhLookup(String zh, Map<String, List<String>> results, String simplified, List<String> measureWords)
+	public FullLookup(String zh, Map<String, List<String>> results, String simplified, List<String> measureWords)
 	{
 		this.zh = zh;
 		this.results = results;

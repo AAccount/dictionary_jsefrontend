@@ -16,6 +16,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 import dt.jdictionary.ui.UiConstants;
+import dt.jdictionary.ui.UiList;
 import dt.jdictionary.ui.UiSingleChar;
 import dt.jdictionary.ui.UiUtils;
 
@@ -23,6 +24,7 @@ public class App implements ActionListener
 {
 	public static void main(String[] args) throws Exception 
 	{
+		UiConstants.showTracer = false;
 		new App().launchUI();
 	}
 
@@ -49,37 +51,33 @@ public class App implements ActionListener
 		final JTextField entry = new JTextField(20);
 		entry.setName(UI_ENTRY);
 		entry.setFont(UiUtils.generateFont(entry, UiConstants.FONT_MEDIUM));
-
-		final GridBagConstraints entryConstraints = new GridBagConstraints();
 		entry.setBorder(UiConstants.TRACER);
-		entryConstraints.gridx = 0;
-		entryConstraints.gridy = 0;
-		entryConstraints.weightx = 1;
-		entryConstraints.weighty = .1;
-		entryConstraints.anchor = GridBagConstraints.NORTH;
-		entryConstraints.fill = GridBagConstraints.HORIZONTAL;
-		entryConstraints.insets = new Insets(10, 10, 5, 10);
+
 		entry.addActionListener(this);
-		root.add(entry, entryConstraints);
+		root.add(entry, generateNorthAnchConstraints(0, 0, false, new Insets(10, 10, 5, 10)));
+	}
+
+	// Trial and error special constraints for the "main" program window
+	private GridBagConstraints generateNorthAnchConstraints(int row, int column, boolean expandy, Insets insets)
+	{
+		final GridBagConstraints entryConstraints = new GridBagConstraints();
+		entryConstraints.gridx = column;
+		entryConstraints.gridy = row;
+		entryConstraints.weightx = UiConstants.GRIDBAG_AUTOEXPAND;
+		entryConstraints.weighty = expandy ? UiConstants.GRIDBAG_AUTOEXPAND : UiConstants.GRIDBAG_NO_AUTOEXPAND;
+		entryConstraints.anchor = GridBagConstraints.NORTH;
+		entryConstraints.fill = expandy ? GridBagConstraints.BOTH : GridBagConstraints.HORIZONTAL;
+		entryConstraints.insets = insets;
+		return entryConstraints;
 	}
 
 	@Override
 	public void actionPerformed(ActionEvent arg0)
 	{
-		System.out.println("asdf");
 		final JTextField entry = (JTextField)arg0.getSource();
 		final JPanel root = (JPanel)entry.getParent();
-		final String received = entry.getText().trim();
-		System.out.println(received);
-
-		final GridBagConstraints constraints = new GridBagConstraints();
-		constraints.gridx = 0;
-		constraints.gridy = 1;
-		constraints.weightx = 1;
-		constraints.weighty = 1;
-		constraints.anchor = GridBagConstraints.NORTH;
-		constraints.fill = GridBagConstraints.BOTH;
-		constraints.insets = new Insets(10, 10, 10, 10);
+		final String received = entry.getText().trim().toLowerCase();
+		System.out.println("Input trimmed, to lower case: " + received);
 
 		final Component[] uiElements = (Component[])root.getComponents();
 		for(final Component uiElement : uiElements)
@@ -91,15 +89,19 @@ public class App implements ActionListener
 			}
 		}
 
-		final JComponent result = new UiSingleChar().render(getPlaceholder(received), getRelatedPlacholder(), getRelatedPlacholder());
+		final JComponent result = Utils.hasChinese(received) ?
+		 new UiSingleChar().render(getPlaceholder(received), getRelatedPlacholder(), getRelatedPlacholder()) :
+		 new UiList().render(getRelatedPlacholder());
+
 		result.setName(UI_RESULT);
-		root.add(result, constraints);
+		result.setBorder(UiConstants.TRACER);
+		root.add(result, generateNorthAnchConstraints(1, 0, true, new Insets(5, 10, 10, 10)));
 
 		root.revalidate();
 		root.repaint();
 	}
 
-	private ZhLookup getPlaceholder(String checkText)
+	private FullLookup getPlaceholder(String checkText)
 	{
 		List<String> definitions = new ArrayList<String>();
 		definitions.add("definition 1");
@@ -114,7 +116,7 @@ public class App implements ActionListener
 		List<String> measureWords = new ArrayList<>();
 		measureWords.add("1");
 		measureWords.add("2");
-		ZhLookup placeholder = new ZhLookup("漢字", results, checkText, measureWords);
+		FullLookup placeholder = new FullLookup("漢字", results, checkText, measureWords);
 		return placeholder;
 	}
 

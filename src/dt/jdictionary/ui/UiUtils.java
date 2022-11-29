@@ -4,6 +4,8 @@ import java.awt.*;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import dt.jdictionary.Utils;
+
 public class UiUtils 
 {
 	public static Font generateFont(Component target, int size)
@@ -37,8 +39,7 @@ public class UiUtils
 	{
 		final JLabel jlabel = new JLabel(text);
 		jlabel.setBorder(UiConstants.TRACER);
-		final boolean hasChinese = text.codePoints().anyMatch(codepoint -> Character.UnicodeScript.of(codepoint) == Character.UnicodeScript.HAN);
-		if(hasChinese)
+		if(Utils.hasChinese(text))
 		{
 			jlabel.setFont(generateFont(jlabel, UiConstants.FONT_MEDIUM));
 		}

@@ -3,7 +3,7 @@ import java.util.List;
 import javax.swing.JPanel;
 
 import dt.jdictionary.SimpleLookup;
-import dt.jdictionary.ZhLookup;
+import dt.jdictionary.FullLookup;
 
 import java.awt.*;
 import javax.swing.*;
@@ -12,7 +12,7 @@ public class UiSingleChar
 {
 	public UiSingleChar() {}
 
-	public JComponent render(ZhLookup dictionaryResult, List<SimpleLookup> sameFront, List<SimpleLookup> sameBack)
+	public JComponent render(FullLookup dictionaryResult, List<SimpleLookup> sameFront, List<SimpleLookup> sameBack)
 	{
 		// Return the raw notebook. Don't prepackage it in a panel.
 		final JTabbedPane notebook = new JTabbedPane();
@@ -29,7 +29,7 @@ public class UiSingleChar
 		return notebook;
 	}
 
-	private JPanel renderZhDefinition(ZhLookup dictionaryResult)
+	private JPanel renderZhDefinition(FullLookup dictionaryResult)
 	{
 		final JPanel result = new JPanel(new GridBagLayout());
 		result.setBorder(UiConstants.TRACER);
@@ -53,7 +53,7 @@ public class UiSingleChar
 		parent.add(filler, UiUtils.generateGridConstraint(lastRow, 0, false, true, UiConstants.nopadding));
 	}
 
-	private int renderDictionaryResults(JComponent parent, ZhLookup dictionaryResult)
+	private int renderDictionaryResults(JComponent parent, FullLookup dictionaryResult)
 	{
 		int row = 0;
 		for(String pinyin : dictionaryResult.getResults().keySet())
