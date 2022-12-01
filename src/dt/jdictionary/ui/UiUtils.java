@@ -32,7 +32,7 @@ public class UiUtils
 
 	public static String wordWrapHack(String string)
 	{
-		return "<html>" + string + "</html>";
+		return "<html><div WIDTH=400>" + string + "</div></html>";
 	}
 
 	public static JComponent renderLabelToGrid(JComponent parent, String text, int row, int col, boolean expandx)
