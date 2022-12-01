@@ -92,7 +92,7 @@ public class App implements ActionListener
 		}
 
 		final JComponent result = Utils.hasChinese(received) ?
-		 new UiSingleChar().render(db.lookupChinese(received), db.lookupSameBack(received), db.lookupSameBack(received)) :
+		 new UiSingleChar().render(db.lookupChinese(received), db.lookupSameFront(received), db.lookupSameBack(received)) :
 		 new UiList().render(db.lookupEnglish(received));
 
 		result.setName(UI_RESULT);

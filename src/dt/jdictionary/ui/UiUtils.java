@@ -25,7 +25,7 @@ public class UiUtils
 		constraints.weightx = weightx;
 		constraints.weighty = weighty;
 		constraints.anchor = expandy ? GridBagConstraints.FIRST_LINE_START : GridBagConstraints.LINE_START;
-		constraints.fill = GridBagConstraints.HORIZONTAL;
+		constraints.fill = expandy ? GridBagConstraints.BOTH : GridBagConstraints.HORIZONTAL;
 		constraints.insets = insets;
 		return constraints;
 	}
