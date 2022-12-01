@@ -39,7 +39,7 @@ public class UiUtils
 	{
 		final JLabel jlabel = new JLabel(text);
 		jlabel.setBorder(UiConstants.TRACER);
-		if(Utils.hasChinese(text))
+		if(Utils.hasChinese(text) && !text.matches(".*[a-zA-Z]+.*")) // don't show definitions that happen to have chinese in huge font
 		{
 			jlabel.setFont(generateFont(jlabel, UiConstants.FONT_MEDIUM));
 		}
