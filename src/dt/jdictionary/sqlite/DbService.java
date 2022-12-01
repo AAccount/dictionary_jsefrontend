@@ -39,13 +39,15 @@ public class DbService
 
 	public List<SimpleLookup> lookupSameFront(String zh)
 	{
-		final List<RawDbRow> rawResults = db.lookupRelatedWord(zh, RelatedChar.SAME_FRONT);
+		final String firstChar = Character.toString(zh.charAt(0));
+		final List<RawDbRow> rawResults = db.lookupRelatedWord(firstChar, RelatedChar.SAME_FRONT);
 		return convertRawToSimple(rawResults);
 	}
 
 	public List<SimpleLookup> lookupSameBack(String zh)
 	{
-		final List<RawDbRow> rawResults = db.lookupRelatedWord(zh, RelatedChar.SAME_BACK);
+		final String lastChar = Character.toString(zh.charAt(zh.length()-1));
+		final List<RawDbRow> rawResults = db.lookupRelatedWord(lastChar, RelatedChar.SAME_BACK);
 		return convertRawToSimple(rawResults);
 	}
 
