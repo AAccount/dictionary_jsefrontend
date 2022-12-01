@@ -44,7 +44,7 @@ public class UiUtils
 			jlabel.setFont(generateFont(jlabel, UiConstants.FONT_MEDIUM));
 		}
 
-		final Insets insets = new Insets(row == 0 ? 10 : 5, 5, 5, 5);
+		final Insets insets = new Insets(5, 5, 5, 5);
 		final GridBagConstraints labelConstraints = generateGridConstraint(row, col, expandx, false, insets);
 		parent.add(jlabel, labelConstraints);
 
