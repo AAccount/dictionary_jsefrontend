@@ -2,10 +2,6 @@ package dt.jdictionary;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.GridBagConstraints;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.Component;
@@ -15,6 +11,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import dt.jdictionary.sqlite.DbService;
 import dt.jdictionary.ui.UiConstants;
 import dt.jdictionary.ui.UiList;
 import dt.jdictionary.ui.UiSingleChar;
@@ -22,15 +19,20 @@ import dt.jdictionary.ui.UiUtils;
 
 public class App implements ActionListener
 {
-	public static void main(String[] args) throws Exception 
+	public static void main(String[] args)
 	{
-		UiConstants.showTracer = false;
 		new App().launchUI();
 	}
 
 	private final String UI_ROOT = "root";
 	private final String UI_ENTRY = "entry";
 	private final String UI_RESULT = "result";
+	private final DbService db;
+
+	public App()
+	{
+		db = new DbService();
+	}
 
 	public void launchUI()
 	{
@@ -90,8 +92,8 @@ public class App implements ActionListener
 		}
 
 		final JComponent result = Utils.hasChinese(received) ?
-		 new UiSingleChar().render(getPlaceholder(received), getRelatedPlacholder(), getRelatedPlacholder()) :
-		 new UiList().render(getRelatedPlacholder());
+		 new UiSingleChar().render(db.lookupChinese(received), db.lookupSameBack(received), db.lookupSameBack(received)) :
+		 new UiList().render(db.lookupEnglish(received));
 
 		result.setName(UI_RESULT);
 		result.setBorder(UiConstants.TRACER);
@@ -99,39 +101,5 @@ public class App implements ActionListener
 
 		root.revalidate();
 		root.repaint();
-	}
-
-	private FullLookup getPlaceholder(String checkText)
-	{
-		List<String> definitions = new ArrayList<String>();
-		definitions.add("definition 1");
-		definitions.add("definition 2");
-		definitions.add("definition 3");
-		definitions.add("definition 4");
-		definitions.add("definition 5");
-		definitions.add("variant of");
-
-		Map<String, List<String>> results = new HashMap<>();
-		results.put("pinyin", definitions);
-		List<String> measureWords = new ArrayList<>();
-		measureWords.add("1");
-		measureWords.add("2");
-		FullLookup placeholder = new FullLookup("漢字", results, checkText, measureWords);
-		return placeholder;
-	}
-
-
-	private List<SimpleLookup> getRelatedPlacholder()
-	{
-		final List<String> definitions = new ArrayList<String>();
-		definitions.add("variant of");
-		definitions.add("def 2");
-		final SimpleLookup result1 = new SimpleLookup("阿", "a", definitions);
-		final SimpleLookup result2 = new SimpleLookup("為", "wei", definitions);
-		
-		final List<SimpleLookup> result = new ArrayList<>();
-		result.add(result1);
-		result.add(result2);
-		return result;
 	}
 }
