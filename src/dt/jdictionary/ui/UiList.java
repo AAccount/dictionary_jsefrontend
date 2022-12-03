@@ -118,9 +118,9 @@ public class UiList implements ItemListener
 			return FLAG_CHINA_SPECIES;
 		}
 
-		if(definition.contains("variant of"))
+		if(definition.contains("variant of") && dbresult.getDefinitions().size() == 1)
 		{
-			return FLAG_VARIANT_OF;
+			return FLAG_VARIANT_OF; //flag it if its ONLY definition is "variant of ___"
 		}
 
 		final String linkFlagText = "see ";
