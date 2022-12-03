@@ -10,7 +10,7 @@ public class RawDbRow
 	{
 		this.zh = zh;
 		this.pinyin = Pinyin.recreate(rawPinyin);
-		this.singleDefinition = singleDefinition;
+		this.singleDefinition = recreateEmbeddedPinyin(singleDefinition);
 	}
 
 	public String getZh() 
@@ -26,5 +26,19 @@ public class RawDbRow
 	public String getSingleDefinition() 
 	{
 		return singleDefinition;
+	}
+
+	private String recreateEmbeddedPinyin(String raw)
+	{
+		final int start = raw.indexOf("[");
+		final int end = raw.indexOf("]");
+		final int NOT_FOUND = -1;
+		if(start == NOT_FOUND || end == NOT_FOUND || start >= end)
+		{
+			return raw;
+		}
+
+		final String recreated = Pinyin.recreate(raw.substring(start+1, end));
+		return raw.substring(0, start) + " " + recreated + " " + raw.substring(end+1);
 	}
 }
