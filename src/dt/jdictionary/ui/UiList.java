@@ -67,7 +67,7 @@ public class UiList implements ItemListener
 		
 		final int COL_DEF = 2;
 		final String definition = String.join(", ", dbresult.getDefinitions()).toLowerCase();
-		JComponent defLabel = UiUtils.renderLabelToGrid(parent, UiUtils.wordWrapHack(definition), row, COL_DEF, true);
+		JComponent defLabel = UiUtils.renderLabelToGrid(parent, definition, row, COL_DEF, true);
 
 		final String flag = flagDbResult(dbresult);
 		if(flag.equals(FLAG_NONE))

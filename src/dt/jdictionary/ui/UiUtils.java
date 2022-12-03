@@ -30,14 +30,15 @@ public class UiUtils
 		return constraints;
 	}
 
-	public static String wordWrapHack(String string)
+	private static String wordWrapHack(String string)
 	{
 		return "<html><div WIDTH=400>" + string + "</div></html>";
 	}
 
 	public static JComponent renderLabelToGrid(JComponent parent, String text, int row, int col, boolean expandx)
 	{
-		final JLabel jlabel = new JLabel(text);
+		final String renderedText = expandx ? wordWrapHack(text) : text;
+		final JLabel jlabel = new JLabel(renderedText);
 		jlabel.setBorder(UiConstants.TRACER);
 		if(Utils.hasChinese(text) && !text.matches(".*[a-zA-Z]+.*")) // don't show definitions that happen to have chinese in huge font
 		{

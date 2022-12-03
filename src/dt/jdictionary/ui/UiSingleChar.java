@@ -76,7 +76,7 @@ public class UiSingleChar
 		UiUtils.renderLabelToGrid(parent, label, row, LABEL_COL, false);
 
 		final int VALUE_COL = 2;
-		UiUtils.renderLabelToGrid(parent, UiUtils.wordWrapHack(value), row, VALUE_COL, true);
+		UiUtils.renderLabelToGrid(parent, value, row, VALUE_COL, true);
 	}
 
 	private void renderZhCharBig(String zhchar, JPanel target, int height)
