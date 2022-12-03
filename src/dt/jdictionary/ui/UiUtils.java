@@ -32,6 +32,7 @@ public class UiUtils
 		return constraints;
 	}
 
+	// If applying the word wrap hack, ALL cells in a column must have it and it has to be the same WIDTH for all of them.
 	private static String wordWrapHack(String string)
 	{
 		return "<html><div WIDTH=400>" + string + "</div></html>";
