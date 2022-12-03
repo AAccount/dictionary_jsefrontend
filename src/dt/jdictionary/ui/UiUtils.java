@@ -50,4 +50,13 @@ public class UiUtils
 
 		return jlabel;
 	}
+
+	public static final String UI_FILLER = "filler";
+	public static void renderFiller(JComponent parent, int row)
+	{
+		final JLabel filler = new JLabel();
+		filler.setName(UI_FILLER);
+		filler.setBorder(UiConstants.TRACER);
+		parent.add(filler, UiUtils.generateGridConstraint(row, 0, false, true, UiConstants.nopadding));
+	}
 }

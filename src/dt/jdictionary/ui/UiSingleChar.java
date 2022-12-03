@@ -36,21 +36,9 @@ public class UiSingleChar
 
 		final int rowsRendered = renderDictionaryResults(result, dictionaryResult);
 		renderZhCharBig(dictionaryResult.getZh(), result, rowsRendered);
-		renderFiller(result, rowsRendered+1);
+		UiUtils.renderFiller(result, rowsRendered+1);
 		
 		return result;
-	}
-
-	private void renderFiller(JComponent parent, int lastRow)
-	{
-		final JLabel filler = new JLabel();
-		filler.setBorder(UiConstants.TRACER);
-
-		/*
-		 * Still sharing the same column with the big chinese character.
-		 * Don't ruin its column with auto expanding.
-		 */
-		parent.add(filler, UiUtils.generateGridConstraint(lastRow, 0, false, true, UiConstants.nopadding));
 	}
 
 	private int renderDictionaryResults(JComponent parent, FullLookup dictionaryResult)

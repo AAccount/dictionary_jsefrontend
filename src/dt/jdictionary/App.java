@@ -27,6 +27,10 @@ public class App implements ActionListener
 	private final String UI_ROOT = "root";
 	private final String UI_ENTRY = "entry";
 	private final String UI_RESULT = "result";
+	private final int UI_ROW_ENTRY = 0;
+	private final int UI_ROW_RESULT = 1;
+	private final int UI_SINGLE_COLUMN = 0;
+
 	private final DbService db;
 
 	public App()
@@ -40,8 +44,9 @@ public class App implements ActionListener
 		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		final JPanel root = new JPanel(new GridBagLayout());
 		root.setName(UI_ROOT);
-
+		root.setBorder(UiConstants.TRACER);
 		renderEntry(root);
+		UiUtils.renderFiller(root, UI_ROW_RESULT);
 
 		window.add(root);
 		window.pack();
@@ -56,7 +61,7 @@ public class App implements ActionListener
 		entry.setBorder(UiConstants.TRACER);
 
 		entry.addActionListener(this);
-		root.add(entry, generateNorthAnchConstraints(0, 0, false, new Insets(10, 10, 5, 10)));
+		root.add(entry, generateNorthAnchConstraints(UI_ROW_ENTRY, UI_SINGLE_COLUMN, false, new Insets(10, 10, 5, 10)));
 	}
 
 	// Trial and error special constraints for the "main" program window
@@ -84,7 +89,7 @@ public class App implements ActionListener
 		final Component[] uiElements = (Component[])root.getComponents();
 		for(final Component uiElement : uiElements)
 		{
-			if(uiElement.getName().equals(UI_RESULT))
+			if(uiElement.getName().equals(UI_RESULT) || uiElement.getName().equals(UiUtils.UI_FILLER))
 			{
 				root.remove(uiElement);
 				break;
@@ -97,7 +102,7 @@ public class App implements ActionListener
 
 		result.setName(UI_RESULT);
 		result.setBorder(UiConstants.TRACER);
-		root.add(result, generateNorthAnchConstraints(1, 0, true, new Insets(5, 10, 10, 10)));
+		root.add(result, generateNorthAnchConstraints(UI_ROW_RESULT, UI_SINGLE_COLUMN, true, new Insets(5, 10, 10, 10)));
 
 		root.revalidate();
 		root.repaint();
