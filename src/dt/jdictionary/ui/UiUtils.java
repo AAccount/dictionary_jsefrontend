@@ -2,7 +2,9 @@ package dt.jdictionary.ui;
 import java.awt.*;
 
 import javax.swing.JComponent;
+import javax.swing.JEditorPane;
 import javax.swing.JLabel;
+import javax.swing.JTextPane;
 
 import dt.jdictionary.Utils;
 
@@ -38,18 +40,24 @@ public class UiUtils
 	public static JComponent renderLabelToGrid(JComponent parent, String text, int row, int col, boolean expandx)
 	{
 		final String renderedText = expandx ? wordWrapHack(text) : text;
-		final JLabel jlabel = new JLabel(renderedText);
-		jlabel.setBorder(UiConstants.TRACER);
+		final JTextPane textPane = new JTextPane();
+		textPane.setContentType("text/html");
+		textPane.setText(renderedText);
+		textPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
+		textPane.setBorder(UiConstants.TRACER);
+		textPane.setBackground(null);
+		textPane.setEditable(false);
+
 		if(Utils.hasChinese(text) && !text.matches(".*[a-zA-Z]+.*")) // don't show definitions that happen to have chinese in huge font
 		{
-			jlabel.setFont(generateFont(jlabel, UiConstants.FONT_MEDIUM));
+			textPane.setFont(generateFont(textPane, UiConstants.FONT_MEDIUM));
 		}
 
 		final Insets insets = new Insets(5, 5, 5, 5);
 		final GridBagConstraints labelConstraints = generateGridConstraint(row, col, expandx, false, insets);
-		parent.add(jlabel, labelConstraints);
+		parent.add(textPane, labelConstraints);
 
-		return jlabel;
+		return textPane;
 	}
 
 	public static final String UI_FILLER = "filler";

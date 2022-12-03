@@ -81,8 +81,13 @@ public class UiSingleChar
 
 	private void renderZhCharBig(String zhchar, JPanel target, int height)
 	{
-		final JLabel zhLabel = new JLabel(zhchar);
-		zhLabel.setFont(UiUtils.generateFont(zhLabel, UiConstants.FONT_LARGE));
+		final JTextPane zhPane = new JTextPane();
+		zhPane.setText(zhchar);
+		zhPane.setBorder(UiConstants.TRACER);
+		zhPane.setFont(UiUtils.generateFont(zhPane, UiConstants.FONT_LARGE));
+		zhPane.setBackground(null);
+		zhPane.setEditable(false);
+		zhPane.setBorder(UiConstants.TRACER);
 
 		final GridBagConstraints constraints = new GridBagConstraints();
 		constraints.gridx = 0;
@@ -93,7 +98,6 @@ public class UiSingleChar
 		constraints.fill = GridBagConstraints.VERTICAL;
 		constraints.insets = new Insets(10, 10, 10, 5);
 
-		zhLabel.setBorder(UiConstants.TRACER);
-		target.add(zhLabel, constraints);
+		target.add(zhPane, constraints);
 	}
 }
