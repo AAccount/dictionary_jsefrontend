@@ -3,6 +3,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
@@ -10,6 +15,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
 import dt.jdictionary.SimpleLookup;
+import dt.jdictionary.Utils;
 
 import java.awt.GridBagLayout;
 import java.text.Normalizer;
@@ -28,16 +34,25 @@ public class UiList implements ItemListener
 
 	private final Map<String, List<JComponent>> flag2Ui;
 	private final JComponent root;
+	private final ExecutorService rowRenderThreads;
+	private final Lock flag2UiLock;
 
 	public UiList() 
 	{
 		flag2Ui = new HashMap<>();
 		root = new JPanel(new GridBagLayout());
 		root.setBorder(UiConstants.TRACER);
+
+		final int MIN_THREADS = 4;
+		final int cpus = Runtime.getRuntime().availableProcessors();
+		rowRenderThreads = Executors.newFixedThreadPool(cpus > MIN_THREADS ? cpus : MIN_THREADS);
+		flag2UiLock = new ReentrantLock();
 	}
 
 	public JComponent render(List<SimpleLookup> dbResults)
 	{
+		Utils.logTimestamp("start ui list");
+
 		final JPanel flagCheckboxes = new JPanel();
 		flagCheckboxes.setBorder(UiConstants.TRACER);
 		root.add(flagCheckboxes, UiUtils.generateGridConstraint(0, 0, true, false, UiConstants.nopadding));
@@ -49,14 +64,27 @@ public class UiList implements ItemListener
 
 		for(int row = 0; row < dbResults.size(); row++)
 		{
-			renderSimpleLookup(dbResults.get(row), dbResultPanel, row);
+			final int itsrow = row;
+			rowRenderThreads.execute(new Thread(() -> renderSimpleLookup(dbResults.get(itsrow), dbResultPanel, itsrow)));
 		}
 		root.add(scrollPane, UiUtils.generateGridConstraint(1, 0, true, true, UiConstants.nopadding));
+		
+		rowRenderThreads.shutdown();
+		try 
+		{
+			rowRenderThreads.awaitTermination(10, TimeUnit.SECONDS);
+		} 
+		catch (InterruptedException e) 
+		{
+			e.printStackTrace();
+		}
 
 		renderFlagCheckboxes(flagCheckboxes);
+		Utils.logTimestamp("stop ui list");
 		return root;
 	}
 
+	// Ok to write to the non threadsafe parent because all the ui elements are written to different areas.
 	private void renderSimpleLookup(SimpleLookup dbresult, JComponent parent, int row)
 	{
 		final int COL_ZH = 0;
@@ -97,11 +125,13 @@ public class UiList implements ItemListener
 
 	private void addToFlagMap(String key, JComponent ui)
 	{
+		flag2UiLock.lock();
 		if(!flag2Ui.keySet().contains(key))
 		{
 			flag2Ui.put(key, new ArrayList<>());
 		}
 		flag2Ui.get(key).add(ui);
+		flag2UiLock.unlock();
 	}
 
 	private String flagDbResult(SimpleLookup dbresult)

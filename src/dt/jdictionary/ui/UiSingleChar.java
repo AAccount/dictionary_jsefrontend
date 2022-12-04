@@ -3,6 +3,7 @@ import java.util.List;
 import javax.swing.JPanel;
 
 import dt.jdictionary.SimpleLookup;
+import dt.jdictionary.Utils;
 import dt.jdictionary.FullLookup;
 
 import java.awt.*;
@@ -12,20 +13,20 @@ public class UiSingleChar
 {
 	public UiSingleChar() {}
 
+	// Need to be out here for independent thread rendering.
+	private JComponent sameFrontTab; 
+	private JComponent sameBackTab;
+
 	public JComponent render(FullLookup dictionaryResult, List<SimpleLookup> sameFront, List<SimpleLookup> sameBack)
 	{
 		// Return the raw notebook. Don't prepackage it in a panel.
+		Utils.logTimestamp("start single char");
+
 		final JTabbedPane notebook = new JTabbedPane();
 		notebook.setBorder(UiConstants.TRACER);
 		notebook.addTab("Definition", renderZhDefinition(dictionaryResult));
-		if(sameFront.size() > 0)
-		{
-			notebook.addTab("Same Front", new UiList().render(sameFront));
-		}
-		if(sameBack.size() > 0)
-		{
-			notebook.addTab("Same Back", new UiList().render(sameBack));
-		}
+		renderRelatedWords(notebook, sameFront, sameBack);
+		Utils.logTimestamp("end single char");
 		return notebook;
 	}
 
@@ -37,8 +38,47 @@ public class UiSingleChar
 		final int rowsRendered = renderDictionaryResults(result, dictionaryResult);
 		renderZhCharBig(dictionaryResult.getZh(), result, rowsRendered);
 		UiUtils.renderFiller(result, rowsRendered+1);
-		
 		return result;
+	}
+
+	private void renderRelatedWords(JTabbedPane notebook,  List<SimpleLookup> sameFront, List<SimpleLookup> sameBack)
+	{
+		Thread sameFrontThread = null, sameBackThread = null;
+		final boolean renderSameFront = sameFront.size() > 0;
+		final boolean renderSameBack = sameBack.size() > 0;
+		if(renderSameFront)
+		{
+			sameFrontThread = new Thread(() -> {
+				sameFrontTab = new UiList().render(sameFront);
+			});
+			sameFrontThread.start();
+		}
+		if(renderSameBack)
+		{
+			sameBackThread = new Thread(() -> {
+				sameBackTab =  new UiList().render(sameBack);
+			});
+			sameBackThread.start();
+		}
+
+		try // Wait for the tabs to finish in this order so they can be added in this order.
+		{
+			if(renderSameFront)
+			{
+				sameFrontThread.join();
+				notebook.addTab("Same Front", sameFrontTab);
+			}
+			if(renderSameBack)
+			{
+				sameBackThread.join();
+				notebook.addTab("Same Back", sameBackTab);
+			}
+		} 
+		catch (InterruptedException e) 
+		{
+			e.printStackTrace();
+		}
+
 	}
 
 	private int renderDictionaryResults(JComponent parent, FullLookup dictionaryResult)
