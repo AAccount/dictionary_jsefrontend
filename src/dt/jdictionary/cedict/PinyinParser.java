@@ -1,8 +1,8 @@
-package dt.jdictionary.sqlite;
+package dt.jdictionary.cedict;
 
 import java.util.Map;
 
-public class Pinyin 
+public class PinyinParser 
 {
 	private static final Map<Character, Map<Integer, Character>> TONEMAP = Map.of(
 		'a', Map.of(1, 'ā', 2, 'á', 3,'ǎ', 4,'à', 5,'a'),
@@ -12,6 +12,20 @@ public class Pinyin
 		'u', Map.of(1, 'ū', 2, 'ú', 3,'ǔ', 4,'ù', 5,'u'),
 		'v', Map.of(1, 'ǖ', 2, 'ǘ', 3,'ǚ', 4,'ǜ', 5,'ǚ')
 	);
+
+	public static String recreateEmbeddedPinyin(String raw)
+	{
+		final int start = raw.indexOf("[");
+		final int end = raw.indexOf("]");
+		final int NOT_FOUND = -1;
+		if(start == NOT_FOUND || end == NOT_FOUND || start >= end)
+		{
+			return raw;
+		}
+
+		final String recreated = PinyinParser.recreate(raw.substring(start+1, end));
+		return raw.substring(0, start) + " " + recreated + " " + raw.substring(end+1);
+	}
 
 	public static String recreate(String raw)
 	{

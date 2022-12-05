@@ -8,7 +8,7 @@ import javax.swing.JTextPane;
 
 import dt.jdictionary.Utils;
 
-public class UiUtils 
+class UiUtils 
 {
 	public static Font generateFont(Component target, int size)
 	{

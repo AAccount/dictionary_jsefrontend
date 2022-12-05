@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class DbRepo 
+class DbRepo 
 {
 	private Connection db;
 
@@ -26,7 +26,6 @@ public class DbRepo
 	private static final String COL_SIMPLIFIED = "simplified";
 	private static final String COL_OG = "original";
 	private static final String COL_MEASURE_WORD = "measure";
-
 
 	public DbRepo()
 	{
@@ -48,15 +47,27 @@ public class DbRepo
 		}
 	}
 
-	public List<RawDbRow> lookupChinese(String zh)
+	public void close()
+	{
+		try 
+		{
+			db.close();
+		} 
+		catch (SQLException e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	public List<RawDictionaryRow> lookupChinese(String zh)
 	{
 		final String sql = "select * from dictionary where zh = ?";
 		return lookupDictionaryTable(sql, zh);
 	}
 
-	private List<RawDbRow> lookupDictionaryTable(String sql, String target)
+	private List<RawDictionaryRow> lookupDictionaryTable(String sql, String target)
 	{
-		final List<RawDbRow> rawDbRows = new ArrayList<>();
+		final List<RawDictionaryRow> rawDbRows = new ArrayList<>();
 		try 
 		{
 			final PreparedStatement pst = db.prepareStatement(sql);
@@ -65,7 +76,7 @@ public class DbRepo
 
 			while(results.next())
 			{
-				rawDbRows.add(new RawDbRow(results.getString(COL_ZH), results.getString(COL_PINYIN), results.getString(COL_EN)));
+				rawDbRows.add(new RawDictionaryRow(results.getString(COL_ZH), results.getString(COL_PINYIN), results.getString(COL_EN)));
 			}
 		}
 		catch (SQLException e) 
@@ -133,14 +144,14 @@ public class DbRepo
 		return measureWords;
 	}
 
-	public List<RawDbRow> lookupRelatedWord(String zh, RelatedChar similarity)
+	public List<RawDictionaryRow> lookupRelatedWord(String zh, RelatedChar similarity)
 	{
 		final String zhlike = similarity == RelatedChar.SAME_FRONT ? zh + "%" : "%" + zh;
 		final String sql = "select * from dictionary where zh like ? and length(zh)>1";
 		return lookupDictionaryTable(sql, zhlike);
 	}
 
-	public List<RawDbRow> lookupEnglish(String en)
+	public List<RawDictionaryRow> lookupEnglish(String en)
 	{
 		final String sql = "select * from dictionary_fts5(?)";
 		return lookupDictionaryTable(sql, en);

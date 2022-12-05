@@ -23,7 +23,7 @@ import java.text.Normalizer.Form;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 
-public class UiList implements ItemListener
+class UiList implements ItemListener
 {
 	private final String FLAG_CHINA_SPECIES = "china species";
 	private final String FLAG_NAME = "name"; // hard to detect reliably
@@ -161,7 +161,7 @@ public class UiList implements ItemListener
 
 		final String pinyinNoAccents = Normalizer.normalize(dbresult.getPinyin(), Form.NFD);
 		final String definitionNoAccents = Normalizer.normalize(definition, Form.NFD);
-		if(definition.contains(" county") || definitionNoAccents.contains(pinyinNoAccents))
+		if(definition.contains(" county") || definition.contains("district of ") || definitionNoAccents.contains(pinyinNoAccents))
 		{
 			return FLAG_NAME;
 		}

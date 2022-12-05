@@ -4,7 +4,7 @@ import javax.swing.border.Border;
 import java.awt.Color;
 import java.awt.Insets;
 
-public class UiConstants 
+class UiConstants 
 {
 	public static final int FONT_MEDIUM = 20;
 	public static final int FONT_LARGE = 45;

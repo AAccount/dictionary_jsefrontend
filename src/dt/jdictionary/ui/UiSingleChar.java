@@ -9,7 +9,7 @@ import dt.jdictionary.FullLookup;
 import java.awt.*;
 import javax.swing.*;
 
-public class UiSingleChar
+class UiSingleChar
 {
 	public UiSingleChar() {}
 
@@ -25,8 +25,9 @@ public class UiSingleChar
 		final JTabbedPane notebook = new JTabbedPane();
 		notebook.setBorder(UiConstants.TRACER);
 		notebook.addTab("Definition", renderZhDefinition(dictionaryResult));
-		renderRelatedWords(notebook, sameFront, sameBack);
 		Utils.logTimestamp("end single char");
+
+		renderRelatedWords(notebook, sameFront, sameBack);
 		return notebook;
 	}
 
