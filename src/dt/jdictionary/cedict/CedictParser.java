@@ -36,6 +36,7 @@ public class CedictParser
 					line = cedictReader.readLine();
 					continue;
 				}
+
 				final Map<String, String> selfSimplifiedChars = catalogSimplified(parsedLine.getOriginal(), parsedLine.getSimplified());
 				final List<String> defsPinyinProced = procDefsEmbeddedPinyin(parsedLine.getRawDefinitions());
 				final Map<String, String> defsSimplifiedChars = procDefsEmbeddedSimplified(defsPinyinProced);
@@ -95,9 +96,8 @@ public class CedictParser
 		}
 		final String zhTraditional = zhParts[0].strip();
 		final String zhSimplified = zhParts[1].strip();
-
-
 		final String pinyinPortion = line.substring(pinyinStart, pinyinEnd+1).strip();
+
 		final String definitionPortion = line.substring(pinyinEnd+1).strip();
 		final String definitionCleaned = cleanRawDefinitionsString(definitionPortion);
 		final String[] definitions = definitionCleaned.split("/");
@@ -109,6 +109,7 @@ public class CedictParser
 				useableDefinitions.add(definition);
 			}
 		}
+
 		return new RawCedictLine(zhTraditional, zhSimplified, pinyinPortion, useableDefinitions);
 	}
 
@@ -122,7 +123,7 @@ public class CedictParser
 
 		/**
 		 * On VERY rare occasions cedict breaks its own rules marking measure words as (CL:XX)
-		 * instead of marking them as separate definitions.
+		 * instead of marking them as /separate/definitions/.
 		 */
 		final String definitionCleaned = rawDefinitions.replace(IMPROPER_MEASURE_WORD_MARKER, "/CL:");
 		/**
@@ -138,7 +139,6 @@ public class CedictParser
 	private Map<String, String> catalogSimplified(String original, String simplified)
 	{
 		Map<String, String> result = new HashMap<>();
-
 		final String originalCleaned = original.replace("(", "");
 		final boolean sameLength = originalCleaned.length() == simplified.length();
 

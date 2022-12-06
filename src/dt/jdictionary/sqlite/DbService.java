@@ -117,7 +117,7 @@ public class DbService
 		{
 			simplifieds.add(new RawSimplifiedRow(original, dump.getSimplifiedChars().get(original)));
 		}
-		// db.fillSimplified(simplifieds);
+		db.fillSimplified(simplifieds);
 
 		// db.close();
 		// final File dbfile = new File(DbRepo.DB_LOCATION);
