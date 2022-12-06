@@ -45,7 +45,7 @@ class RawDictionaryRow
 	@Override
 	public boolean equals(Object obj)
 	{
-		if(obj == null || (obj.getClass() != this.getClass()))
+		if(obj == null || !obj.getClass().equals(this.getClass()))
 		{
 			return false;
 		}
