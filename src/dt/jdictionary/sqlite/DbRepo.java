@@ -3,6 +3,7 @@ package dt.jdictionary.sqlite;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -12,13 +13,13 @@ import java.util.Map;
 
 class DbRepo 
 {
-	private Connection db;
-
 	public enum RelatedChar
 	{
 		SAME_FRONT,
 		SAME_BACK
 	}
+
+	private Connection db;
 
 	private static final String COL_ZH = "zh";
 	private static final String COL_EN = "en";
@@ -34,6 +35,7 @@ class DbRepo
 			final String sqlitePath = System.getProperty("user.home") + "/Programs/mdbgrip.sqlite";
 			Class.forName("org.sqlite.JDBC");
 			this.db = DriverManager.getConnection("jdbc:sqlite:"+sqlitePath);
+			db.setAutoCommit(false);
 		} 
 		catch (SQLException e) 
 		{
@@ -47,13 +49,53 @@ class DbRepo
 		}
 	}
 
-	public void close()
+	public void init()
+	{
+		final String createDictionary = "CREATE TABLE dictionary (zh	TEXT NOT NULL, en	TEXT NOT NULL, pinyin	TEXT NOT NULL, PRIMARY KEY(zh,en,pinyin))";
+		final String createMeasureWords = "CREATE TABLE measureword (zh	TEXT, measure	TEXT, measurePinyin	TEXT, PRIMARY KEY(zh,measure))";
+		final String createSimplified = "CREATE TABLE simplified (original	TEXT NOT NULL, simplified	TEXT NOT NULL, PRIMARY KEY(original,simplified))";
+		final String createFTS5 = "CREATE VIRTUAL TABLE dictionary_fts5 using fts5(zh, en, pinyin)";
+		final String[] tables = {createDictionary, createMeasureWords, createSimplified, createFTS5};
+
+		for(final String table : tables)
+		{
+			try 
+			{
+				final Statement stmt = db.createStatement();
+				stmt.execute(table);
+			} 
+			catch (SQLException e) 
+			{
+				e.printStackTrace();
+			}
+		}
+	}
+
+	public void wipe()
 	{
 		try 
 		{
-			db.close();
+			final Statement findTables = db.createStatement();
+			final ResultSet foundTables = findTables.executeQuery("SELECT name FROM sqlite_master WHERE type='table'");
+			final List<String> tables = new ArrayList<>();
+			while(foundTables.next())
+			{
+				tables.add(foundTables.getString(1));
+			}
+
+			final Statement rm = db.createStatement();
+			for(final String table : tables)
+			{
+				rm.execute("drop table if exists " + table + ";");
+			}
+			db.commit();
+
+			db.setAutoCommit(true);
+			final Statement vaccuum = db.createStatement();
+			vaccuum.execute("vacuum;");
+			db.setAutoCommit(false);
 		} 
-		catch (SQLException e)
+		catch (SQLException e) 
 		{
 			e.printStackTrace();
 		}
@@ -155,5 +197,79 @@ class DbRepo
 	{
 		final String sql = "select * from dictionary_fts5(?)";
 		return lookupDictionaryTable(sql, en);
+	}
+
+	public void fillDictionary(List<RawDictionaryRow> allRows)
+	{
+		final String sqlNormal = "INSERT INTO dictionary (zh, en, pinyin) VALUES (?,?,?)";
+		final String sqlFTS5 = "INSERT INTO dictionary_fts5 (zh, en, pinyin) VALUES (?,?,?)";
+		try 
+		{
+			final PreparedStatement pstNormal = db.prepareStatement(sqlNormal);
+			final PreparedStatement pstFTS5 = db.prepareStatement(sqlFTS5);
+			final PreparedStatement[] psts = {pstNormal, pstFTS5};
+			for(final PreparedStatement pst : psts)
+			{
+				for(final RawDictionaryRow row : allRows)
+				{
+					pst.setString(1, row.getZh());
+					pst.setString(2, row.getSingleDefinition());
+					pst.setString(3, row.getPinyin());
+					pst.addBatch();
+				}
+				pst.executeBatch();
+			}
+			db.commit();
+		} 
+		catch (SQLException e) 
+		{
+			e.printStackTrace();
+		}
+	}
+
+	public void fillMeasureWords(List<RawMeasureWordRow> allRows)
+	{
+		final String sql = "INSERT INTO measureword (zh, measure, measurePinyin) VALUES (?,?,?)";
+		try 
+		{
+			final PreparedStatement pst = db.prepareStatement(sql);
+		
+			for(final RawMeasureWordRow row : allRows)
+			{
+				pst.setString(1, row.getZh());
+				pst.setString(2, row.getMeasure());
+				pst.setString(3, row.getMeasurePinyin());
+				pst.addBatch();
+			}
+			pst.executeBatch();
+			db.commit();
+		} 
+		catch (SQLException e) 
+		{
+			e.printStackTrace();
+		}
+	}
+
+	public void fillSimplified(List<RawSimplifiedRow> allRows)
+	{
+		final String sql = "INSERT INTO simplified (original, simplified) VALUES (?,?)";
+		try 
+		{
+			final PreparedStatement pst = db.prepareStatement(sql);
+		
+			for(final RawSimplifiedRow row : allRows)
+			{
+				System.out.println(row);
+				pst.setString(1, row.getOriginal());
+				pst.setString(2, row.getSimplified());
+				pst.executeUpdate();
+				db.commit();
+			}
+			// pst.executeBatch();
+		} 
+		catch (SQLException e) 
+		{
+			e.printStackTrace();
+		}
 	}
 }

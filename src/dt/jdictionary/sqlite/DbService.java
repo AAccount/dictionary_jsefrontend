@@ -2,12 +2,16 @@ package dt.jdictionary.sqlite;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import dt.jdictionary.FullLookup;
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.cedict.CedictDump;
+import dt.jdictionary.cedict.MeasureWords;
+import dt.jdictionary.cedict.ZhPinyin;
 import dt.jdictionary.sqlite.DbRepo.RelatedChar;
 
 public class DbService 
@@ -80,6 +84,46 @@ public class DbService
 
 	public void saveCedictDump(CedictDump dump)
 	{
+		db.wipe();
+		db.init();
 
+		// There are legit duplicate values in the cedict file.
+		final Set<RawDictionaryRow> defTracker = new HashSet<>();
+		for(final SimpleLookup simpleLookup : dump.getDefinitions())
+		{
+			for(final String definition : simpleLookup.getDefinitions())
+			{
+				defTracker.add(new RawDictionaryRow(simpleLookup.getZh(), simpleLookup.getPinyin(), definition));
+			}
+		}
+		final List<RawDictionaryRow> dedupDefs = new ArrayList<>();
+		dedupDefs.addAll(defTracker);
+		db.fillDictionary(dedupDefs);
+
+		final Set<RawMeasureWordRow> mwTracker = new HashSet<>();
+		for(final MeasureWords measureListing : dump.getMeasureWords())
+		{
+			for(final ZhPinyin measure : measureListing.getMeasures())
+			{
+				mwTracker.add(new RawMeasureWordRow(measureListing.getZh(), measure.getZh(), measure.getPinyin()));
+			}
+		}
+		final List<RawMeasureWordRow> dedupMeasures = new ArrayList<>();
+		dedupMeasures.addAll(mwTracker);
+		db.fillMeasureWords(dedupMeasures);
+
+		final List<RawSimplifiedRow> simplifieds = new ArrayList<>();
+		for(final String original : dump.getSimplifiedChars().keySet())
+		{
+			simplifieds.add(new RawSimplifiedRow(original, dump.getSimplifiedChars().get(original)));
+		}
+		// db.fillSimplified(simplifieds);
+
+		// db.close();
+		// final File dbfile = new File(DbRepo.DB_LOCATION);
+		// dbfile.renameTo(new File(DbRepo.DB_LOCATION+".bak-"+Instant.now()));
+		// final File tmpDbFile = new File(TmpDbRepo.DB_LOCATION);
+		// tmpDbFile.renameTo(new File(DbRepo.DB_LOCATION));
+		// db = new DbRepo();
 	}
 }

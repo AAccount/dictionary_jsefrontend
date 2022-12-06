@@ -4,14 +4,15 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import dt.jdictionary.SimpleLookup;
 
@@ -41,7 +42,8 @@ public class CedictParser
 				final List<String> defPinyinSimplifiedProced = procDefsRmSimplified(defsPinyinProced);
 				final List<ZhPinyin> measureWords = procDefsMeasureWords(defPinyinSimplifiedProced);
 				final List<String> defPinyinSimplifiedMeasureWordProced = procDefsRmMeasureWords(defPinyinSimplifiedProced);
-				result.getDefinitions().add(new SimpleLookup(parsedLine.getOriginal(), parsedLine.getPinyin(), defPinyinSimplifiedMeasureWordProced));
+				final List<String> dedupFinalDefinitions = dedupDefinitions(defPinyinSimplifiedMeasureWordProced);
+				result.getDefinitions().add(new SimpleLookup(parsedLine.getOriginal(), parsedLine.getPinyin(), dedupFinalDefinitions));
 				result.getSimplifiedChars().putAll(selfSimplifiedChars);
 				result.getSimplifiedChars().putAll(defsSimplifiedChars);
 				if(measureWords.size() > 0)
@@ -49,7 +51,6 @@ public class CedictParser
 					result.getMeasureWords().add(new MeasureWords(parsedLine.getOriginal(), measureWords));
 				}
 
-				// System.out.println("Parsed entry: " + parsedLine.getOriginal());
 				line = cedictReader.readLine();
 			}
 			cedictReader.close();
@@ -98,7 +99,8 @@ public class CedictParser
 
 		final String pinyinPortion = line.substring(pinyinStart, pinyinEnd+1).strip();
 		final String definitionPortion = line.substring(pinyinEnd+1).strip();
-		final String[] definitions = definitionPortion.split("/");
+		final String definitionCleaned = cleanRawDefinitionsString(definitionPortion);
+		final String[] definitions = definitionCleaned.split("/");
 		final List<String> useableDefinitions = new ArrayList<>();
 		for(final String definition : definitions)
 		{
@@ -108,6 +110,29 @@ public class CedictParser
 			}
 		}
 		return new RawCedictLine(zhTraditional, zhSimplified, pinyinPortion, useableDefinitions);
+	}
+
+	private final String cleanRawDefinitionsString(String rawDefinitions)
+	{
+		final String IMPROPER_MEASURE_WORD_MARKER = "(CL:";
+		if(!rawDefinitions.contains(IMPROPER_MEASURE_WORD_MARKER))
+		{
+			return rawDefinitions;
+		}
+
+		/**
+		 * On VERY rare occasions cedict breaks its own rules marking measure words as (CL:XX)
+		 * instead of marking them as separate definitions.
+		 */
+		final String definitionCleaned = rawDefinitions.replace(IMPROPER_MEASURE_WORD_MARKER, "/CL:");
+		/**
+		 * Have to use the og definition portion, only a 1 char difference
+		 * but it's the 1 char needed to spot the improperly formatted measure word ending ")"
+		 */
+		final int endBracket = rawDefinitions.indexOf(")", rawDefinitions.indexOf(IMPROPER_MEASURE_WORD_MARKER));
+		final char[] underlyingChars = definitionCleaned.toCharArray();
+		underlyingChars[endBracket] = ' ';
+		return String.valueOf(underlyingChars);
 	}
 
 	private Map<String, String> catalogSimplified(String original, String simplified)
@@ -239,7 +264,6 @@ public class CedictParser
 		return result;
 	}
 
-
 	private List<ZhPinyin> procDefsMeasureWords(List<String> rawDefinitions)
 	{
 		final List<ZhPinyin> result = new ArrayList<>();
@@ -264,6 +288,20 @@ public class CedictParser
 				result.add(new ZhPinyin(measureChar, pinyin));
 			}
 		}
+		return result;
+	}
+
+	// Cedict file will break its own rules and have an unescaped "/" in the definition causing possible duplicates.
+	private List<String> dedupDefinitions(List<String> rawDefinitions)
+	{
+		final Set<String> tracker = new HashSet<>();
+		for(final String def : rawDefinitions)
+		{
+			final String cleaned = def.strip();
+			tracker.add(cleaned);
+		}
+		final List<String> result =  new ArrayList<>();
+		result.addAll(tracker);
 		return result;
 	}
 }

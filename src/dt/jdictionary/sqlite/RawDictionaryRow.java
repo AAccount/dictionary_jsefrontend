@@ -29,4 +29,31 @@ class RawDictionaryRow
 	{
 		return singleDefinition;
 	}
+
+	@Override
+	public int hashCode()
+	{
+		return toString().hashCode();
+	}
+
+	@Override
+	public String toString() 
+	{
+		return "RawDictionaryRow [zh=" + zh + ", pinyin=" + pinyin + ", singleDefinition=" + singleDefinition + "]";
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if(obj == null || (obj.getClass() != this.getClass()))
+		{
+			return false;
+		}
+		
+		final RawDictionaryRow casted = (RawDictionaryRow)obj;
+		return 
+			casted.zh.equals(this.zh) && 
+			casted.pinyin.equals(this.pinyin) && 
+			casted.singleDefinition.equals(this.singleDefinition);
+	}
 }
