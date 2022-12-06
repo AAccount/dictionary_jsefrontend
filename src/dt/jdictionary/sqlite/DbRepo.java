@@ -259,13 +259,12 @@ class DbRepo
 		
 			for(final RawSimplifiedRow row : allRows)
 			{
-				System.out.println(row);
 				pst.setString(1, row.getOriginal());
 				pst.setString(2, row.getSimplified());
-				pst.executeUpdate();
-				db.commit();
+				pst.addBatch();
 			}
-			// pst.executeBatch();
+			pst.executeBatch();
+			db.commit();
 		} 
 		catch (SQLException e) 
 		{

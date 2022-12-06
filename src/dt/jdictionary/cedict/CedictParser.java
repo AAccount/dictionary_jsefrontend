@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Set;
 
 import dt.jdictionary.SimpleLookup;
+import dt.jdictionary.Utils;
 
 public class CedictParser 
 {
@@ -96,6 +97,11 @@ public class CedictParser
 		}
 		final String zhTraditional = zhParts[0].strip();
 		final String zhSimplified = zhParts[1].strip();
+		if(!Utils.hasChinese(zhTraditional))
+		{
+			System.out.println("Line is defining a very exotic chinese character java can't handle: " + line);
+			return null;
+		}
 		final String pinyinPortion = line.substring(pinyinStart, pinyinEnd+1).strip();
 
 		final String definitionPortion = line.substring(pinyinEnd+1).strip();
@@ -151,11 +157,18 @@ public class CedictParser
 		final int maxIndex = sameLength ? originalCleaned.length() : Math.min(originalCleaned.length(), simplified.length());
 		for(int i=0; i<maxIndex; i++)
 		{
-			final char ogchar = originalCleaned.charAt(i);
-			final char simplifiedchar = simplified.charAt(i);
-			if(ogchar != simplifiedchar)
+			final String ogchar = Character.toString(originalCleaned.charAt(i));
+			final String simplifiedchar = Character.toString(simplified.charAt(i));
+			final boolean normalChinese = Utils.hasChinese(ogchar) && Utils.hasChinese(originalCleaned);
+			if(!ogchar.equals(simplifiedchar) && normalChinese)
+			{ 
+				result.put(ogchar, simplifiedchar);
+			}
+
+			// Java can't recognize some extremely exotic chinese characters.
+			if(!normalChinese)
 			{
-				result.put(Character.toString(ogchar), Character.toString(simplifiedchar));
+				System.out.println("Original " + ogchar + " or simplified " + simplifiedchar + " has very exotic chinese");
 			}
 		}
 		return result;

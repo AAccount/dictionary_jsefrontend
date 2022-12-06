@@ -118,12 +118,5 @@ public class DbService
 			simplifieds.add(new RawSimplifiedRow(original, dump.getSimplifiedChars().get(original)));
 		}
 		db.fillSimplified(simplifieds);
-
-		// db.close();
-		// final File dbfile = new File(DbRepo.DB_LOCATION);
-		// dbfile.renameTo(new File(DbRepo.DB_LOCATION+".bak-"+Instant.now()));
-		// final File tmpDbFile = new File(TmpDbRepo.DB_LOCATION);
-		// tmpDbFile.renameTo(new File(DbRepo.DB_LOCATION));
-		// db = new DbRepo();
 	}
 }
