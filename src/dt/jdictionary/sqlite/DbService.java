@@ -84,6 +84,12 @@ public class DbService
 
 	public void saveCedictDump(CedictDump dump)
 	{
+		if(dump.getDefinitions().size() == 0)
+		{
+			System.out.println("Empty dump. Don't wipe!");
+			return;
+		}
+
 		db.wipe();
 		db.init();
 
