@@ -1,7 +1,5 @@
 package dt.jdictionary.sqlite;
 
-import dt.jdictionary.cedict.PinyinParser;
-
 class RawDictionaryRow 
 {
 	private final String zh;
@@ -13,8 +11,8 @@ class RawDictionaryRow
 	public RawDictionaryRow(String zh, String rawPinyin, String singleDefinition) 
 	{
 		this.zh = zh;
-		this.pinyin = PinyinParser.recreate(rawPinyin);
-		this.singleDefinition = PinyinParser.recreateEmbeddedPinyin(singleDefinition);
+		this.pinyin = rawPinyin;
+		this.singleDefinition = singleDefinition;
 		this.firstChar = zh.length() > 1 ? Character.toString(zh.charAt(0)) : null;
 		this.lastChar = zh.length() > 1 ? Character.toString(zh.charAt(zh.length()-1)) : null;
 	}
@@ -22,8 +20,8 @@ class RawDictionaryRow
 	public RawDictionaryRow(String zh, String rawPinyin, String singleDefinition, String firstChar, String lastChar) 
 	{
 		this.zh = zh;
-		this.pinyin = PinyinParser.recreate(rawPinyin);
-		this.singleDefinition = PinyinParser.recreateEmbeddedPinyin(singleDefinition);
+		this.pinyin = rawPinyin;
+		this.singleDefinition = singleDefinition;
 		this.firstChar = firstChar;
 		this.lastChar = lastChar;
 	}

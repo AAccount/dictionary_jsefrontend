@@ -2,7 +2,7 @@ package dt.jdictionary.cedict;
 
 import java.util.Map;
 
-public class PinyinParser 
+class PinyinParser 
 {
 	private static final Map<Character, Map<Integer, Character>> TONEMAP = Map.of(
 		'a', Map.of(1, 'ā', 2, 'á', 3,'ǎ', 4,'à', 5,'a'),
@@ -27,7 +27,7 @@ public class PinyinParser
 		return raw.substring(0, start) + " " + recreated + " " + raw.substring(end+1);
 	}
 
-	public static String recreate(String raw)
+	private static String recreate(String raw)
 	{
 		final String nocommas = raw.replaceAll(",", "");
 		final String[] words = nocommas.split(" ");

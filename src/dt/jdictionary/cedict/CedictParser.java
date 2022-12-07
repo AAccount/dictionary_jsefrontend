@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -45,7 +46,7 @@ public class CedictParser
 				final List<ZhPinyin> measureWords = procDefsMeasureWords(defPinyinSimplifiedProced);
 				final List<String> defPinyinSimplifiedMeasureWordProced = procDefsRmMeasureWords(defPinyinSimplifiedProced);
 				final List<String> dedupFinalDefinitions = dedupDefinitions(defPinyinSimplifiedMeasureWordProced);
-				result.getDefinitions().add(new SimpleLookup(parsedLine.getOriginal(), parsedLine.getPinyin(), dedupFinalDefinitions));
+				result.getDictionary().add(new SimpleLookup(parsedLine.getOriginal(), parsedLine.getPinyin(), dedupFinalDefinitions));
 				result.getSimplifiedChars().putAll(selfSimplifiedChars);
 				result.getSimplifiedChars().putAll(defsSimplifiedChars);
 				if(measureWords.size() > 0)
@@ -106,15 +107,8 @@ public class CedictParser
 
 		final String definitionPortion = line.substring(pinyinEnd+1).strip();
 		final String definitionCleaned = cleanRawDefinitionsString(definitionPortion);
-		final String[] definitions = definitionCleaned.split("/");
-		final List<String> useableDefinitions = new ArrayList<>();
-		for(final String definition : definitions)
-		{
-			if(definition.length() != 0)
-			{
-				useableDefinitions.add(definition);
-			}
-		}
+		final List<String> definitions = Arrays.asList(definitionCleaned.split("/"));
+		final List<String> useableDefinitions = definitions.stream().filter(def -> def.length() >0).toList();
 
 		return new RawCedictLine(zhTraditional, zhSimplified, pinyinPortion, useableDefinitions);
 	}
@@ -176,32 +170,9 @@ public class CedictParser
 
 	private List<String> procDefsEmbeddedPinyin(List<String> rawDefinitions)
 	{
-		final List<String> result = new ArrayList<>();
-		for(final String rawDef : rawDefinitions)
-		{
-			if(rawDef.contains(MEASURE_WORD_INDICATOR)) // Let the measure word processor handle these.
-			{
-				result.add(rawDef);
-				continue;
-			}
-
-			final int start = rawDef.indexOf("[");
-			final int end = rawDef.indexOf("]");
-			final int NOT_FOUND = -1;
-			if(start == NOT_FOUND || end == NOT_FOUND || start >= end)
-			{
-				result.add(rawDef);
-				continue;
-			}
-
-			final String first = rawDef.substring(0, start).strip();
-			final String rawPinyin = rawDef.substring(start+1, end).strip();
-			final String pinyin = PinyinParser.recreate(rawPinyin).strip();
-			final String rest = rawDef.substring(end+1).strip();
-			result.add(first + " " + pinyin + " " + rest);
-		}
-
-		return result;
+		return rawDefinitions.stream()
+			.map(raw -> raw.contains(MEASURE_WORD_INDICATOR) ? raw : PinyinParser.recreateEmbeddedPinyin(raw))
+			.toList();
 	}
 
 	private Map<String, String> procDefsEmbeddedSimplified(List<String> rawDefinitions)
@@ -266,15 +237,7 @@ public class CedictParser
 
 	private List<String> procDefsRmMeasureWords(List<String> rawDefinitions)
 	{
-		final List<String> result = new ArrayList<>();
-		for(final String rawDef : rawDefinitions)
-		{
-			if(!rawDef.contains(MEASURE_WORD_INDICATOR))
-			{
-				result.add(rawDef);
-			}
-		}
-		return result;
+		return rawDefinitions.stream().filter(rawDef -> !rawDef.contains(MEASURE_WORD_INDICATOR)).toList();
 	}
 
 	private List<ZhPinyin> procDefsMeasureWords(List<String> rawDefinitions)
@@ -295,8 +258,8 @@ public class CedictParser
 				final int NOT_FOUND = -1;
 				final int split = rawMeasureWord.indexOf(OG_SIMPLIFIED_SPLIT);
 
-				final String rawPinyin = rawMeasureWord.substring(pinyinStart+1, pinyinEnd);
-				final String pinyin = PinyinParser.recreate(rawPinyin);
+				final String rawPinyin = rawMeasureWord.substring(pinyinStart, pinyinEnd+1);
+				final String pinyin = PinyinParser.recreateEmbeddedPinyin(rawPinyin);
 				final String measureChar = rawMeasureWord.substring(0, split == NOT_FOUND ? pinyinStart : split);
 				result.add(new ZhPinyin(measureChar, pinyin));
 			}
@@ -308,12 +271,9 @@ public class CedictParser
 	private List<String> dedupDefinitions(List<String> rawDefinitions)
 	{
 		final Set<String> tracker = new HashSet<>();
-		for(final String def : rawDefinitions)
-		{
-			final String cleaned = def.strip();
-			tracker.add(cleaned);
-		}
-		final List<String> result =  new ArrayList<>();
+		rawDefinitions.stream().forEach(def -> tracker.add(def.strip()));
+
+		final List<String> result = new ArrayList<>();
 		result.addAll(tracker);
 		return result;
 	}

@@ -7,7 +7,7 @@ import dt.jdictionary.SimpleLookup;
 
 public class CedictDump 
 {
-	private final List<SimpleLookup> definitions;
+	private final List<SimpleLookup> dictionary;
 	private final List<MeasureWords> measureWords;
 	private final Map<String, String> simplifiedChars;
 
@@ -16,14 +16,14 @@ public class CedictDump
 		List<MeasureWords> measureWords, 
 		Map<String, String> simplifiedChars) 
 	{
-		this.definitions = definitions;
+		this.dictionary = definitions;
 		this.measureWords = measureWords;
 		this.simplifiedChars = simplifiedChars;
 	}
 
-	public List<SimpleLookup> getDefinitions() 
+	public List<SimpleLookup> getDictionary() 
 	{
-		return definitions;
+		return dictionary;
 	}
 
 	public List<MeasureWords> getMeasureWords() 

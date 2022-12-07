@@ -84,7 +84,7 @@ public class DbService
 
 	public void saveCedictDump(CedictDump dump)
 	{
-		if(dump.getDefinitions().size() == 0)
+		if(dump.getDictionary().size() == 0)
 		{
 			System.out.println("Empty dump. Don't wipe!");
 			return;
@@ -93,19 +93,29 @@ public class DbService
 		db.wipe();
 		db.init();
 
+		fillDictionary(dump);
+		fillMeasureWords(dump);
+		fillSimplified(dump);
+	}
+
+	private void fillDictionary(CedictDump dump)
+	{
 		// There are legit duplicate values in the cedict file.
 		final Set<RawDictionaryRow> defTracker = new HashSet<>();
-		for(final SimpleLookup simpleLookup : dump.getDefinitions())
+		for(final SimpleLookup entry : dump.getDictionary())
 		{
-			for(final String definition : simpleLookup.getDefinitions())
+			for(final String definition : entry.getDefinitions())
 			{
-				defTracker.add(new RawDictionaryRow(simpleLookup.getZh(), simpleLookup.getPinyin(), definition));
+				defTracker.add(new RawDictionaryRow(entry.getZh(), entry.getPinyin(), definition));
 			}
 		}
 		final List<RawDictionaryRow> dedupDefs = new ArrayList<>();
 		dedupDefs.addAll(defTracker);
 		db.fillDictionary(dedupDefs);
+	}
 
+	private void fillMeasureWords(CedictDump dump)
+	{
 		final Set<RawMeasureWordRow> mwTracker = new HashSet<>();
 		for(final MeasureWords measureListing : dump.getMeasureWords())
 		{
@@ -117,7 +127,10 @@ public class DbService
 		final List<RawMeasureWordRow> dedupMeasures = new ArrayList<>();
 		dedupMeasures.addAll(mwTracker);
 		db.fillMeasureWords(dedupMeasures);
+	}
 
+	private void fillSimplified(CedictDump dump)
+	{
 		final List<RawSimplifiedRow> simplifieds = new ArrayList<>();
 		for(final String original : dump.getSimplifiedChars().keySet())
 		{
