@@ -27,6 +27,8 @@ class DbRepo
 	private static final String COL_SIMPLIFIED = "simplified";
 	private static final String COL_OG = "original";
 	private static final String COL_MEASURE_WORD = "measure";
+	private static final String COL_FIRST_CHAR = "firstChar";
+	private static final String COL_LAST_CHAR = "lastChar";
 
 	public DbRepo()
 	{
@@ -51,18 +53,30 @@ class DbRepo
 
 	public void init()
 	{
-		final String createDictionary = "CREATE TABLE dictionary (zh	TEXT NOT NULL, en	TEXT NOT NULL, pinyin	TEXT NOT NULL, PRIMARY KEY(zh,en,pinyin))";
-		final String createMeasureWords = "CREATE TABLE measureword (zh	TEXT, measure	TEXT, measurePinyin	TEXT, PRIMARY KEY(zh,measure))";
-		final String createSimplified = "CREATE TABLE simplified (original	TEXT NOT NULL, simplified	TEXT NOT NULL, PRIMARY KEY(original,simplified))";
+		final String createDictionary = "CREATE TABLE dictionary (zh	TEXT NOT NULL, en	TEXT NOT NULL, pinyin	TEXT NOT NULL, firstChar TEXT, lastChar TEXT, PRIMARY KEY(zh,en,pinyin))";
+		final String createIndexDictionaryZh = "CREATE INDEX DictionarySortZh ON dictionary (zh)";
+		final String createIndexDictionaryFirstChar = "CREATE INDEX DictionarySortFirst ON dictionary (firstChar)";
+		final String createIndexDictionaryLastChar = "CREATE INDEX DictionarySortLast ON dictionary (lastChar)";
 		final String createFTS5 = "CREATE VIRTUAL TABLE dictionary_fts5 using fts5(zh, en, pinyin)";
-		final String[] tables = {createDictionary, createMeasureWords, createSimplified, createFTS5};
 
-		for(final String table : tables)
+		final String createMeasureWords = "CREATE TABLE measureword (zh	TEXT NOT NULL, measure	TEXT NOT NULL, measurePinyin	TEXT  NOT NULL, PRIMARY KEY(zh,measure))";
+		final String createIndexMeasureZh = "CREATE INDEX MeasureWordZh ON measureword (zh)";
+
+		final String createSimplified = "CREATE TABLE simplified (original	TEXT NOT NULL, simplified	TEXT NOT NULL, PRIMARY KEY(original,simplified))";
+		final String createIndexSimplifiedOg = "CREATE INDEX SimplifiedSortOriginal ON simplified (original)";
+
+		final String[] creates = {
+			createDictionary, createMeasureWords, createSimplified, createFTS5,
+			createIndexDictionaryZh, createIndexDictionaryFirstChar, createIndexDictionaryLastChar, 
+			createIndexMeasureZh, createIndexSimplifiedOg 
+		};
+
+		for(final String creation : creates)
 		{
 			try 
 			{
 				final Statement stmt = db.createStatement();
-				stmt.execute(table);
+				stmt.execute(creation);
 			} 
 			catch (SQLException e) 
 			{
@@ -118,7 +132,14 @@ class DbRepo
 
 			while(results.next())
 			{
-				rawDbRows.add(new RawDictionaryRow(results.getString(COL_ZH), results.getString(COL_PINYIN), results.getString(COL_EN)));
+				final RawDictionaryRow row =  new RawDictionaryRow(
+					results.getString(COL_ZH), 
+					results.getString(COL_PINYIN), 
+					results.getString(COL_EN), 
+					results.getString(COL_FIRST_CHAR), 
+					results.getString(COL_LAST_CHAR)
+				);
+				rawDbRows.add(row);
 			}
 		}
 		catch (SQLException e) 
@@ -188,9 +209,9 @@ class DbRepo
 
 	public List<RawDictionaryRow> lookupRelatedWord(String zh, RelatedChar similarity)
 	{
-		final String zhlike = similarity == RelatedChar.SAME_FRONT ? zh + "%" : "%" + zh;
-		final String sql = "select * from dictionary where zh like ? and length(zh)>1";
-		return lookupDictionaryTable(sql, zhlike);
+		final String column = similarity == RelatedChar.SAME_FRONT ? COL_FIRST_CHAR : COL_LAST_CHAR;
+		final String sql = "select * from dictionary where "+column+" = ? and length(zh)>1";
+		return lookupDictionaryTable(sql, zh);
 	}
 
 	public List<RawDictionaryRow> lookupEnglish(String en)
@@ -201,24 +222,30 @@ class DbRepo
 
 	public void fillDictionary(List<RawDictionaryRow> allRows)
 	{
-		final String sqlNormal = "INSERT INTO dictionary (zh, en, pinyin) VALUES (?,?,?)";
+		final String sqlNormal = "INSERT INTO dictionary (zh, en, pinyin, firstChar, lastChar) VALUES (?,?,?,?,?)";
 		final String sqlFTS5 = "INSERT INTO dictionary_fts5 (zh, en, pinyin) VALUES (?,?,?)";
 		try 
 		{
 			final PreparedStatement pstNormal = db.prepareStatement(sqlNormal);
 			final PreparedStatement pstFTS5 = db.prepareStatement(sqlFTS5);
 			final PreparedStatement[] psts = {pstNormal, pstFTS5};
-			for(final PreparedStatement pst : psts)
+
+			for(final RawDictionaryRow row : allRows)
 			{
-				for(final RawDictionaryRow row : allRows)
+				for(final PreparedStatement pst : psts)
 				{
 					pst.setString(1, row.getZh());
 					pst.setString(2, row.getSingleDefinition());
 					pst.setString(3, row.getPinyin());
-					pst.addBatch();
 				}
-				pst.executeBatch();
+				pstNormal.setString(4, row.getFirstChar());
+				pstNormal.setString(5, row.getLastChar());
+				pstNormal.addBatch();
+				pstFTS5.addBatch();
 			}
+			pstNormal.executeBatch();
+			pstFTS5.executeBatch();
+			
 			db.commit();
 		} 
 		catch (SQLException e) 

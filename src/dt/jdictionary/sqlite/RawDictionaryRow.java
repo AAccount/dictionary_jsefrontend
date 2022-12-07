@@ -7,12 +7,25 @@ class RawDictionaryRow
 	private final String zh;
 	private final String pinyin;
 	private final String singleDefinition;
+	private final String firstChar;
+	private final String lastChar;
 
 	public RawDictionaryRow(String zh, String rawPinyin, String singleDefinition) 
 	{
 		this.zh = zh;
 		this.pinyin = PinyinParser.recreate(rawPinyin);
 		this.singleDefinition = PinyinParser.recreateEmbeddedPinyin(singleDefinition);
+		this.firstChar = zh.length() > 1 ? Character.toString(zh.charAt(0)) : null;
+		this.lastChar = zh.length() > 1 ? Character.toString(zh.charAt(zh.length()-1)) : null;
+	}
+
+	public RawDictionaryRow(String zh, String rawPinyin, String singleDefinition, String firstChar, String lastChar) 
+	{
+		this.zh = zh;
+		this.pinyin = PinyinParser.recreate(rawPinyin);
+		this.singleDefinition = PinyinParser.recreateEmbeddedPinyin(singleDefinition);
+		this.firstChar = firstChar;
+		this.lastChar = lastChar;
 	}
 
 	public String getZh() 
@@ -28,6 +41,16 @@ class RawDictionaryRow
 	public String getSingleDefinition() 
 	{
 		return singleDefinition;
+	}
+	
+	public String getFirstChar() 
+	{
+		return firstChar;
+	}
+
+	public String getLastChar() 
+	{
+		return lastChar;
 	}
 
 	@Override
