@@ -98,11 +98,6 @@ public class CedictParser
 		}
 		final String zhTraditional = zhParts[0].strip();
 		final String zhSimplified = zhParts[1].strip();
-		if(!Utils.hasChinese(zhTraditional))
-		{
-			System.out.println("Line is defining a very exotic chinese character java can't handle: " + line);
-			return null;
-		}
 		final String pinyinPortion = line.substring(pinyinStart, pinyinEnd+1).strip();
 
 		final String definitionPortion = line.substring(pinyinEnd+1).strip();
@@ -139,33 +134,50 @@ public class CedictParser
 	private Map<String, String> catalogSimplified(String original, String simplified)
 	{
 		Map<String, String> result = new HashMap<>();
-		final String originalCleaned = original.replace("(", "");
-		final boolean sameLength = originalCleaned.length() == simplified.length();
+		final String originalCleaned = makeStringChineseOnly(original);
+		final String simplifiedCleaned = makeStringChineseOnly(simplified);
+
+		final List<String> ogchars = Utils.trueChars(originalCleaned);
+		final List<String> simplifiedchars = Utils.trueChars(simplifiedCleaned);
+		final boolean sameLength = ogchars.size() == simplifiedchars.size();
 
 		if(!sameLength)
 		{
-			System.out.println(originalCleaned + " and " + simplified + " are not the same length. Ignoring.");
+			System.out.println(originalCleaned + " and " + simplified + " are not the same perceived length. Ignoring.");
 			return result;
 		}
 
-		final int maxIndex = sameLength ? originalCleaned.length() : Math.min(originalCleaned.length(), simplified.length());
-		for(int i=0; i<maxIndex; i++)
+		for(int i=0; i<ogchars.size(); i++)
 		{
-			final String ogchar = Character.toString(originalCleaned.charAt(i));
-			final String simplifiedchar = Character.toString(simplified.charAt(i));
-			final boolean normalChinese = Utils.hasChinese(ogchar) && Utils.hasChinese(originalCleaned);
-			if(!ogchar.equals(simplifiedchar) && normalChinese)
+			final String ogchar = ogchars.get(i);
+			final String simplifiedchar = simplifiedchars.get(i);
+			if(!ogchar.equals(simplifiedchar))
 			{ 
 				result.put(ogchar, simplifiedchar);
 			}
-
-			// Java can't recognize some extremely exotic chinese characters.
-			if(!normalChinese)
-			{
-				System.out.println("Original " + ogchar + " or simplified " + simplifiedchar + " has very exotic chinese");
-			}
 		}
 		return result;
+	}
+
+	private String makeStringChineseOnly(String string)
+	{
+		HashSet<Character.UnicodeScript> chineseEncoded = new HashSet<>();
+		chineseEncoded.add(Character.UnicodeScript.UNKNOWN); // java is dumb sometimes
+		chineseEncoded.add(Character.UnicodeScript.HAN);
+		
+		List<Character> stringAsCharObjs = new ArrayList<>();
+		for(char single : string.toCharArray())
+		{
+			stringAsCharObjs.add(single);
+		}
+		
+		List<Character> remainingChinese =  stringAsCharObjs
+			.stream().filter(jchar -> chineseEncoded.contains(Character.UnicodeScript.of(jchar))).toList();
+		
+		return remainingChinese.size() == 0 ? "" : remainingChinese.stream()
+			.map(jchar -> jchar.toString())
+			.reduce((acc, singlestring) -> acc + singlestring)
+			.get();
 	}
 
 	private List<String> procDefsEmbeddedPinyin(List<String> rawDefinitions)
@@ -195,8 +207,21 @@ public class CedictParser
 				}
 				final String cleanedDefWord = defWord.replace("(", "");
 				final int split = cleanedDefWord.indexOf(OG_SIMPLIFIED_SPLIT);
+
+				/*
+				 * The end of the original substring is where the split "|" is.
+				 * It doesn't matter if the last char of the original was parseable by java or not.
+				 * The "|" will always come after it.
+				 */
 				final String original = cleanedDefWord.substring(0, split).strip();
-				final String simplified = cleanedDefWord.substring(split+1, split*2+1).strip();
+
+				/*
+				 * Unlike the original, there is no predictable text that comes after the simplified.
+				 * Can't use the original's string length. What if the simplified has unparseable chars, inflating the length?
+				 * At the mercy of java's string parseability. It will need to be cleaned downstream.
+				 */
+				final String simplified = cleanedDefWord.substring(split+1, cleanedDefWord.length()).strip();
+
 				final Map<String, String> defResult = catalogSimplified(original, simplified);
 				result.putAll(defResult);
 			}

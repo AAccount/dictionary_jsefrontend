@@ -1,5 +1,9 @@
 package dt.jdictionary.sqlite;
 
+import java.util.List;
+
+import dt.jdictionary.Utils;
+
 class RawDictionaryRow 
 {
 	private final String zh;
@@ -13,8 +17,10 @@ class RawDictionaryRow
 		this.zh = zh;
 		this.pinyin = rawPinyin;
 		this.singleDefinition = singleDefinition;
-		this.firstChar = zh.length() > 1 ? Character.toString(zh.charAt(0)) : null;
-		this.lastChar = zh.length() > 1 ? Character.toString(zh.charAt(zh.length()-1)) : null;
+
+		final List<String> trueChars = Utils.trueChars(zh);
+		this.firstChar = trueChars.size() > 1 ? trueChars.get(0) : null;
+		this.lastChar = trueChars.size() > 1 ? trueChars.get(trueChars.size()-1) : null;
 	}
 
 	public RawDictionaryRow(String zh, String rawPinyin, String singleDefinition, String firstChar, String lastChar) 
