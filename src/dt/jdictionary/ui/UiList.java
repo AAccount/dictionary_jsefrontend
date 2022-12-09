@@ -52,10 +52,13 @@ class UiList implements ItemListener
 	public JComponent render(List<SimpleLookup> dbResults)
 	{
 		Utils.logTimestamp("start ui list");
+		final int UI_SINGLE_COLUMN = 0;
+		final int UI_ROW_CHECKBOXES = 0;
+		final int UI_ROW_RESULTS = 1;
 
 		final JPanel flagCheckboxes = new JPanel();
 		flagCheckboxes.setBorder(UiConstants.TRACER);
-		root.add(flagCheckboxes, UiUtils.generateGridConstraint(0, 0, true, false, UiConstants.nopadding));
+		root.add(flagCheckboxes, UiUtils.makeGridConstraint(UI_ROW_CHECKBOXES, UI_SINGLE_COLUMN, true, false, UiConstants.nopadding));
 
 		final JPanel dbResultPanel = new JPanel(new GridBagLayout());
 		dbResultPanel.setBorder(UiConstants.TRACER);
@@ -67,7 +70,7 @@ class UiList implements ItemListener
 			final int itsrow = row;
 			rowRenderThreads.execute(new Thread(() -> renderSimpleLookup(dbResults.get(itsrow), dbResultPanel, itsrow)));
 		}
-		root.add(scrollPane, UiUtils.generateGridConstraint(1, 0, true, true, UiConstants.nopadding));
+		root.add(scrollPane, UiUtils.makeGridConstraint(UI_ROW_RESULTS, UI_SINGLE_COLUMN, true, true, UiConstants.nopadding));
 		
 		rowRenderThreads.shutdown();
 		try 
@@ -138,7 +141,8 @@ class UiList implements ItemListener
 	{
 		final String definition = String.join(", ", dbresult.getDefinitions()).toLowerCase();
 
-		if(dbresult.getZh().length() > 4) // longer than a "4 char saying"
+		final int FOUR_CHAR_EXPR = 4;
+		if(dbresult.getZh().length() > FOUR_CHAR_EXPR)
 		{
 			return FLAG_TOO_LONG;
 		}

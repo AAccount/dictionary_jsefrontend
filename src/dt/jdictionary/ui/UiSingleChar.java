@@ -1,9 +1,12 @@
 package dt.jdictionary.ui;
 import java.util.List;
+import java.util.Set;
+
 import javax.swing.JPanel;
 
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.Utils;
+import dt.jdictionary.ui.UiUtils.Neighbor;
 import dt.jdictionary.FullLookup;
 
 import java.awt.*;
@@ -49,16 +52,12 @@ class UiSingleChar
 		final boolean renderSameBack = sameBack.size() > 0;
 		if(renderSameFront)
 		{
-			sameFrontThread = new Thread(() -> {
-				sameFrontTab = new UiList().render(sameFront);
-			});
+			sameFrontThread = new Thread(() -> { sameFrontTab = new UiList().render(sameFront); });
 			sameFrontThread.start();
 		}
 		if(renderSameBack)
 		{
-			sameBackThread = new Thread(() -> {
-				sameBackTab =  new UiList().render(sameBack);
-			});
+			sameBackThread = new Thread(() -> { sameBackTab =  new UiList().render(sameBack); });
 			sameBackThread.start();
 		}
 
@@ -125,7 +124,7 @@ class UiSingleChar
 		final JTextPane zhPane = new JTextPane();
 		zhPane.setText(zhchar);
 		zhPane.setBorder(UiConstants.TRACER);
-		zhPane.setFont(UiUtils.generateFont(zhPane, UiConstants.FONT_LARGE));
+		zhPane.setFont(UiUtils.makeFont(zhPane, UiConstants.FONT_LARGE));
 		zhPane.setBackground(null);
 		zhPane.setEditable(false);
 		zhPane.setBorder(UiConstants.TRACER);
@@ -137,7 +136,7 @@ class UiSingleChar
 		constraints.gridheight = height;
 		constraints.anchor = GridBagConstraints.LINE_START;
 		constraints.fill = GridBagConstraints.VERTICAL;
-		constraints.insets = new Insets(10, 10, 10, 5);
+		constraints.insets = UiUtils.makeInsets(Set.of(Neighbor.RIGHT));
 
 		target.add(zhPane, constraints);
 	}

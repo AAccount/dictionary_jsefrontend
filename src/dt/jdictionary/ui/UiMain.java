@@ -6,6 +6,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
+import java.util.Set;
 import java.awt.Component;
 
 import javax.swing.JComponent;
@@ -21,6 +22,7 @@ import dt.jdictionary.Utils;
 import dt.jdictionary.cedict.CedictDump;
 import dt.jdictionary.cedict.CedictParser;
 import dt.jdictionary.sqlite.DbService;
+import dt.jdictionary.ui.UiUtils.Neighbor;
 
 public class UiMain implements ActionListener
 {
@@ -75,17 +77,18 @@ public class UiMain implements ActionListener
 
 	private void renderEntry(JPanel root)
 	{
-		final JTextField entry = new JTextField(20);
+		final int ENTRY_INITIAL_WIDTH = 20;
+		final JTextField entry = new JTextField(ENTRY_INITIAL_WIDTH);
 		entry.setName(UI_ENTRY);
-		entry.setFont(UiUtils.generateFont(entry, UiConstants.FONT_MEDIUM));
+		entry.setFont(UiUtils.makeFont(entry, UiConstants.FONT_MEDIUM));
 		entry.setBorder(UiConstants.TRACER);
 
 		entry.addActionListener(this);
-		root.add(entry, generateNorthAnchConstraints(UI_ROW_ENTRY, UI_SINGLE_COLUMN, false, new Insets(10, 10, 5, 10)));
+		root.add(entry, uiMainConstraints(UI_ROW_ENTRY, UI_SINGLE_COLUMN, false, UiUtils.makeInsets(Set.of(Neighbor.BOTTOM))));
 	}
 
 	// Trial and error special constraints for the "main" program window
-	private GridBagConstraints generateNorthAnchConstraints(int row, int column, boolean expandy, Insets insets)
+	private GridBagConstraints uiMainConstraints(int row, int column, boolean expandy, Insets insets)
 	{
 		final GridBagConstraints entryConstraints = new GridBagConstraints();
 		entryConstraints.gridx = column;
@@ -152,7 +155,7 @@ public class UiMain implements ActionListener
 
 		result.setName(UI_RESULT);
 		result.setBorder(UiConstants.TRACER);
-		root.add(result, generateNorthAnchConstraints(UI_ROW_RESULT, UI_SINGLE_COLUMN, true, new Insets(5, 10, 10, 10)));
+		root.add(result, uiMainConstraints(UI_ROW_RESULT, UI_SINGLE_COLUMN, true, UiUtils.makeInsets(Set.of(Neighbor.TOP))));
 
 		root.revalidate();
 		root.repaint();

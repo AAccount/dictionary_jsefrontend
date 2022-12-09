@@ -1,22 +1,37 @@
 package dt.jdictionary.ui;
-import java.awt.*;
 
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JTextPane;
 
+import java.awt.Font;
+import java.awt.Component;
+import java.awt.GridBagConstraints;
+import java.awt.Insets;
+import java.util.HashSet;
+import java.util.Set;
+
 import dt.jdictionary.Utils;
 
 class UiUtils 
 {
-	public static Font generateFont(Component target, int size)
+	public enum Neighbor
+	{
+		TOP,
+		BOTTOM,
+		LEFT,
+		RIGHT,
+		EVERYWHERE
+	}
+
+	public static Font makeFont(Component target, int size)
 	{
 		final Font currentFont = target.getFont();
 		return new Font(currentFont.getName(), currentFont.getStyle(), size);
 	}
 
-	public static GridBagConstraints generateGridConstraint(int row, int column, boolean expandx, boolean expandy, Insets insets)
+	public static GridBagConstraints makeGridConstraint(int row, int column, boolean expandx, boolean expandy, Insets insets)
 	{
 		final int weightx = expandx ? UiConstants.GRIDBAG_AUTOEXPAND : UiConstants.GRIDBAG_NO_AUTOEXPAND;
 		final int weighty = expandy ? UiConstants.GRIDBAG_AUTOEXPAND : UiConstants.GRIDBAG_NO_AUTOEXPAND;
@@ -51,11 +66,11 @@ class UiUtils
 
 		if(Utils.hasChinese(text) && !text.matches(".*[a-zA-Z]+.*")) // don't show definitions that happen to have chinese in huge font
 		{
-			textPane.setFont(generateFont(textPane, UiConstants.FONT_MEDIUM));
+			textPane.setFont(makeFont(textPane, UiConstants.FONT_MEDIUM));
 		}
 
-		final Insets insets = new Insets(5, 5, 5, 5);
-		final GridBagConstraints labelConstraints = generateGridConstraint(row, col, expandx, false, insets);
+		final Insets insets = makeInsets(Set.of(Neighbor.EVERYWHERE));
+		final GridBagConstraints labelConstraints = makeGridConstraint(row, col, expandx, false, insets);
 		parent.add(textPane, labelConstraints);
 
 		return textPane;
@@ -64,9 +79,26 @@ class UiUtils
 	public static final String UI_FILLER = "filler";
 	public static void renderFiller(JComponent parent, int row)
 	{
+		final int FIRST_COLUMN = 0;
 		final JLabel filler = new JLabel();
 		filler.setName(UI_FILLER);
 		filler.setBorder(UiConstants.TRACER);
-		parent.add(filler, UiUtils.generateGridConstraint(row, 0, false, true, UiConstants.nopadding));
+		parent.add(filler, UiUtils.makeGridConstraint(row, FIRST_COLUMN, false, true, UiConstants.nopadding));
+	}
+
+	public static Insets makeInsets(Set<Neighbor> neighbors)
+	{
+		if(neighbors.contains(Neighbor.EVERYWHERE))
+		{
+			neighbors = (Set.of(Neighbor.LEFT, Neighbor.RIGHT, Neighbor.TOP, Neighbor.BOTTOM));
+		}
+
+		final int PADDING = 10;
+		return new Insets(
+			neighbors.contains(Neighbor.TOP) ? PADDING / 2 : PADDING, 
+			neighbors.contains(Neighbor.LEFT) ? PADDING / 2 : PADDING, 
+			neighbors.contains(Neighbor.BOTTOM)? PADDING / 2 : PADDING, 
+			neighbors.contains(Neighbor.RIGHT) ? PADDING / 2 : PADDING
+			);
 	}
 }
