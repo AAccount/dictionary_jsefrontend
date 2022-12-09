@@ -9,7 +9,6 @@ import java.awt.Font;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
-import java.util.HashSet;
 import java.util.Set;
 
 import dt.jdictionary.Utils;
