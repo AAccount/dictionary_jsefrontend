@@ -20,6 +20,11 @@ class UiSingleChar
 	private JComponent sameFrontTab; 
 	private JComponent sameBackTab;
 
+	private final int COL_LABEL = 0;
+	private final int COL_VALUE = 1;
+	private final int ROW_BIG_CHAR = 0;
+	private final int ROW_START_DEFINITIONS = 1;
+
 	public JComponent render(FullLookup dictionaryResult, List<SimpleLookup> sameFront, List<SimpleLookup> sameBack)
 	{
 		// Return the raw notebook. Don't prepackage it in a panel.
@@ -40,7 +45,7 @@ class UiSingleChar
 		result.setBorder(UiConstants.TRACER);
 
 		final int rowsRendered = renderDictionaryResults(result, dictionaryResult);
-		renderZhCharBig(dictionaryResult.getZh(), result, rowsRendered);
+		renderZhCharBig(dictionaryResult.getZh(), result);
 		UiUtils.renderFiller(result, rowsRendered+1);
 		return result;
 	}
@@ -83,7 +88,7 @@ class UiSingleChar
 
 	private int renderDictionaryResults(JComponent parent, FullLookup dictionaryResult)
 	{
-		int row = 0;
+		int row = ROW_START_DEFINITIONS;
 		for(final String pinyin : dictionaryResult.getResults().keySet())
 		{
 			renderLabelValue(parent, "Pinyin", pinyin, row);
@@ -112,14 +117,11 @@ class UiSingleChar
 
 	private void renderLabelValue(JComponent parent, String label, String value, int row)
 	{
-		final int LABEL_COL = 1;
-		UiUtils.renderLabelToGrid(parent, label, row, LABEL_COL, false);
-
-		final int VALUE_COL = 2;
-		UiUtils.renderLabelToGrid(parent, value, row, VALUE_COL, true);
+		UiUtils.renderLabelToGrid(parent, label, row, COL_LABEL, false);
+		UiUtils.renderLabelToGrid(parent, value, row, COL_VALUE, true);
 	}
 
-	private void renderZhCharBig(String zhchar, JPanel target, int height)
+	private void renderZhCharBig(String zhchar, JPanel target)
 	{
 		final JTextPane zhPane = new JTextPane();
 		zhPane.setText(zhchar);
@@ -129,14 +131,15 @@ class UiSingleChar
 		zhPane.setEditable(false);
 		zhPane.setBorder(UiConstants.TRACER);
 
+		final int ALL_COLUMNS = 2;
 		final GridBagConstraints constraints = new GridBagConstraints();
-		constraints.gridx = 0;
-		constraints.gridy = 0;
-		constraints.weightx = UiConstants.GRIDBAG_NO_AUTOEXPAND;
-		constraints.gridheight = height;
-		constraints.anchor = GridBagConstraints.LINE_START;
-		constraints.fill = GridBagConstraints.VERTICAL;
-		constraints.insets = UiUtils.makeInsets(Set.of(Neighbor.RIGHT));
+		constraints.gridx = COL_LABEL;
+		constraints.gridy = ROW_BIG_CHAR;
+		constraints.weightx = UiConstants.GRIDBAG_AUTOEXPAND;
+		constraints.gridwidth = ALL_COLUMNS;
+		constraints.anchor = GridBagConstraints.CENTER;
+		constraints.fill = GridBagConstraints.HORIZONTAL;
+		constraints.insets = UiUtils.makeInsets(Set.of(Neighbor.BOTTOM));
 
 		target.add(zhPane, constraints);
 	}
