@@ -39,16 +39,11 @@ public class CedictParser
 					continue;
 				}
 
-				final Map<String, String> selfSimplifiedChars = catalogSimplified(parsedLine.getOriginal(), parsedLine.getSimplified());
-				final List<String> defsPinyinProced = procDefsEmbeddedPinyin(parsedLine.getRawDefinitions());
-				final Map<String, String> defsSimplifiedChars = procDefsEmbeddedSimplified(defsPinyinProced);
-				final List<String> defPinyinSimplifiedProced = procDefsRmSimplified(defsPinyinProced);
-				final List<ZhPinyin> measureWords = procDefsMeasureWords(defPinyinSimplifiedProced);
-				final List<String> defPinyinSimplifiedMeasureWordProced = procDefsRmMeasureWords(defPinyinSimplifiedProced);
-				final List<String> dedupFinalDefinitions = dedupDefinitions(defPinyinSimplifiedMeasureWordProced);
-				result.getDictionary().add(new SimpleLookup(parsedLine.getOriginal(), parsedLine.getPinyin(), dedupFinalDefinitions));
-				result.getSimplifiedChars().putAll(selfSimplifiedChars);
-				result.getSimplifiedChars().putAll(defsSimplifiedChars);
+				final List<String> definitions = parseDefinitions(parsedLine);
+				result.getDictionary().add(new SimpleLookup(parsedLine.getOriginal(), parsedLine.getPinyin(), definitions));
+				final Map<String, String> simplifiedChars = getSimplifiedChars(parsedLine);
+				result.getSimplifiedChars().putAll(simplifiedChars);
+				final List<ZhPinyin> measureWords = procDefsMeasureWords(parsedLine);
 				if(measureWords.size() > 0)
 				{
 					result.getMeasureWords().add(new MeasureWords(parsedLine.getOriginal(), measureWords));
@@ -70,6 +65,23 @@ public class CedictParser
 		}
 		System.out.println("Finished parsing.");
 		return result;
+	}
+
+	private List<String> parseDefinitions(RawCedictLine line)
+	{
+		final List<String> rawDefinitions = line.getRawDefinitions().stream().map(rawDef -> new String(rawDef)).toList();
+		final List<String> pinyin = procDefsEmbeddedPinyin(rawDefinitions);
+		final List<String> pinyinNoSimplified = procDefsRmSimplified(pinyin);
+		final List<String> pinyinNoSimplifiedNoMW = procDefsRmMeasureWords(pinyinNoSimplified);
+		return dedupDefinitions(pinyinNoSimplifiedNoMW);
+	}
+
+	private Map<String, String> getSimplifiedChars(RawCedictLine line)
+	{
+		final Map<String, String> selfSimplifiedChars = catalogSimplified(line.getOriginal(), line.getSimplified());
+		final Map<String, String> defsSimplifiedChars = procDefsEmbeddedSimplified(line.getRawDefinitions());
+		selfSimplifiedChars.putAll(defsSimplifiedChars);
+		return selfSimplifiedChars;
 	}
 
 	private RawCedictLine parseLine(String line)
@@ -99,16 +111,20 @@ public class CedictParser
 		final String zhTraditional = zhParts[0].strip();
 		final String zhSimplified = zhParts[1].strip();
 		final String pinyinPortion = line.substring(pinyinStart, pinyinEnd+1).strip();
-
 		final String definitionPortion = line.substring(pinyinEnd+1).strip();
-		final String definitionCleaned = cleanRawDefinitionsString(definitionPortion);
-		final List<String> definitions = Arrays.asList(definitionCleaned.split("/"));
-		final List<String> useableDefinitions = definitions.stream().filter(def -> def.length() >0).toList();
+		final List<String> definitions = processRawDefinitions(definitionPortion);
 
-		return new RawCedictLine(zhTraditional, zhSimplified, pinyinPortion, useableDefinitions);
+		return new RawCedictLine(zhTraditional, zhSimplified, pinyinPortion, definitions);
 	}
 
-	private final String cleanRawDefinitionsString(String rawDefinitions)
+	private List<String> processRawDefinitions(String definitionPortion)
+	{
+		final String sanitized = sanitizeRawDefinitions(definitionPortion);
+		final List<String> definitions = Arrays.asList(sanitized.split("/"));
+		return definitions.stream().filter(def -> def.length() > 0).toList();
+	}
+
+	private final String sanitizeRawDefinitions(String rawDefinitions)
 	{
 		final String IMPROPER_MEASURE_WORD_MARKER = "(CL:";
 		if(!rawDefinitions.contains(IMPROPER_MEASURE_WORD_MARKER))
@@ -161,10 +177,7 @@ public class CedictParser
 
 	private String makeStringChineseOnly(String string)
 	{
-		HashSet<Character.UnicodeScript> chineseEncoded = new HashSet<>();
-		chineseEncoded.add(Character.UnicodeScript.UNKNOWN); // java is dumb sometimes
-		chineseEncoded.add(Character.UnicodeScript.HAN);
-		
+		Set<Character.UnicodeScript> chineseEncoded = Set.of(Character.UnicodeScript.UNKNOWN, Character.UnicodeScript.HAN);
 		List<Character> stringAsCharObjs = new ArrayList<>();
 		for(char single : string.toCharArray())
 		{
@@ -183,7 +196,7 @@ public class CedictParser
 	private List<String> procDefsEmbeddedPinyin(List<String> rawDefinitions)
 	{
 		return rawDefinitions.stream()
-			.map(raw -> raw.contains(MEASURE_WORD_INDICATOR) ? raw : PinyinParser.recreateEmbeddedPinyin(raw))
+			.map(raw -> raw.contains(MEASURE_WORD_INDICATOR) ? raw : PinyinParser.parse(raw))
 			.toList();
 	}
 
@@ -265,10 +278,10 @@ public class CedictParser
 		return rawDefinitions.stream().filter(rawDef -> !rawDef.contains(MEASURE_WORD_INDICATOR)).toList();
 	}
 
-	private List<ZhPinyin> procDefsMeasureWords(List<String> rawDefinitions)
+	private List<ZhPinyin> procDefsMeasureWords(RawCedictLine line)
 	{
 		final List<ZhPinyin> result = new ArrayList<>();
-		for(final String rawDef : rawDefinitions)
+		for(final String rawDef : line.getRawDefinitions())
 		{
 			if(!rawDef.contains(MEASURE_WORD_INDICATOR))
 			{
@@ -284,7 +297,7 @@ public class CedictParser
 				final int split = rawMeasureWord.indexOf(OG_SIMPLIFIED_SPLIT);
 
 				final String rawPinyin = rawMeasureWord.substring(pinyinStart, pinyinEnd+1);
-				final String pinyin = PinyinParser.recreateEmbeddedPinyin(rawPinyin);
+				final String pinyin = PinyinParser.parse(rawPinyin);
 				final String measureChar = rawMeasureWord.substring(0, split == NOT_FOUND ? pinyinStart : split);
 				result.add(new ZhPinyin(measureChar, pinyin));
 			}

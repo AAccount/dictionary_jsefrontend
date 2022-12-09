@@ -13,7 +13,7 @@ class RawCedictLine
 	{
 		this.original = original;
 		this.simplified = simplified;
-		this.pinyin = PinyinParser.recreateEmbeddedPinyin(rawPinyin).strip();
+		this.pinyin = PinyinParser.parse(rawPinyin).strip();
 		this.rawDefinitions = rawDefinitions;
 	}
 

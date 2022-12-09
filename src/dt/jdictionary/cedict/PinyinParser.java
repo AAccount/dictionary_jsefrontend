@@ -13,7 +13,7 @@ class PinyinParser
 		'v', Map.of(1, 'ǖ', 2, 'ǘ', 3,'ǚ', 4,'ǜ', 5,'ǚ')
 	);
 
-	public static String recreateEmbeddedPinyin(String raw)
+	public static String parse(String raw)
 	{
 		final int start = raw.indexOf("[");
 		final int end = raw.indexOf("]");

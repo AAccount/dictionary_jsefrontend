@@ -89,7 +89,7 @@ class UiUtils
 	{
 		if(neighbors.contains(Neighbor.EVERYWHERE))
 		{
-			neighbors = (Set.of(Neighbor.LEFT, Neighbor.RIGHT, Neighbor.TOP, Neighbor.BOTTOM));
+			neighbors = Set.of(Neighbor.LEFT, Neighbor.RIGHT, Neighbor.TOP, Neighbor.BOTTOM);
 		}
 
 		final int PADDING = 10;
