@@ -29,6 +29,7 @@ class DbRepo
 	private static final String COL_MEASURE_WORD = "measure";
 	private static final String COL_FIRST_CHAR = "firstChar";
 	private static final String COL_LAST_CHAR = "lastChar";
+	private static final String COL_4_CHAR = "fourChar";
 
 	public DbRepo()
 	{
@@ -65,10 +66,14 @@ class DbRepo
 		final String createSimplified = "CREATE TABLE simplified (original	TEXT NOT NULL, simplified	TEXT NOT NULL, PRIMARY KEY(original,simplified))";
 		final String createIndexSimplifiedOg = "CREATE INDEX SimplifiedSortOriginal ON simplified (original)";
 
+		final String create4Char = "CREATE TABLE FourCharSubstring (substring	TEXT NOT NULL, fourChar	TEXT NOT NULL, PRIMARY KEY(substring,fourChar))";
+		final String create4CharIndex = "CREATE INDEX FourCharSubSortSub ON FourCharSubstring (substring)";
+
 		final String[] creates = {
 			createDictionary, createMeasureWords, createSimplified, createFTS5,
 			createIndexDictionaryZh, createIndexDictionaryFirstChar, createIndexDictionaryLastChar, 
-			createIndexMeasureZh, createIndexSimplifiedOg 
+			createIndexMeasureZh, createIndexSimplifiedOg,
+			create4Char, create4CharIndex
 		};
 
 		for(final String creation : creates)
@@ -220,6 +225,28 @@ class DbRepo
 		return lookupDictionaryTable(sql, en);
 	}
 
+	public List<String> tryFourChars(String compoundWord)
+	{
+		final List<String> result = new ArrayList<>();
+		try
+		{
+			final String sql = "select fourChar from FourCharSubstring where substring = ?";
+			final PreparedStatement pst = db.prepareStatement(sql);
+			pst.setString(1, compoundWord);
+			final ResultSet results = pst.executeQuery();
+
+			while(results.next())
+			{
+				result.add(results.getString(COL_4_CHAR));
+			}
+		}
+		catch (SQLException e) 
+		{
+			e.printStackTrace();
+		}
+		return result;
+	}
+
 	public void fillDictionary(List<RawDictionaryRow> allRows)
 	{
 		final String sqlNormal = "INSERT INTO dictionary (zh, en, pinyin, firstChar, lastChar) VALUES (?,?,?,?,?)";
@@ -288,6 +315,28 @@ class DbRepo
 			{
 				pst.setString(1, row.getOriginal());
 				pst.setString(2, row.getSimplified());
+				pst.addBatch();
+			}
+			pst.executeBatch();
+			db.commit();
+		} 
+		catch (SQLException e) 
+		{
+			e.printStackTrace();
+		}
+	}
+
+	public void fill4Chars(List<Raw4CharRow> allRows)
+	{
+		final String sql = "INSERT INTO FourCharSubstring (substring, fourChar) VALUES (?,?)";
+		try 
+		{
+			final PreparedStatement pst = db.prepareStatement(sql);
+		
+			for(final Raw4CharRow row : allRows)
+			{
+				pst.setString(1, row.getSubstring());
+				pst.setString(2, row.getFourChar());
 				pst.addBatch();
 			}
 			pst.executeBatch();

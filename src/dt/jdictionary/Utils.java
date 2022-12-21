@@ -12,6 +12,11 @@ public class Utils
 		return string.codePoints().anyMatch(codepoint -> Character.UnicodeScript.of(codepoint) == Character.UnicodeScript.HAN);
 	}
 
+	public static boolean allChinese(String string)
+	{
+		return string.codePoints().allMatch(codepoint -> Character.UnicodeScript.of(codepoint) == Character.UnicodeScript.HAN);
+	}
+	
 	/**
 	 * Java doesn't handle 4 byte encoded Chinese characters very well.
 	 * Char at returns bogus, string length "inflates" among other problems.

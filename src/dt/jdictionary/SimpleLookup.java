@@ -28,4 +28,35 @@ public class SimpleLookup
 	{
 		return definitions;
 	}
+
+	@Override
+	public String toString() 
+	{
+		return "SimpleLookup [zh=" + zh + ", pinyin=" + pinyin + ", definitions=" + definitions + "]";
+	}
+
+	// Definitions are based on the zh and pinyin. No need to compare those.
+	@Override
+	public int hashCode() 
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((zh == null) ? 0 : zh.hashCode());
+		result = prime * result + ((pinyin == null) ? 0 : pinyin.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) 
+	{
+		if(obj == null || !obj.getClass().equals(this.getClass()))
+		{
+			return false;
+		}
+
+		final SimpleLookup casted = (SimpleLookup)obj;
+		return
+			casted.zh.equals(this.zh) &&
+			casted.pinyin.equals(this.pinyin);
+	}
 }

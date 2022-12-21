@@ -9,6 +9,7 @@ import java.util.Set;
 
 import dt.jdictionary.FullLookup;
 import dt.jdictionary.SimpleLookup;
+import dt.jdictionary.Utils;
 import dt.jdictionary.cedict.CedictDump;
 import dt.jdictionary.cedict.MeasureWords;
 import dt.jdictionary.cedict.ZhPinyin;
@@ -16,6 +17,7 @@ import dt.jdictionary.sqlite.DbRepo.RelatedChar;
 
 public class DbService 
 {
+	public static final int MIN_4CHARS_SUBSTRING = 2;
 	private final DbRepo db;
 
 	public DbService()
@@ -82,6 +84,23 @@ public class DbService
 		return result;
 	}
 
+	public List<SimpleLookup> try4CharLookup(String compoundWord)
+	{
+		final List<String> possibleMatches = db.tryFourChars(compoundWord);
+		if(possibleMatches.size() == 0)
+		{
+			return List.of();
+		}
+
+		final List<RawDictionaryRow> raws = new ArrayList<>();
+		for(final String possibleMatch : possibleMatches)
+		{
+			raws.addAll(db.lookupChinese(possibleMatch));
+		}
+
+		return convertRawToSimple(raws);
+	}
+
 	public void saveCedictDump(CedictDump dump)
 	{
 		if(dump.getDictionary().size() == 0)
@@ -96,6 +115,43 @@ public class DbService
 		fillDictionary(dump);
 		fillMeasureWords(dump);
 		fillSimplified(dump);
+		fill4Chars(dump);
+	}
+
+	private void fill4Chars(CedictDump dump)
+	{
+		final List<SimpleLookup> fourCharEntries = dump.getDictionary().stream()
+			.filter(simplelookup -> List.of(3,4,5).indexOf(simplelookup.getZh().length()) != -1 && Utils.allChinese(simplelookup.getZh())).toList();
+
+		final Set<Raw4CharRow> result = new HashSet<>();
+		for(final SimpleLookup simpleLookup : fourCharEntries)
+		{
+			final List<String> substrings = generate4CharSubstrings(simpleLookup.getZh());
+			for(final String substring : substrings)
+			{
+				result.add(new Raw4CharRow(substring, simpleLookup.getZh()));
+			}
+		}
+		
+		final List<Raw4CharRow> dedup =  new ArrayList<>();
+		dedup.addAll(result);
+		db.fill4Chars(dedup);
+	}
+
+	private List<String> generate4CharSubstrings(String saying)
+	{
+		if(saying.length() <= MIN_4CHARS_SUBSTRING)
+		{
+			return List.of();
+		}
+
+		final List<String> result = new ArrayList<>();
+		for(int i = MIN_4CHARS_SUBSTRING; i < saying.length(); i++)
+		{
+			result.add(saying.substring(0, i));
+		}
+		result.addAll(generate4CharSubstrings(saying.substring(1)));
+		return result;
 	}
 
 	private void fillDictionary(CedictDump dump)

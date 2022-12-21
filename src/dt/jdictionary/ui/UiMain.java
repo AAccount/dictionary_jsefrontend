@@ -6,6 +6,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
+import java.util.List;
 import java.util.Set;
 import java.awt.Component;
 
@@ -18,6 +19,8 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import dt.jdictionary.FullLookup;
+import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.Utils;
 import dt.jdictionary.cedict.CedictDump;
 import dt.jdictionary.cedict.CedictParser;
@@ -150,7 +153,7 @@ public class UiMain implements ActionListener
 		}
 
 		final JComponent result = Utils.hasChinese(received) ?
-		 new UiSingleChar().render(db.lookupChinese(received), db.lookupSameFront(received), db.lookupSameBack(received)) :
+		 renderChineseLookup(received) :
 		 new UiList().render(db.lookupEnglish(received));
 
 		result.setName(UI_RESULT);
@@ -159,5 +162,25 @@ public class UiMain implements ActionListener
 
 		root.revalidate();
 		root.repaint();
+	}
+
+	private JComponent renderChineseLookup(String chinese)
+	{
+		final FullLookup directResults =  db.lookupChinese(chinese);
+		final boolean hasDirectResults = directResults.getResults().size() > 0;
+		
+		final boolean shouldTry4Chars = !hasDirectResults && chinese.length() >= DbService.MIN_4CHARS_SUBSTRING;
+		final List<SimpleLookup> fourCharResults = shouldTry4Chars ? db.try4CharLookup(chinese) : List.of();
+		final boolean has4CharResults = fourCharResults.size() > 0;
+		
+		// If there are neither direct nor 4 char results, maybe the ui single char's related word tabs may be useful?
+		if(hasDirectResults || (!hasDirectResults && !has4CharResults))
+		{
+			return new UiSingleChar().render(directResults, db.lookupSameFront(chinese), db.lookupSameBack(chinese));
+		}
+		else
+		{
+			return new UiList().render(fourCharResults);
+		}
 	}
 }
