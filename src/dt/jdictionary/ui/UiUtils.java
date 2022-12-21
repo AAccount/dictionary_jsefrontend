@@ -63,7 +63,7 @@ class UiUtils
 		textPane.setBackground(null);
 		textPane.setEditable(false);
 
-		if(Utils.hasChinese(text) && !text.matches(".*[a-zA-Z]+.*")) // don't show definitions that happen to have chinese in huge font
+		if(Utils.allChinese(text))
 		{
 			textPane.setFont(makeFont(textPane, UiConstants.FONT_MEDIUM));
 		}
