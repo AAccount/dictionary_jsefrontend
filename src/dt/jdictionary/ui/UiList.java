@@ -18,8 +18,6 @@ import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.Utils;
 
 import java.awt.GridBagLayout;
-import java.text.Normalizer;
-import java.text.Normalizer.Form;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 
