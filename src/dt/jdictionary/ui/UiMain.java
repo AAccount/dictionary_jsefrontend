@@ -172,15 +172,24 @@ public class UiMain implements ActionListener
 		final boolean shouldTry4Chars = !hasDirectResults && chinese.length() >= DbService.MIN_4CHARS_SUBSTRING;
 		final List<SimpleLookup> fourCharResults = shouldTry4Chars ? db.try4CharLookup(chinese) : List.of();
 		final boolean has4CharResults = fourCharResults.size() > 0;
+
+		// Last ditch probably sketchy results. Only do this if other attempts failed.
+		final boolean shouldTryTypo = !hasDirectResults && !has4CharResults;
+		final List<SimpleLookup> typoResults = shouldTryTypo ? db.tryTypoMatch(chinese) : List.of();
+		final boolean hasTypoResults = typoResults.size() > 0;
 		
-		// If there are neither direct nor 4 char results, maybe the ui single char's related word tabs may be useful?
-		if(hasDirectResults || (!hasDirectResults && !has4CharResults))
+		// If there are no alternative results, maybe the ui single char's related word tabs may be useful?
+		if(hasDirectResults || (!hasDirectResults && !has4CharResults && !hasTypoResults))
 		{
 			return new UiSingleChar().render(directResults, db.lookupSameFront(chinese), db.lookupSameBack(chinese));
 		}
-		else
+		else if(has4CharResults)
 		{
 			return new UiList().render(fourCharResults);
+		}
+		else
+		{
+			return new UiList().render(typoResults);
 		}
 	}
 }

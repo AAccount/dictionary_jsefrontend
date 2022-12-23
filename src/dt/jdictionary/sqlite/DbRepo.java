@@ -96,6 +96,7 @@ class DbRepo
 				PRIMARY KEY(original,simplified)
 			)""";
 		final String createIndexSimplifiedOg = "CREATE INDEX SimplifiedSortOriginal ON simplified (original)";
+		final String createIndexSimplifiedS = "CREATE INDEX SimplifiedSortSimplified ON simplified (simplified)";
 
 		final String create4Char = """
 			CREATE TABLE FourCharSubstring (
@@ -109,7 +110,7 @@ class DbRepo
 			createZhBase, createIndexZhBaseZh, createIndexZhBaseFirstChar, createIndexZhBaseLastChar, createIndexZhBasePinyinNorm,
 			createEnglish, createEnglishFTS5,
 			createMeasureWords, createIndexMeasureZh,
-			createSimplified, createIndexSimplifiedOg,
+			createSimplified, createIndexSimplifiedOg, createIndexSimplifiedS,
 			create4Char, create4CharIndex
 		};
 
@@ -271,24 +272,41 @@ class DbRepo
 
 	public List<String> tryFourChars(String compoundWord)
 	{
+		final String sql = "select "+COL_4_CHAR+" from FourCharSubstring where substring = ?";
+		return getListOfString(sql, compoundWord, COL_4_CHAR);
+	}
+
+	public List<String> findSimplifiedNormalizedPinyins(String zh)
+	{
+		final String sql = "select distinct "+COL_PINYIN_NORM+" from simplified join ZhBase on simplified.original = ZhBase.zh where simplified = ?";
+		return getListOfString(sql, zh, COL_PINYIN_NORM);
+	}
+
+	public List<RawDictionaryRow> findByNormalizedPinyin(String normalizedPinyin)
+	{
+		final String sql = DictionaryBaseSql + "  pinyinNormalized=?";
+		return lookupDictionaryTable(sql, normalizedPinyin);
+	}
+
+	private List<String> getListOfString(String sql, String search, String column)
+	{
 		final List<String> result = new ArrayList<>();
 		try
 		{
-			final String sql = "select fourChar from FourCharSubstring where substring = ?";
 			final PreparedStatement pst = db.prepareStatement(sql);
-			pst.setString(1, compoundWord);
+			pst.setString(1, search);
 			final ResultSet results = pst.executeQuery();
 
 			while(results.next())
 			{
-				result.add(results.getString(COL_4_CHAR));
+				result.add(results.getString(column));
 			}
 		}
 		catch (SQLException e) 
 		{
 			e.printStackTrace();
 		}
-		return result;
+		return result;	
 	}
 
 	public void fillDictionary(List<SimpleLookup> allEntries)
@@ -325,8 +343,8 @@ class DbRepo
 					{
 						pstEn.setInt(1, id);
 						pstEn.setString(2, definition);
+						pstEn.addBatch();
 					}
-					pstEn.addBatch();
 				}
 			}
 			pstEnglish.executeBatch();
