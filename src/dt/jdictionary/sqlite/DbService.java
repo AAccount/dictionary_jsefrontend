@@ -163,9 +163,7 @@ public class DbService
 		{
 			final Set<String> pinyinsUnique = new HashSet<>();
 			directResults.stream().forEach(result -> pinyinsUnique.add(Utils.normalizePinyin(result.getPinyin())));
-			List<String> pinyins = new ArrayList<>();
-			pinyins.addAll(pinyinsUnique);
-			return pinyins;
+			return new ArrayList<>(pinyinsUnique);
 		}
 
 		return db.findSimplifiedNormalizedPinyins(singleChar);
@@ -231,10 +229,7 @@ public class DbService
 				result.add(new Raw4CharRow(substring, simpleLookup.getZh()));
 			}
 		}
-		
-		final List<Raw4CharRow> dedup =  new ArrayList<>();
-		dedup.addAll(result);
-		db.fill4Chars(dedup);
+		db.fill4Chars(new ArrayList<>(result));
 	}
 
 	private List<String> generate4CharSubstrings(String saying)
@@ -263,9 +258,7 @@ public class DbService
 				mwTracker.add(new RawMeasureWordRow(measureListing.getZh(), measure.getZh(), measure.getPinyin()));
 			}
 		}
-		final List<RawMeasureWordRow> dedupMeasures = new ArrayList<>();
-		dedupMeasures.addAll(mwTracker);
-		db.fillMeasureWords(dedupMeasures);
+		db.fillMeasureWords(new ArrayList<>(mwTracker));
 	}
 
 	private void fillSimplified(CedictDump dump)

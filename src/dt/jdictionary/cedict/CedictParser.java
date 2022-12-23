@@ -310,9 +310,6 @@ public class CedictParser
 	{
 		final Set<String> tracker = new HashSet<>();
 		rawDefinitions.stream().forEach(def -> tracker.add(def.strip()));
-
-		final List<String> result = new ArrayList<>();
-		result.addAll(tracker);
-		return result;
+		return new ArrayList<>(tracker);
 	}
 }
