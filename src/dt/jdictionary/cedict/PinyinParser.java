@@ -18,13 +18,15 @@ class PinyinParser
 		final int start = raw.indexOf("[");
 		final int end = raw.indexOf("]");
 		final int NOT_FOUND = -1;
-		if(start == NOT_FOUND || end == NOT_FOUND || start >= end)
+		if(start == NOT_FOUND || end == NOT_FOUND || start >= end) // base case: no more pinyin
 		{
 			return raw;
 		}
 
 		final String recreated = PinyinParser.recreate(raw.substring(start+1, end));
-		return raw.substring(0, start) + " " + recreated + " " + raw.substring(end+1);
+
+		// call itself in case there are more pinyins later on
+		return parse(raw.substring(0, start) + " " + recreated + " " + raw.substring(end+1));
 	}
 
 	private static String recreate(String raw)
