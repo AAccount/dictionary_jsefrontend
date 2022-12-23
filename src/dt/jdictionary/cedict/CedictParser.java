@@ -297,7 +297,7 @@ public class CedictParser
 				final int split = rawMeasureWord.indexOf(OG_SIMPLIFIED_SPLIT);
 
 				final String rawPinyin = rawMeasureWord.substring(pinyinStart, pinyinEnd+1);
-				final String pinyin = PinyinParser.parse(rawPinyin);
+				final String pinyin = PinyinParser.parse(rawPinyin).strip();
 				final String measureChar = rawMeasureWord.substring(0, split == NOT_FOUND ? pinyinStart : split);
 				result.add(new ZhPinyin(measureChar, pinyin));
 			}

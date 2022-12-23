@@ -11,6 +11,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import dt.jdictionary.SimpleLookup;
+
 class DbRepo 
 {
 	public enum RelatedChar
@@ -22,8 +24,9 @@ class DbRepo
 	private Connection db;
 
 	private static final String COL_ZH = "zh";
-	private static final String COL_EN = "en";
+	private static final String COL_DEF = "definition";
 	private static final String COL_PINYIN = "pinyin";
+	private static final String COL_PINYIN_NORM = "pinyinNormalized";
 	private static final String COL_SIMPLIFIED = "simplified";
 	private static final String COL_OG = "original";
 	private static final String COL_MEASURE_WORD = "measure";
@@ -31,11 +34,16 @@ class DbRepo
 	private static final String COL_LAST_CHAR = "lastChar";
 	private static final String COL_4_CHAR = "fourChar";
 
+	private final String DictionaryBaseSql = String.format("""
+		select %s, %s, %s, %s, %s, %s 
+		from ZhBase join English on ZhBase.id = English.zhBaseId where"""
+		, COL_ZH, COL_PINYIN, COL_PINYIN_NORM, COL_DEF, COL_FIRST_CHAR, COL_LAST_CHAR);
+
 	public DbRepo()
 	{
 		try 
 		{
-			final String sqlitePath = System.getProperty("user.home") + "/Programs/mdbgrip.sqlite";
+			final String sqlitePath = System.getProperty("user.home") + "/Programs/mdbg2.sqlite";
 			Class.forName("org.sqlite.JDBC");
 			this.db = DriverManager.getConnection("jdbc:sqlite:"+sqlitePath);
 			db.setAutoCommit(false);
@@ -54,25 +62,54 @@ class DbRepo
 
 	public void init()
 	{
-		final String createDictionary = "CREATE TABLE dictionary (zh	TEXT NOT NULL, en	TEXT NOT NULL, pinyin	TEXT NOT NULL, firstChar TEXT, lastChar TEXT, PRIMARY KEY(zh,en,pinyin))";
-		final String createIndexDictionaryZh = "CREATE INDEX DictionarySortZh ON dictionary (zh)";
-		final String createIndexDictionaryFirstChar = "CREATE INDEX DictionarySortFirst ON dictionary (firstChar)";
-		final String createIndexDictionaryLastChar = "CREATE INDEX DictionarySortLast ON dictionary (lastChar)";
-		final String createFTS5 = "CREATE VIRTUAL TABLE dictionary_fts5 using fts5(zh, en, pinyin)";
+		final String createZhBase = """
+			CREATE TABLE ZhBase (
+				id	INTEGER NOT NULL, 
+				zh	TEXT NOT NULL, pinyin	TEXT NOT NULL, 
+				pinyinNormalized TEXT NOT NULL, 
+				firstChar TEXT, 
+				lastChar TEXT, 
+				PRIMARY KEY(id AUTOINCREMENT)
+			)
+			""";
+		final String createIndexZhBaseZh = "CREATE INDEX ZhBaseSortZh ON ZhBase (zh)";
+		final String createIndexZhBaseFirstChar = "CREATE INDEX ZhBaseSortFirst ON ZhBase (firstChar)";
+		final String createIndexZhBaseLastChar = "CREATE INDEX ZhBaseSortLast ON ZhBase (lastChar)";
+		final String createIndexZhBasePinyinNorm = "CREATE INDEX ZhBaseSortPinyinNorm ON ZhBase (pinyinNormalized)";
 
-		final String createMeasureWords = "CREATE TABLE measureword (zh	TEXT NOT NULL, measure	TEXT NOT NULL, measurePinyin	TEXT  NOT NULL, PRIMARY KEY(zh,measure))";
+		final String createEnglish = "CREATE TABLE English (zhBaseId	INTEGER NOT NULL, definition	TEXT NOT NULL);";
+		final String createEnglishFTS5 = "CREATE VIRTUAL TABLE English_fts5 using fts5(definition, zhBaseId)";
+
+		final String createMeasureWords = """
+			CREATE TABLE measureword (
+				zh	TEXT NOT NULL, 
+				measure	TEXT NOT NULL, 
+				measurePinyin	TEXT  NOT NULL, 
+				PRIMARY KEY(zh,measure)
+				)""";
 		final String createIndexMeasureZh = "CREATE INDEX MeasureWordZh ON measureword (zh)";
 
-		final String createSimplified = "CREATE TABLE simplified (original	TEXT NOT NULL, simplified	TEXT NOT NULL, PRIMARY KEY(original,simplified))";
+		final String createSimplified = """
+			CREATE TABLE simplified (
+				original	TEXT NOT NULL, 
+				simplified	TEXT NOT NULL, 
+				PRIMARY KEY(original,simplified)
+			)""";
 		final String createIndexSimplifiedOg = "CREATE INDEX SimplifiedSortOriginal ON simplified (original)";
 
-		final String create4Char = "CREATE TABLE FourCharSubstring (substring	TEXT NOT NULL, fourChar	TEXT NOT NULL, PRIMARY KEY(substring,fourChar))";
+		final String create4Char = """
+			CREATE TABLE FourCharSubstring (
+				substring	TEXT NOT NULL, 
+				fourChar	TEXT NOT NULL, 
+				PRIMARY KEY(substring,fourChar)
+			)""";
 		final String create4CharIndex = "CREATE INDEX FourCharSubSortSub ON FourCharSubstring (substring)";
 
 		final String[] creates = {
-			createDictionary, createMeasureWords, createSimplified, createFTS5,
-			createIndexDictionaryZh, createIndexDictionaryFirstChar, createIndexDictionaryLastChar, 
-			createIndexMeasureZh, createIndexSimplifiedOg,
+			createZhBase, createIndexZhBaseZh, createIndexZhBaseFirstChar, createIndexZhBaseLastChar, createIndexZhBasePinyinNorm,
+			createEnglish, createEnglishFTS5,
+			createMeasureWords, createIndexMeasureZh,
+			createSimplified, createIndexSimplifiedOg,
 			create4Char, create4CharIndex
 		};
 
@@ -95,7 +132,7 @@ class DbRepo
 		try 
 		{
 			final Statement findTables = db.createStatement();
-			final ResultSet foundTables = findTables.executeQuery("SELECT name FROM sqlite_master WHERE type='table'");
+			final ResultSet foundTables = findTables.executeQuery("SELECT name FROM sqlite_master WHERE type='table' and name not like 'sqlite_%'");
 			final List<String> tables = new ArrayList<>();
 			while(foundTables.next())
 			{
@@ -122,7 +159,7 @@ class DbRepo
 
 	public List<RawDictionaryRow> lookupChinese(String zh)
 	{
-		final String sql = "select * from dictionary where zh = ?";
+		final String sql = DictionaryBaseSql + " zh = ?";
 		return lookupDictionaryTable(sql, zh);
 	}
 
@@ -140,7 +177,8 @@ class DbRepo
 				final RawDictionaryRow row =  new RawDictionaryRow(
 					results.getString(COL_ZH), 
 					results.getString(COL_PINYIN), 
-					results.getString(COL_EN), 
+					results.getString(COL_PINYIN_NORM),
+					results.getString(COL_DEF), 
 					results.getString(COL_FIRST_CHAR), 
 					results.getString(COL_LAST_CHAR)
 				);
@@ -215,13 +253,19 @@ class DbRepo
 	public List<RawDictionaryRow> lookupRelatedWord(String zh, RelatedChar similarity)
 	{
 		final String column = similarity == RelatedChar.SAME_FRONT ? COL_FIRST_CHAR : COL_LAST_CHAR;
-		final String sql = "select * from dictionary where "+column+" = ? and length(zh)>1";
+		final String sql = DictionaryBaseSql + " " + column+" = ?";
 		return lookupDictionaryTable(sql, zh);
 	}
 
 	public List<RawDictionaryRow> lookupEnglish(String en)
 	{
-		final String sql = "select * from dictionary_fts5(?)";
+		final String sql = String.format("""
+			select %s, %s, %s, English.%s, %s, %s 
+			from ZhBase 
+				join English_fts5 on ZhBase.id = English_fts5.zhBaseId 
+				join English on ZhBase.id = English.zhBaseId 
+			where English_fts5.definition match ?""",
+			COL_ZH, COL_PINYIN, COL_PINYIN_NORM, COL_DEF, COL_FIRST_CHAR, COL_LAST_CHAR);
 		return lookupDictionaryTable(sql, en);
 	}
 
@@ -247,32 +291,46 @@ class DbRepo
 		return result;
 	}
 
-	public void fillDictionary(List<RawDictionaryRow> allRows)
+	public void fillDictionary(List<SimpleLookup> allEntries)
 	{
-		final String sqlNormal = "INSERT INTO dictionary (zh, en, pinyin, firstChar, lastChar) VALUES (?,?,?,?,?)";
-		final String sqlFTS5 = "INSERT INTO dictionary_fts5 (zh, en, pinyin) VALUES (?,?,?)";
+		final String sqlZhBase = "INSERT INTO ZhBase (zh, pinyin, pinyinNormalized, firstChar, lastChar) VALUES (?,?,?,?,?)";
+		final String sqlEnglish = "INSERT INTO English (zhBaseId, definition) VALUES (?,?)";
+		final String sqlEnglishFTS5 =  "INSERT INTO English_fts5 (zhBaseId, definition) VALUES (?,?)";
 		try 
 		{
-			final PreparedStatement pstNormal = db.prepareStatement(sqlNormal);
-			final PreparedStatement pstFTS5 = db.prepareStatement(sqlFTS5);
-			final PreparedStatement[] psts = {pstNormal, pstFTS5};
+			final PreparedStatement pstZhBase = db.prepareStatement(sqlZhBase);
+			final PreparedStatement pstEnglish = db.prepareStatement(sqlEnglish);
+			final PreparedStatement pstEnglishFts5 = db.prepareStatement(sqlEnglishFTS5);
 
-			for(final RawDictionaryRow row : allRows)
+			final PreparedStatement[] englishPsts = {pstEnglish, pstEnglishFts5};
+
+			for(final SimpleLookup entry : allEntries)
 			{
-				for(final PreparedStatement pst : psts)
+				final RawDictionaryRow zhBase = new RawDictionaryRow(entry.getZh(), entry.getPinyin());
+				pstZhBase.setString(1, zhBase.getZh());
+				pstZhBase.setString(2, zhBase.getPinyin());
+				pstZhBase.setString(3, zhBase.getPinyinNormalized());
+				pstZhBase.setString(4, zhBase.getFirstChar());
+				pstZhBase.setString(5, zhBase.getLastChar());
+				pstZhBase.execute();
+
+				final PreparedStatement getId = db.prepareStatement("select last_insert_rowid() as id;");
+				final ResultSet getIdResults = getId.executeQuery();
+				getIdResults.next();
+				final int id = getIdResults.getInt("id");
+				
+				for(final PreparedStatement pstEn : englishPsts)
 				{
-					pst.setString(1, row.getZh());
-					pst.setString(2, row.getSingleDefinition());
-					pst.setString(3, row.getPinyin());
+					for(final String definition : entry.getDefinitions())
+					{
+						pstEn.setInt(1, id);
+						pstEn.setString(2, definition);
+					}
+					pstEn.addBatch();
 				}
-				pstNormal.setString(4, row.getFirstChar());
-				pstNormal.setString(5, row.getLastChar());
-				pstNormal.addBatch();
-				pstFTS5.addBatch();
 			}
-			pstNormal.executeBatch();
-			pstFTS5.executeBatch();
-			
+			pstEnglish.executeBatch();
+			pstEnglishFts5.executeBatch();
 			db.commit();
 		} 
 		catch (SQLException e) 

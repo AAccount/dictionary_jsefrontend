@@ -8,25 +8,28 @@ class RawDictionaryRow
 {
 	private final String zh;
 	private final String pinyin;
+	private final String pinyinNormalized;
 	private final String singleDefinition;
 	private final String firstChar;
 	private final String lastChar;
 
-	public RawDictionaryRow(String zh, String rawPinyin, String singleDefinition) 
+	public RawDictionaryRow(String zh, String pinyin) 
 	{
 		this.zh = zh;
-		this.pinyin = rawPinyin;
-		this.singleDefinition = singleDefinition;
+		this.pinyin = pinyin;
+		this.pinyinNormalized = Utils.normalizePinyin(pinyin);
+		this.singleDefinition = null;
 
 		final List<String> trueChars = Utils.trueChars(zh);
 		this.firstChar = trueChars.size() > 1 ? trueChars.get(0) : null;
 		this.lastChar = trueChars.size() > 1 ? trueChars.get(trueChars.size()-1) : null;
 	}
 
-	public RawDictionaryRow(String zh, String rawPinyin, String singleDefinition, String firstChar, String lastChar) 
+	public RawDictionaryRow(String zh, String pinyin, String pinyinNormalized, String singleDefinition, String firstChar, String lastChar) 
 	{
 		this.zh = zh;
-		this.pinyin = rawPinyin;
+		this.pinyin = pinyin;
+		this.pinyinNormalized = pinyinNormalized;
 		this.singleDefinition = singleDefinition;
 		this.firstChar = firstChar;
 		this.lastChar = lastChar;
@@ -55,6 +58,11 @@ class RawDictionaryRow
 	public String getLastChar() 
 	{
 		return lastChar;
+	}
+
+	public String getPinyinNormalized() 
+	{
+		return pinyinNormalized;
 	}
 
 	@Override

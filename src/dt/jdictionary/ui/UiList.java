@@ -163,8 +163,8 @@ class UiList implements ItemListener
 			return FLAG_LINK;
 		}
 
-		final String pinyinNoAccents = Normalizer.normalize(dbresult.getPinyin(), Form.NFD);
-		final String definitionNoAccents = Normalizer.normalize(definition, Form.NFD);
+		final String pinyinNoAccents = Utils.normalizePinyin(dbresult.getPinyin());
+		final String definitionNoAccents = Utils.normalizePinyin(definition);
 		if(definition.contains(" county") || definition.contains("district of ") || definitionNoAccents.contains(pinyinNoAccents))
 		{
 			return FLAG_NAME;

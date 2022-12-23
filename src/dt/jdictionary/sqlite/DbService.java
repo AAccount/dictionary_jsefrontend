@@ -112,7 +112,7 @@ public class DbService
 		db.wipe();
 		db.init();
 
-		fillDictionary(dump);
+		db.fillDictionary(dump.getDictionary());
 		fillMeasureWords(dump);
 		fillSimplified(dump);
 		fill4Chars(dump);
@@ -152,22 +152,6 @@ public class DbService
 		}
 		result.addAll(generate4CharSubstrings(saying.substring(1)));
 		return result;
-	}
-
-	private void fillDictionary(CedictDump dump)
-	{
-		// There are legit duplicate values in the cedict file.
-		final Set<RawDictionaryRow> defTracker = new HashSet<>();
-		for(final SimpleLookup entry : dump.getDictionary())
-		{
-			for(final String definition : entry.getDefinitions())
-			{
-				defTracker.add(new RawDictionaryRow(entry.getZh(), entry.getPinyin(), definition));
-			}
-		}
-		final List<RawDictionaryRow> dedupDefs = new ArrayList<>();
-		dedupDefs.addAll(defTracker);
-		db.fillDictionary(dedupDefs);
 	}
 
 	private void fillMeasureWords(CedictDump dump)

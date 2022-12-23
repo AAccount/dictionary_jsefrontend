@@ -1,5 +1,7 @@
 package dt.jdictionary;
 
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +17,11 @@ public class Utils
 	public static boolean allChinese(String string)
 	{
 		return string.codePoints().allMatch(codepoint -> Character.UnicodeScript.of(codepoint) == Character.UnicodeScript.HAN);
+	}
+
+	public static String normalizePinyin(String pinyin)
+	{
+		return Normalizer.normalize(pinyin.toLowerCase().strip(), Form.NFD).replaceAll("\\p{M}", "");
 	}
 	
 	/**
