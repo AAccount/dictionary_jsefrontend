@@ -6,6 +6,7 @@ import javax.swing.JPanel;
 
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.Utils;
+import dt.jdictionary.events.EventUtils;
 import dt.jdictionary.ui.UiUtils.Neighbor;
 import dt.jdictionary.FullLookup;
 
@@ -81,7 +82,7 @@ class UiSingleChar
 		} 
 		catch (InterruptedException e) 
 		{
-			e.printStackTrace();
+			EventUtils.sendError(e);
 		}
 
 	}

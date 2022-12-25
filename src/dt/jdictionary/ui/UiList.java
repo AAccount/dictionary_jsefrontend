@@ -16,6 +16,7 @@ import javax.swing.JScrollPane;
 
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.Utils;
+import dt.jdictionary.events.EventUtils;
 
 import java.awt.GridBagLayout;
 import java.awt.event.ItemEvent;
@@ -77,7 +78,7 @@ class UiList implements ItemListener
 		} 
 		catch (InterruptedException e) 
 		{
-			e.printStackTrace();
+			EventUtils.sendError(e);
 		}
 
 		renderFlagCheckboxes(flagCheckboxes);
