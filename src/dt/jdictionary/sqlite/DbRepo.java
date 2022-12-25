@@ -22,7 +22,8 @@ class DbRepo
 		SAME_BACK
 	}
 	public static final int INIT_TRX_COUNT = 2;
-	public static final int SINGLE_TRX_FILL_COUNT = 3; // measure words, simplified, 4 chars
+	public static final int DICT_EN_TRX = 2;
+	public static final int POST_DICT_TRX = 3; // measure words, simplified, 4 chars
 
 	private Connection db;
 
@@ -335,7 +336,8 @@ class DbRepo
 
 			final PreparedStatement[] englishPsts = {pstEnglish, pstEnglishFts5};
 
-			final int totalTrxes = INIT_TRX_COUNT + allEntries.size() + SINGLE_TRX_FILL_COUNT;
+			final int uptoDictTrxes = INIT_TRX_COUNT + allEntries.size() + DICT_EN_TRX;
+			final int totalTrxes = uptoDictTrxes + POST_DICT_TRX;
 			int saved = 0;
 			for(final SimpleLookup entry : allEntries)
 			{
@@ -362,10 +364,11 @@ class DbRepo
 					}
 				}
 				saved++;
-				DbEvent.sendProgressEvent(INIT_TRX_COUNT+saved, totalTrxes);
+				DbEvent.sendProgressEvent(INIT_TRX_COUNT + saved, totalTrxes);
 			}
 			pstEnglish.executeBatch();
 			pstEnglishFts5.executeBatch();
+			DbEvent.sendProgressEvent(uptoDictTrxes, totalTrxes);
 			db.commit();
 		} 
 		catch (SQLException e) 

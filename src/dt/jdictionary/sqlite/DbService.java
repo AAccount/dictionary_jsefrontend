@@ -206,7 +206,9 @@ public class DbService
 			return;
 		}
 
-		final int totalTrxes = DbRepo.INIT_TRX_COUNT + dump.getDictionary().size() + DbRepo.SINGLE_TRX_FILL_COUNT;
+		final int dictionarySize = dump.getDictionary().size();
+		final int uptoDictTrxes = DbRepo.INIT_TRX_COUNT + dictionarySize + DbRepo.DICT_EN_TRX;
+		final int totalTrxes = uptoDictTrxes + DbRepo.POST_DICT_TRX;
 		DbEvent.sendProgressEvent(0, totalTrxes);
 		db.wipe();
 		DbEvent.sendProgressEvent(1, totalTrxes);
@@ -215,11 +217,11 @@ public class DbService
 
 		db.fillDictionary(dump.getDictionary());
 		fillMeasureWords(dump);
-		DbEvent.sendProgressEvent(DbRepo.INIT_TRX_COUNT + dump.getDictionary().size()+1, totalTrxes);
+		DbEvent.sendProgressEvent(uptoDictTrxes + 1, totalTrxes);
 		fillSimplified(dump);
-		DbEvent.sendProgressEvent(DbRepo.INIT_TRX_COUNT + dump.getDictionary().size()+2, totalTrxes);
+		DbEvent.sendProgressEvent(uptoDictTrxes + 2, totalTrxes);
 		fill4Chars(dump);
-		DbEvent.sendProgressEvent(DbRepo.INIT_TRX_COUNT + dump.getDictionary().size()+3, totalTrxes);
+		DbEvent.sendProgressEvent(uptoDictTrxes + 3, totalTrxes);
 
 		// Funny things happen when you try to import more than once on the same connection.
 		db.close();

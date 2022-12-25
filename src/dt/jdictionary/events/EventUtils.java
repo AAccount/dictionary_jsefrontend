@@ -14,9 +14,8 @@ public class EventUtils
 	public static void sendError(Exception e)
 	{
 		e.printStackTrace();
-		
-		final StackTraceElement[] stackTrace = e.getStackTrace();
-		final List<StackTraceElement> stackList =  Arrays.asList(stackTrace);
+
+		final List<StackTraceElement> stackList =  Arrays.asList(e.getStackTrace());
 		final String relevantEntries = stackList.stream()
 			.filter(element -> element.getClassName().contains("dt.jdictionary"))
 			.map(element -> element.toString())
