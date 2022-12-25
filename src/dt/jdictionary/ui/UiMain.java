@@ -17,6 +17,7 @@ import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JTextField;
@@ -29,6 +30,7 @@ import dt.jdictionary.cedict.CedictParser;
 import dt.jdictionary.events.Event;
 import dt.jdictionary.events.EventDispatcher;
 import dt.jdictionary.events.EventListener;
+import dt.jdictionary.events.EventUtils;
 import dt.jdictionary.sqlite.DbEvent;
 import dt.jdictionary.sqlite.DbService;
 import dt.jdictionary.ui.UiUtils.Neighbor;
@@ -237,28 +239,39 @@ public class UiMain implements ActionListener, EventListener
 			case DB_SAVE:
 				handleDbSaveEvent(event.getData());
 				break;
-			case SQL_ERROR:
+			case JAVA_EXCEPTION:
+				printException(event.getData());
 				break;
 			default:
 				break;
 		}
 	}
 
+	private void printException(Map<String, Object> data)
+	{
+		final String title = (String)data.get(EventUtils.EVENT_ERR_CLASS);
+		final String errorMessage = (String)data.get(EventUtils.EVENT_ERR_MSG);
+		final String stackTrace = (String)data.get(EventUtils.EVENT_STACK_TRACE);
+		final String message = errorMessage + "\n" + stackTrace;
+
+		JOptionPane.showMessageDialog(null, message, title, JOptionPane.ERROR_MESSAGE);
+	}
+
 	private void handleCedictEvent(Map<String, Object> data)
 	{
 		final long processedBytes = (long)data.get(CedictParser.EVENT_PROCESSED_BYTES);
 		final long totalBytes = (long)data.get(CedictParser.EVENT_TOTAL_BYTES);
-		updateProgressBar((int)processedBytes, (int)totalBytes, "Parse CEDICT: ");
+		updateImportProgress((int)processedBytes, (int)totalBytes, "Parse CEDICT: ");
 	}
 
 	private void handleDbSaveEvent(Map<String, Object> data)
 	{
 		final int trxSofar = (int)data.get(DbEvent.EVENT_TRX_SOFAR);
 		final int trxTotal = (int)data.get(DbEvent.EVENT_TRX_TOTAL);
-		updateProgressBar(trxSofar, trxTotal, "Db Transactions: ");
+		updateImportProgress(trxSofar, trxTotal, "Db Transactions: ");
 	}
 
-	private void updateProgressBar(int current, int max, String reason)
+	private void updateImportProgress(int current, int max, String reason)
 	{
 		if(current == 0)
 		{

@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import dt.jdictionary.SimpleLookup;
+import dt.jdictionary.events.EventUtils;
 
 class DbRepo 
 {
@@ -52,13 +53,11 @@ class DbRepo
 		} 
 		catch (SQLException e) 
 		{
-			e.printStackTrace();
-			System.exit(1);
+			EventUtils.sendError(e);
 		} 
 		catch (ClassNotFoundException e) 
 		{
-			e.printStackTrace();
-			System.exit(1);
+			EventUtils.sendError(e);
 		}
 	}
 
@@ -70,7 +69,7 @@ class DbRepo
 		} 
 		catch (SQLException e) 
 		{
-			e.printStackTrace();
+			EventUtils.sendError(e);
 		}
 	}
 
@@ -137,7 +136,7 @@ class DbRepo
 			} 
 			catch (SQLException e) 
 			{
-				e.printStackTrace();
+				EventUtils.sendError(e);
 			}
 		}
 	}
@@ -168,7 +167,7 @@ class DbRepo
 		} 
 		catch (SQLException e) 
 		{
-			e.printStackTrace();
+			EventUtils.sendError(e);
 		}
 	}
 
@@ -202,7 +201,7 @@ class DbRepo
 		}
 		catch (SQLException e) 
 		{
-			e.printStackTrace();
+			EventUtils.sendError(e);
 		}
 		return rawDbRows;
 	}
@@ -238,7 +237,7 @@ class DbRepo
 		}
 		catch (SQLException e) 
 		{
-			e.printStackTrace();
+			EventUtils.sendError(e);
 		}
 		return zhSimplified;
 	}
@@ -260,7 +259,7 @@ class DbRepo
 		}
 		catch (SQLException e) 
 		{
-			e.printStackTrace();
+			EventUtils.sendError(e);
 		}
 		return measureWords;
 	}
@@ -318,7 +317,7 @@ class DbRepo
 		}
 		catch (SQLException e) 
 		{
-			e.printStackTrace();
+			EventUtils.sendError(e);
 		}
 		return result;	
 	}
@@ -371,7 +370,7 @@ class DbRepo
 		} 
 		catch (SQLException e) 
 		{
-			e.printStackTrace();
+			EventUtils.sendError(e);
 		}
 	}
 
@@ -394,7 +393,7 @@ class DbRepo
 		} 
 		catch (SQLException e) 
 		{
-			e.printStackTrace();
+			EventUtils.sendError(e);
 		}
 	}
 
@@ -416,7 +415,7 @@ class DbRepo
 		} 
 		catch (SQLException e) 
 		{
-			e.printStackTrace();
+			EventUtils.sendError(e);
 		}
 	}
 
@@ -438,7 +437,7 @@ class DbRepo
 		} 
 		catch (SQLException e) 
 		{
-			e.printStackTrace();
+			EventUtils.sendError(e);
 		}
 	}
 }

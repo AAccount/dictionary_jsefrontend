@@ -20,6 +20,7 @@ import dt.jdictionary.Utils;
 import dt.jdictionary.events.Event;
 import dt.jdictionary.events.EventDispatcher;
 import dt.jdictionary.events.EventType;
+import dt.jdictionary.events.EventUtils;
 
 public class CedictParser 
 {
@@ -70,13 +71,11 @@ public class CedictParser
 		} 
 		catch (FileNotFoundException e) 
 		{
-			System.out.println(cedictFile.getAbsolutePath() + " does not exist");
-			e.printStackTrace();
+			EventUtils.sendError(e);
 		} 
 		catch (IOException e) 
 		{
-			System.out.println("Couldn't read a line from the cedict file");
-			e.printStackTrace();
+			EventUtils.sendError(e);
 		}
 		return result;
 	}
