@@ -243,6 +243,7 @@ public class UiMain implements ActionListener, EventListener
 				printException(event.getData());
 				break;
 			default:
+				JOptionPane.showMessageDialog(null, event.toString(), "Unknown Event", JOptionPane.WARNING_MESSAGE);
 				break;
 		}
 	}
