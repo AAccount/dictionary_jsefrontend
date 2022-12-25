@@ -17,25 +17,37 @@ import java.util.Set;
 
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.Utils;
+import dt.jdictionary.events.Event;
+import dt.jdictionary.events.EventDispatcher;
+import dt.jdictionary.events.EventType;
 
 public class CedictParser 
 {
+	public static final String EVENT_TOTAL_BYTES = "total bytes";
+	public static final String EVENT_PROCESSED_BYTES = "processed bytes";
+
 	private final String MEASURE_WORD_INDICATOR = "CL:";
 	private final String OG_SIMPLIFIED_SPLIT = "|";
 
 	public CedictDump parse(File cedictFile)
 	{
+		long processedBytes = 0;
+		sendProgressEvent(processedBytes, cedictFile.length());
+
 		final CedictDump result = new CedictDump(new ArrayList<>(), new ArrayList<>(), new HashMap<>());
 		try 
 		{
 			final BufferedReader cedictReader =  new BufferedReader(new InputStreamReader(new FileInputStream(cedictFile), StandardCharsets.UTF_8));
 			String line = cedictReader.readLine();
+			
 			while (line != null)
 			{
 				final RawCedictLine parsedLine = parseLine(line);
 				if(parsedLine == null)
 				{
 					line = cedictReader.readLine();
+					processedBytes = processedBytes + line.getBytes().length;
+					sendProgressEvent(processedBytes, cedictFile.length());
 					continue;
 				}
 
@@ -49,9 +61,12 @@ public class CedictParser
 					result.getMeasureWords().add(new MeasureWords(parsedLine.getOriginal(), measureWords));
 				}
 
+				processedBytes = processedBytes + line.getBytes().length;
+				sendProgressEvent(processedBytes, cedictFile.length());
 				line = cedictReader.readLine();
 			}
 			cedictReader.close();
+			sendProgressEvent(cedictFile.length(), cedictFile.length());
 		} 
 		catch (FileNotFoundException e) 
 		{
@@ -63,8 +78,17 @@ public class CedictParser
 			System.out.println("Couldn't read a line from the cedict file");
 			e.printStackTrace();
 		}
-		System.out.println("Finished parsing.");
 		return result;
+	}
+
+	private void sendProgressEvent(long bytesProcessed, long bytesTotal)
+	{
+		final Map<String, Object> data = Map.of(
+			EVENT_PROCESSED_BYTES, bytesProcessed,
+			EVENT_TOTAL_BYTES, bytesTotal
+		);
+		final Event progress = new Event(EventType.CEDICT_PARSE, data);
+		EventDispatcher.get().push(progress);
 	}
 
 	private List<String> parseDefinitions(RawCedictLine line)

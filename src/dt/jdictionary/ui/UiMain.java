@@ -7,6 +7,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.awt.Component;
 
@@ -17,6 +18,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 
 import dt.jdictionary.FullLookup;
@@ -24,25 +26,38 @@ import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.Utils;
 import dt.jdictionary.cedict.CedictDump;
 import dt.jdictionary.cedict.CedictParser;
+import dt.jdictionary.events.Event;
+import dt.jdictionary.events.EventDispatcher;
+import dt.jdictionary.events.EventListener;
+import dt.jdictionary.sqlite.DbEvent;
 import dt.jdictionary.sqlite.DbService;
 import dt.jdictionary.ui.UiUtils.Neighbor;
 
-public class UiMain implements ActionListener
+public class UiMain implements ActionListener, EventListener
 {
 	private final String UI_ROOT = "root";
 	private final String UI_ENTRY = "entry";
 	private final String UI_RESULT = "result";
+	private final String UI_PROGRESS = "progress bar";
 	private final String MENU_INIT_SQLITE = "initalize sqlite";
 
 	private final int UI_ROW_ENTRY = 0;
-	private final int UI_ROW_RESULT = 1;
+	private final int UI_ROW_PROGRESS = 1;
+	private final int UI_ROW_RESULT = 2;
 	private final int UI_SINGLE_COLUMN = 0;
 
 	private final DbService db;
+	private final JTextField uiEntry;
+	private final JProgressBar progressBar;
 
 	public UiMain()
 	{
 		db = new DbService();
+		EventDispatcher.get().register(this);
+
+		final int ENTRY_INITIAL_WIDTH = 20;
+		uiEntry = new JTextField(ENTRY_INITIAL_WIDTH);
+		progressBar = new JProgressBar();
 	}
 
 	public void render()
@@ -53,6 +68,7 @@ public class UiMain implements ActionListener
 		root.setName(UI_ROOT);
 		root.setBorder(UiConstants.TRACER);
 		renderEntry(root);
+		renderProgressBar(root);
 		UiUtils.renderFiller(root, UI_ROW_RESULT);
 
 		window.add(root);
@@ -78,16 +94,23 @@ public class UiMain implements ActionListener
 		return menuBar;
 	}
 
+	private void renderProgressBar(JPanel root)
+	{
+		progressBar.setName(UI_PROGRESS);
+		progressBar.setBorder(UiConstants.TRACER);
+		progressBar.setVisible(false);
+		progressBar.setStringPainted(true);
+		root.add(progressBar, uiMainConstraints(UI_ROW_PROGRESS, UI_SINGLE_COLUMN, false, UiUtils.makeInsets(Set.of(Neighbor.TOP, Neighbor.BOTTOM))));
+	}
+
 	private void renderEntry(JPanel root)
 	{
-		final int ENTRY_INITIAL_WIDTH = 20;
-		final JTextField entry = new JTextField(ENTRY_INITIAL_WIDTH);
-		entry.setName(UI_ENTRY);
-		entry.setFont(UiUtils.makeFont(entry, UiConstants.FONT_MEDIUM));
-		entry.setBorder(UiConstants.TRACER);
+		uiEntry.setName(UI_ENTRY);
+		uiEntry.setFont(UiUtils.makeFont(uiEntry, UiConstants.FONT_MEDIUM));
+		uiEntry.setBorder(UiConstants.TRACER);
 
-		entry.addActionListener(this);
-		root.add(entry, uiMainConstraints(UI_ROW_ENTRY, UI_SINGLE_COLUMN, false, UiUtils.makeInsets(Set.of(Neighbor.BOTTOM))));
+		uiEntry.addActionListener(this);
+		root.add(uiEntry, uiMainConstraints(UI_ROW_ENTRY, UI_SINGLE_COLUMN, false, UiUtils.makeInsets(Set.of(Neighbor.BOTTOM))));
 	}
 
 	// Trial and error special constraints for the "main" program window
@@ -126,9 +149,19 @@ public class UiMain implements ActionListener
 		if (returnVal == JFileChooser.APPROVE_OPTION) 
 		{
 			final File file = fc.getSelectedFile();
-			System.out.println("Using: " + file.getName());
-			final CedictDump dump = new CedictParser().parse(file);
-			db.saveCedictDump(dump);
+			uiEntry.setEditable(false);
+			uiEntry.setText("Importing " + file.getName());
+			progressBar.setVisible(true);
+
+			final Thread importer = new Thread(() -> { 
+				final CedictDump dump = new CedictParser().parse(file);
+				db.saveCedictDump(dump);
+
+				progressBar.setVisible(false);
+				uiEntry.setText("");
+				uiEntry.setEditable(true);
+			});
+			importer.start();
 		} 
 		else 
 		{
@@ -191,5 +224,48 @@ public class UiMain implements ActionListener
 		{
 			return new UiList().render(typoResults);
 		}
+	}
+
+	@Override
+	public void onEvent(Event event) 
+	{
+		switch(event.getType())
+		{
+			case CEDICT_PARSE:
+				handleCedictEvent(event.getData());
+				break;
+			case DB_SAVE:
+				handleDbSaveEvent(event.getData());
+				break;
+			case SQL_ERROR:
+				break;
+			default:
+				break;
+		}
+	}
+
+	private void handleCedictEvent(Map<String, Object> data)
+	{
+		final long processedBytes = (long)data.get(CedictParser.EVENT_PROCESSED_BYTES);
+		final long totalBytes = (long)data.get(CedictParser.EVENT_TOTAL_BYTES);
+		updateProgressBar((int)processedBytes, (int)totalBytes, "Parse CEDICT: ");
+	}
+
+	private void handleDbSaveEvent(Map<String, Object> data)
+	{
+		final int trxSofar = (int)data.get(DbEvent.EVENT_TRX_SOFAR);
+		final int trxTotal = (int)data.get(DbEvent.EVENT_TRX_TOTAL);
+		updateProgressBar(trxSofar, trxTotal, "Db Transactions: ");
+	}
+
+	private void updateProgressBar(int current, int max, String reason)
+	{
+		if(current == 0)
+		{
+			progressBar.setValue(0);
+			progressBar.setMaximum(max);
+		}
+		progressBar.setValue(current);
+		progressBar.setString(reason +  (int)(progressBar.getPercentComplete()*100) + "%");
 	}
 }

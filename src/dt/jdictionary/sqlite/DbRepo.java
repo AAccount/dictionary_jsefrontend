@@ -20,6 +20,8 @@ class DbRepo
 		SAME_FRONT,
 		SAME_BACK
 	}
+	public static final int INIT_TRX_COUNT = 2;
+	public static final int SINGLE_TRX_FILL_COUNT = 3; // measure words, simplified, 4 chars
 
 	private Connection db;
 
@@ -57,6 +59,18 @@ class DbRepo
 		{
 			e.printStackTrace();
 			System.exit(1);
+		}
+	}
+
+	public void close()
+	{
+		try 
+		{
+			db.close();
+		} 
+		catch (SQLException e) 
+		{
+			e.printStackTrace();
 		}
 	}
 
@@ -322,6 +336,8 @@ class DbRepo
 
 			final PreparedStatement[] englishPsts = {pstEnglish, pstEnglishFts5};
 
+			final int totalTrxes = INIT_TRX_COUNT + allEntries.size() + SINGLE_TRX_FILL_COUNT;
+			int saved = 0;
 			for(final SimpleLookup entry : allEntries)
 			{
 				final RawDictionaryRow zhBase = new RawDictionaryRow(entry.getZh(), entry.getPinyin());
@@ -346,6 +362,8 @@ class DbRepo
 						pstEn.addBatch();
 					}
 				}
+				saved++;
+				DbEvent.sendProgressEvent(INIT_TRX_COUNT+saved, totalTrxes);
 			}
 			pstEnglish.executeBatch();
 			pstEnglishFts5.executeBatch();

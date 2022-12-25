@@ -19,7 +19,7 @@ import dt.jdictionary.sqlite.DbRepo.RelatedChar;
 public class DbService 
 {
 	public static final int MIN_4CHARS_SUBSTRING = 2;
-	private final DbRepo db;
+	private DbRepo db;
 
 	public DbService()
 	{
@@ -206,13 +206,24 @@ public class DbService
 			return;
 		}
 
+		final int totalTrxes = DbRepo.INIT_TRX_COUNT + dump.getDictionary().size() + DbRepo.SINGLE_TRX_FILL_COUNT;
+		DbEvent.sendProgressEvent(0, totalTrxes);
 		db.wipe();
+		DbEvent.sendProgressEvent(1, totalTrxes);
 		db.init();
+		DbEvent.sendProgressEvent(2, totalTrxes);
 
 		db.fillDictionary(dump.getDictionary());
 		fillMeasureWords(dump);
+		DbEvent.sendProgressEvent(DbRepo.INIT_TRX_COUNT + dump.getDictionary().size()+1, totalTrxes);
 		fillSimplified(dump);
+		DbEvent.sendProgressEvent(DbRepo.INIT_TRX_COUNT + dump.getDictionary().size()+2, totalTrxes);
 		fill4Chars(dump);
+		DbEvent.sendProgressEvent(DbRepo.INIT_TRX_COUNT + dump.getDictionary().size()+3, totalTrxes);
+
+		// Funny things happen when you try to import more than once on the same connection.
+		db.close();
+		db = new DbRepo();
 	}
 
 	private void fill4Chars(CedictDump dump)
