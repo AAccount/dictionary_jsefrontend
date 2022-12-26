@@ -179,16 +179,22 @@ public class UiMain implements ActionListener, EventListener
 
 		UiUtils.removeNamedComponents(root, Set.of(UI_RESULT, UiUtils.UI_FILLER));
 
-		final JComponent result = Utils.hasChinese(received) ?
-		 renderChineseLookup(received) :
-		 new UiList().render(db.lookupEnglish(received));
+		try
+		{
+			final JComponent result = Utils.hasChinese(received) ?
+			renderChineseLookup(received) :
+			new UiList().render(db.lookupEnglish(received));
+			result.setName(UI_RESULT);
+			result.setBorder(UiConstants.TRACER);
+			root.add(result, uiMainConstraints(UI_ROW_RESULT, UI_SINGLE_COLUMN, true, UiUtils.makeInsets(Set.of(Neighbor.TOP))));
 
-		result.setName(UI_RESULT);
-		result.setBorder(UiConstants.TRACER);
-		root.add(result, uiMainConstraints(UI_ROW_RESULT, UI_SINGLE_COLUMN, true, UiUtils.makeInsets(Set.of(Neighbor.TOP))));
-
-		root.revalidate();
-		root.repaint();
+			root.revalidate();
+			root.repaint();
+		}
+		catch(Exception e)
+		{
+			EventUtils.sendError(e);
+		}
 	}
 
 	private JComponent renderChineseLookup(String chinese)
