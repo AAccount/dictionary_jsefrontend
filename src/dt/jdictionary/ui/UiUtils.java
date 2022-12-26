@@ -100,4 +100,16 @@ class UiUtils
 			neighbors.contains(Neighbor.RIGHT) ? PADDING / 2 : PADDING
 			);
 	}
+
+	public static void removeNamedComponents(JComponent source, Set<String> removals)
+	{
+		final Component[] uiElements = (Component[])source.getComponents();
+		for(final Component uiElement : uiElements)
+		{
+			if(uiElement.getName() != null && removals.contains(uiElement.getName()))
+			{
+				source.remove(uiElement);
+			}
+		}
+	}
 }

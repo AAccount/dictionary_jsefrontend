@@ -3,26 +3,27 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.Set;
 
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.Utils;
-import dt.jdictionary.events.EventUtils;
+import dt.jdictionary.ui.UiUtils.Neighbor;
 
+import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
-class UiList implements ItemListener
+class UiList implements ItemListener, ActionListener
 {
 	private final String FLAG_CHINA_SPECIES = "china species";
 	private final String FLAG_NAME = "name"; // hard to detect reliably
@@ -31,62 +32,81 @@ class UiList implements ItemListener
 	private final String FLAG_TOO_LONG = "too long";
 	private final String FLAG_NONE = "";
 
+	private final int UI_COLUMN_RESULTS= 0;
+	private final int UI_COLUMN_BACK= 0;
+	private final int UI_COLUMN_FORWARD= 1;
+	private final int UI_COLUMN_PAGE_COUNTER= 2;
+	private final int UI_COLUMN_CHECKBOXES= 3;
+	private final int UI_COLUMNS_TOTAL= 4;
+
+	private final int UI_ROW_UTILITY = 0;
+	private final int UI_ROW_RESULTS = 1;
+
+	private final String BTN_FORWARD = "forward button";
+	private final JButton forwardBtn;
+	private final String BTN_PREVIOUS = "previous button";
+	private final JButton previousBtn;
+	private final String LABEL_COUNTER = "current page / total pages";
+	private final JLabel pageCounter;
+	private final String SCROLLVIEW_RESULTS = "results scroll view";
+	private final String JPANEL_CHECKBOXES = "definition flag checkboxes";
+
+	private final int PAGE_SIZE = 10;
+
 	private final Map<String, List<JComponent>> flag2Ui;
 	private final JComponent root;
-	private final ExecutorService rowRenderThreads;
-	private final Lock flag2UiLock;
+	private int currentPage;
+	private List<List<SimpleLookup>> pages;
 
 	public UiList() 
 	{
 		flag2Ui = new HashMap<>();
 		root = new JPanel(new GridBagLayout());
 		root.setBorder(UiConstants.TRACER);
-
-		final int MIN_THREADS = 4;
-		final int cpus = Runtime.getRuntime().availableProcessors();
-		rowRenderThreads = Executors.newFixedThreadPool(cpus > MIN_THREADS ? cpus : MIN_THREADS);
-		flag2UiLock = new ReentrantLock();
+		currentPage = 0;
+		
+		previousBtn = new JButton();
+		forwardBtn= new JButton();
+		pageCounter = new JLabel();
 	}
 
 	public JComponent render(List<SimpleLookup> dbResults)
 	{
 		Utils.logTimestamp("start ui list");
-		final int UI_SINGLE_COLUMN = 0;
-		final int UI_ROW_CHECKBOXES = 0;
-		final int UI_ROW_RESULTS = 1;
+		pages = Utils.subdivideList(dbResults, PAGE_SIZE);
 
-		final JPanel flagCheckboxes = new JPanel();
-		flagCheckboxes.setBorder(UiConstants.TRACER);
-		root.add(flagCheckboxes, UiUtils.makeGridConstraint(UI_ROW_CHECKBOXES, UI_SINGLE_COLUMN, true, false, UiConstants.nopadding));
-
-		final JPanel dbResultPanel = new JPanel(new GridBagLayout());
-		dbResultPanel.setBorder(UiConstants.TRACER);
-		final JScrollPane scrollPane = new JScrollPane(dbResultPanel);
-		scrollPane.setBorder(UiConstants.TRACER);
-
-		for(int row = 0; row < dbResults.size(); row++)
-		{
-			final int itsrow = row;
-			rowRenderThreads.execute(new Thread(() -> renderSimpleLookup(dbResults.get(itsrow), dbResultPanel, itsrow)));
-		}
-		root.add(scrollPane, UiUtils.makeGridConstraint(UI_ROW_RESULTS, UI_SINGLE_COLUMN, true, true, UiConstants.nopadding));
-		
-		rowRenderThreads.shutdown();
-		try 
-		{
-			rowRenderThreads.awaitTermination(10, TimeUnit.SECONDS);
-		} 
-		catch (InterruptedException e) 
-		{
-			EventUtils.sendError(e);
-		}
-
-		renderFlagCheckboxes(flagCheckboxes);
+		renderPageNavigation();
+		renderCurrentPageOfResults();
 		Utils.logTimestamp("stop ui list");
 		return root;
 	}
 
-	// Ok to write to the non threadsafe parent because all the ui elements are written to different areas.
+	private void renderCurrentPageOfResults()
+	{
+		UiUtils.removeNamedComponents(root, Set.of(SCROLLVIEW_RESULTS, JPANEL_CHECKBOXES));
+		flag2Ui.clear();
+		final List<SimpleLookup> dbResults = pages.get(currentPage);
+
+		// Need to leave the scrollpane setup even after pagination because grid bag layout will render "funny" without it.
+		final JPanel dbResultPanel = new JPanel(new GridBagLayout());
+		dbResultPanel.setBorder(UiConstants.TRACER);
+		final JScrollPane scrollPane = new JScrollPane(dbResultPanel);
+		scrollPane.setName(SCROLLVIEW_RESULTS);
+		scrollPane.setBorder(UiConstants.TRACER);
+
+		for(int row = 0; row < dbResults.size(); row++)
+		{
+			renderSimpleLookup(dbResults.get(row), dbResultPanel, row);
+		}
+		final GridBagConstraints constraints =  UiUtils.makeGridConstraint(UI_ROW_RESULTS, UI_COLUMN_RESULTS, true, true, UiConstants.nopadding);
+		constraints.gridwidth = UI_COLUMNS_TOTAL;
+		root.add(scrollPane, constraints);
+
+		// Corresponding checkboxes need to be rendered per page.
+		renderFlagCheckboxes();
+		pageCounter.setText((currentPage+1)+"/"+(pages.size()));
+	}
+
 	private void renderSimpleLookup(SimpleLookup dbresult, JComponent parent, int row)
 	{
 		final int COL_ZH = 0;
@@ -113,27 +133,47 @@ class UiList implements ItemListener
 		defLabel.setVisible(false);
 	}
 
-	private void renderFlagCheckboxes(JComponent parent)
+	private void renderPageNavigation()
 	{
+		previousBtn.setText("<");
+		previousBtn.setName(BTN_PREVIOUS);
+		previousBtn.addActionListener(this);
+		previousBtn.setEnabled(false);
+		root.add(previousBtn, UiUtils.makeGridConstraint(UI_ROW_UTILITY, UI_COLUMN_BACK, false, false, UiConstants.nopadding));
+
+		forwardBtn.setText(">");
+		forwardBtn.setName(BTN_FORWARD);
+		forwardBtn.addActionListener(this);
+		forwardBtn.setEnabled(pages.size() > 1);
+		root.add(forwardBtn, UiUtils.makeGridConstraint(UI_ROW_UTILITY, UI_COLUMN_FORWARD, false, false, UiConstants.nopadding));
+
+		root.add(pageCounter,UiUtils.makeGridConstraint(UI_ROW_UTILITY, UI_COLUMN_PAGE_COUNTER, false, false, UiUtils.makeInsets(Set.of(Neighbor.LEFT, Neighbor.RIGHT))));
+	}
+
+	private void renderFlagCheckboxes()
+	{
+		final JPanel flagCheckboxes = new JPanel();
+		flagCheckboxes.setName(JPANEL_CHECKBOXES);
+		flagCheckboxes.setBorder(UiConstants.TRACER);
+		root.add(flagCheckboxes, UiUtils.makeGridConstraint(UI_ROW_UTILITY, UI_COLUMN_CHECKBOXES, true, false, UiConstants.nopadding));
+
 		for(final String flag : flag2Ui.keySet())
 		{
 			final JCheckBox flagCheckBox = new JCheckBox(flag);
 			flagCheckBox.setBorder(UiConstants.TRACER);
 			flagCheckBox.setName(flag);
 			flagCheckBox.addItemListener(this);
-			parent.add(flagCheckBox);
+			flagCheckboxes.add(flagCheckBox);
 		}
 	}
 
 	private void addToFlagMap(String key, JComponent ui)
 	{
-		flag2UiLock.lock();
 		if(!flag2Ui.keySet().contains(key))
 		{
 			flag2Ui.put(key, new ArrayList<>());
 		}
 		flag2Ui.get(key).add(ui);
-		flag2UiLock.unlock();
 	}
 
 	private String flagDbResult(SimpleLookup dbresult)
@@ -162,8 +202,8 @@ class UiList implements ItemListener
 			return FLAG_LINK;
 		}
 
-		final String pinyinNoAccents = Utils.normalizePinyin(dbresult.getPinyin());
-		final String definitionNoAccents = Utils.normalizePinyin(definition);
+		final String pinyinNoAccents = Utils.normalizePinyin(dbresult.getPinyin()).strip();
+		final String definitionNoAccents = Utils.normalizePinyin(definition).strip();
 		if(definition.contains(" county") || definition.contains("district of ") || definitionNoAccents.contains(pinyinNoAccents))
 		{
 			return FLAG_NAME;
@@ -182,6 +222,34 @@ class UiList implements ItemListener
 			final boolean currentVisibiliy = ui.isVisible();
 			ui.setVisible(!currentVisibiliy);
 		}
+		root.revalidate();
+		root.repaint();
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent arg0) 
+	{
+		final JComponent source = (JComponent)arg0.getSource();
+		final String name = source.getName();
+
+		final int previousPage = currentPage;
+		if(name.equals(BTN_FORWARD) && currentPage != (pages.size() - 1))
+		{
+			currentPage++;
+		}
+		else if(name.equals(BTN_PREVIOUS) && currentPage != 0)
+		{
+			currentPage--;
+		}
+
+		previousBtn.setEnabled(currentPage != 0);
+		forwardBtn.setEnabled(currentPage != (pages.size()-1));
+		if(currentPage == previousPage)
+		{
+			return;
+		}
+
+		renderCurrentPageOfResults();
 		root.revalidate();
 		root.repaint();
 	}

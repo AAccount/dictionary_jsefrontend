@@ -23,6 +23,19 @@ public class Utils
 	{
 		return Normalizer.normalize(pinyin.toLowerCase().strip(), Form.NFD).replaceAll("\\p{M}", "");
 	}
+
+	public static <T> List<List<T>> subdivideList(List<T> original, int subSize)
+	{
+		final List<List<T>> result = new ArrayList<>();
+		int position = 0;
+		while(position < original.size())
+		{
+			final int end = (position + subSize) > original.size() ? original.size() : position + subSize;
+			result.add(original.subList(position, end));
+			position = end;
+		}
+		return result;
+	}
 	
 	/**
 	 * Java doesn't handle 4 byte encoded Chinese characters very well.

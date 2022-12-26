@@ -1,0 +1,31 @@
+Overcomplicated MT no pagination
+Input trimmed, to lower case: 不
+2022-12-25T20:18:58.519105694Z start single char
+2022-12-25T20:18:58.525920690Z end single char
+2022-12-25T20:18:58.526346785Z start ui list
+2022-12-25T20:18:58.526651613Z start ui list
+2022-12-25T20:18:58.595595987Z stop ui list
+2022-12-25T20:18:58.917285142Z stop ui list
+Input trimmed, to lower case: 不
+2022-12-25T20:19:06.411514750Z start single char
+2022-12-25T20:19:06.416825835Z end single char
+2022-12-25T20:19:06.417533731Z start ui list
+2022-12-25T20:19:06.417556168Z start ui list
+2022-12-25T20:19:06.453152973Z stop ui list
+2022-12-25T20:19:06.843977221Z stop ui list
+
+Single Thread no pagination
+Input trimmed, to lower case: 不
+2022-12-25T20:24:36.387834928Z start single char
+2022-12-25T20:24:36.453448835Z end single char
+2022-12-25T20:24:36.456411988Z start ui list
+2022-12-25T20:24:36.456413012Z start ui list
+2022-12-25T20:24:36.657645205Z stop ui list
+2022-12-25T20:24:38.487854495Z stop ui list
+Input trimmed, to lower case: 不
+2022-12-25T20:25:16.551398698Z start single char
+2022-12-25T20:25:16.555834038Z end single char
+2022-12-25T20:25:16.556394929Z start ui list
+2022-12-25T20:25:16.556449770Z start ui list
+2022-12-25T20:25:16.627399805Z stop ui list
+2022-12-25T20:25:18.080167041Z stop ui list

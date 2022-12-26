@@ -177,15 +177,7 @@ public class UiMain implements ActionListener, EventListener
 		final String received = entry.getText().trim().toLowerCase();
 		System.out.println("Input trimmed, to lower case: " + received);
 
-		final Component[] uiElements = (Component[])root.getComponents();
-		for(final Component uiElement : uiElements)
-		{
-			if(uiElement.getName().equals(UI_RESULT) || uiElement.getName().equals(UiUtils.UI_FILLER))
-			{
-				root.remove(uiElement);
-				break;
-			}
-		}
+		UiUtils.removeNamedComponents(root, Set.of(UI_RESULT, UiUtils.UI_FILLER));
 
 		final JComponent result = Utils.hasChinese(received) ?
 		 renderChineseLookup(received) :
