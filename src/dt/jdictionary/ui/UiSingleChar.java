@@ -2,24 +2,23 @@ package dt.jdictionary.ui;
 import java.util.List;
 import java.util.Set;
 
+import java.awt.GridBagLayout;
+import java.awt.GridBagConstraints;
+
+import javax.swing.JComponent;
 import javax.swing.JPanel;
+import javax.swing.JTabbedPane;
+import javax.swing.JTextPane;
 
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.Utils;
-import dt.jdictionary.events.EventUtils;
 import dt.jdictionary.ui.UiUtils.Neighbor;
 import dt.jdictionary.FullLookup;
 
-import java.awt.*;
-import javax.swing.*;
 
 class UiSingleChar
 {
 	public UiSingleChar() {}
-
-	// Need to be out here for independent thread rendering.
-	private JComponent sameFrontTab; 
-	private JComponent sameBackTab;
 
 	private final int COL_LABEL = 0;
 	private final int COL_VALUE = 1;
@@ -36,7 +35,14 @@ class UiSingleChar
 		notebook.addTab("Definition", renderZhDefinition(dictionaryResult));
 		Utils.logTimestamp("end single char");
 
-		renderRelatedWords(notebook, sameFront, sameBack);
+		if(sameBack.size() > 0)
+		{
+			notebook.addTab("Same Front", new UiList().render(sameFront));
+		}
+		if(sameFront.size() > 0)
+		{
+			notebook.addTab("Same Back", new UiList().render(sameBack));
+		}
 		return notebook;
 	}
 
@@ -49,42 +55,6 @@ class UiSingleChar
 		renderZhCharBig(dictionaryResult.getZh(), result);
 		UiUtils.renderFiller(result, rowsRendered+1);
 		return result;
-	}
-
-	private void renderRelatedWords(JTabbedPane notebook,  List<SimpleLookup> sameFront, List<SimpleLookup> sameBack)
-	{
-		Thread sameFrontThread = null, sameBackThread = null;
-		final boolean renderSameFront = sameFront.size() > 0;
-		final boolean renderSameBack = sameBack.size() > 0;
-		if(renderSameFront)
-		{
-			sameFrontThread = new Thread(() -> { sameFrontTab = new UiList().render(sameFront); });
-			sameFrontThread.start();
-		}
-		if(renderSameBack)
-		{
-			sameBackThread = new Thread(() -> { sameBackTab =  new UiList().render(sameBack); });
-			sameBackThread.start();
-		}
-
-		try // Wait for the tabs to finish in this order so they can be added in this order.
-		{
-			if(renderSameFront)
-			{
-				sameFrontThread.join();
-				notebook.addTab("Same Front", sameFrontTab);
-			}
-			if(renderSameBack)
-			{
-				sameBackThread.join();
-				notebook.addTab("Same Back", sameBackTab);
-			}
-		} 
-		catch (InterruptedException e) 
-		{
-			EventUtils.sendError(e);
-		}
-
 	}
 
 	private int renderDictionaryResults(JComponent parent, FullLookup dictionaryResult)
