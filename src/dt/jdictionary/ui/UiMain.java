@@ -198,9 +198,7 @@ public class UiMain implements ActionListener, EventListener
 		
 		final boolean shouldTry4Chars = !hasDirectResults && chinese.length() >= DbService.MIN_4CHARS_SUBSTRING;
 		final List<SimpleLookup> fourCharResults = shouldTry4Chars ? db.try4CharLookup(chinese) : List.of();
-
-		final boolean shouldTryTypo = !hasDirectResults;
-		final List<SimpleLookup> typoResults = shouldTryTypo ? db.tryTypoMatch(chinese) : List.of();
+		final List<SimpleLookup> typoResults = !hasDirectResults ? db.tryTypoMatch(chinese) : List.of();
 		
 		final Map<String, List<SimpleLookup>> supplementaries = new LinkedHashMap<>(); // linked hash map for predictable iteration order
 		supplementaries.put("Same Front", db.lookupSameFront(chinese));
