@@ -30,6 +30,7 @@ class UiList implements ItemListener, ActionListener
 	private final String FLAG_VARIANT_OF = "variant_of";
 	private final String FLAG_LINK = "link";
 	private final String FLAG_TOO_LONG = "too long";
+	private final String FLAG_HYBRID_SLANG = "hybrid slang"; //entries with english and chinese letters
 	private final String FLAG_NONE = "";
 
 	private final int UI_COLUMN_RESULTS= 0;
@@ -135,6 +136,11 @@ class UiList implements ItemListener, ActionListener
 
 	private void renderPageNavigation()
 	{
+		if(pages.size() == 1)
+		{
+			return;
+		}
+
 		previousBtn.setText("<");
 		previousBtn.setName(BTN_PREVIOUS);
 		previousBtn.addActionListener(this);
@@ -144,7 +150,7 @@ class UiList implements ItemListener, ActionListener
 		forwardBtn.setText(">");
 		forwardBtn.setName(BTN_FORWARD);
 		forwardBtn.addActionListener(this);
-		forwardBtn.setEnabled(pages.size() > 1);
+		forwardBtn.setEnabled(true);
 		root.add(forwardBtn, UiUtils.makeGridConstraint(UI_ROW_UTILITY, UI_COLUMN_FORWARD, false, false, UiConstants.nopadding));
 
 		pageCounter.setName(LABEL_COUNTER);
@@ -201,6 +207,11 @@ class UiList implements ItemListener, ActionListener
 		if(definition.startsWith(linkFlagText, 0))
 		{
 			return FLAG_LINK;
+		}
+
+		if(!Utils.allChinese(dbresult.getZh()))
+		{
+			return FLAG_HYBRID_SLANG;
 		}
 
 		final String pinyinNoAccents = Utils.normalizePinyin(dbresult.getPinyin()).strip();

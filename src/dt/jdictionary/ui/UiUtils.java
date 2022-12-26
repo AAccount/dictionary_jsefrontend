@@ -63,7 +63,7 @@ class UiUtils
 		textPane.setBackground(null);
 		textPane.setEditable(false);
 
-		if(Utils.allChinese(text))
+		if(Utils.allChinese(text.replaceAll("\\s+|,|，", ""))) // don't let spaces and commas NOT flag the text as all Chinese
 		{
 			textPane.setFont(makeFont(textPane, UiConstants.FONT_MEDIUM));
 		}
