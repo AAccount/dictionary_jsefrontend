@@ -1,6 +1,6 @@
-package dt.jdictionary.sqlite;
+package dt.jdictionary.sqlite.raw;
 
-class Raw4CharRow 
+public class Raw4CharRow 
 {
 	final String substring;
 	final String fourChar;

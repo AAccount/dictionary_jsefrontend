@@ -32,7 +32,7 @@ import dt.jdictionary.events.EventDispatcher;
 import dt.jdictionary.events.EventListener;
 import dt.jdictionary.events.EventUtils;
 import dt.jdictionary.sqlite.DbEvent;
-import dt.jdictionary.sqlite.DbService;
+import dt.jdictionary.sqlite.dbservice.DbService;
 import dt.jdictionary.ui.UiUtils.Neighbor;
 
 public class UiMain implements ActionListener, EventListener

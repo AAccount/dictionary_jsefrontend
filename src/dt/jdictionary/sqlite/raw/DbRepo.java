@@ -1,4 +1,4 @@
-package dt.jdictionary.sqlite;
+package dt.jdictionary.sqlite.raw;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -12,9 +12,11 @@ import java.util.List;
 import java.util.Map;
 
 import dt.jdictionary.SimpleLookup;
+import dt.jdictionary.Utils;
 import dt.jdictionary.events.EventUtils;
+import dt.jdictionary.sqlite.DbEvent;
 
-class DbRepo 
+public class DbRepo 
 {
 	public enum RelatedChar
 	{
@@ -43,14 +45,18 @@ class DbRepo
 		from ZhBase join English on ZhBase.id = English.zhBaseId where"""
 		, COL_ZH, COL_PINYIN, COL_PINYIN_NORM, COL_DEF, COL_FIRST_CHAR, COL_LAST_CHAR);
 
-	public DbRepo()
+	private final String user;
+
+	public DbRepo(String user)
 	{
+		this.user = user;
 		try 
 		{
 			final String sqlitePath = System.getProperty("user.home") + "/Programs/mdbg2.sqlite";
 			Class.forName("org.sqlite.JDBC");
 			this.db = DriverManager.getConnection("jdbc:sqlite:"+sqlitePath);
 			db.setAutoCommit(false);
+			Utils.logTimestamp("new db repo for " + user);
 		} 
 		catch (SQLException e) 
 		{
@@ -67,6 +73,7 @@ class DbRepo
 		try 
 		{
 			db.close();
+			Utils.logTimestamp("closed db repo for " + user);
 		} 
 		catch (SQLException e) 
 		{

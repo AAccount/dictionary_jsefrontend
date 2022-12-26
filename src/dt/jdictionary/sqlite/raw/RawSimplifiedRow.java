@@ -1,4 +1,4 @@
-package dt.jdictionary.sqlite;
+package dt.jdictionary.sqlite.raw;
 
 public class RawSimplifiedRow 
 {

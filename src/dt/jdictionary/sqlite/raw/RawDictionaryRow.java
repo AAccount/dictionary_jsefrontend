@@ -1,10 +1,10 @@
-package dt.jdictionary.sqlite;
+package dt.jdictionary.sqlite.raw;
 
 import java.util.List;
 
 import dt.jdictionary.Utils;
 
-class RawDictionaryRow 
+public class RawDictionaryRow 
 {
 	private final String zh;
 	private final String pinyin;
