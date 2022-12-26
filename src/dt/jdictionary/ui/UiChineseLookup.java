@@ -1,5 +1,6 @@
 package dt.jdictionary.ui;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import java.awt.GridBagLayout;
@@ -16,16 +17,16 @@ import dt.jdictionary.ui.UiUtils.Neighbor;
 import dt.jdictionary.FullLookup;
 
 
-class UiSingleChar
+class UiChineseLookup
 {
-	public UiSingleChar() {}
+	public UiChineseLookup() {}
 
 	private final int COL_LABEL = 0;
 	private final int COL_VALUE = 1;
 	private final int ROW_BIG_CHAR = 0;
 	private final int ROW_START_DEFINITIONS = 1;
 
-	public JComponent render(FullLookup dictionaryResult, List<SimpleLookup> sameFront, List<SimpleLookup> sameBack)
+	public JComponent render(FullLookup dictionaryResult, Map<String, List<SimpleLookup>> supplementaries)
 	{
 		// Return the raw notebook. Don't prepackage it in a panel.
 		Utils.logTimestamp("start single char");
@@ -35,13 +36,13 @@ class UiSingleChar
 		notebook.addTab("Definition", renderZhDefinition(dictionaryResult));
 		Utils.logTimestamp("end single char");
 
-		if(sameBack.size() > 0)
+		for(final String supplementary : supplementaries.keySet())
 		{
-			notebook.addTab("Same Front", new UiList().render(sameFront));
-		}
-		if(sameFront.size() > 0)
-		{
-			notebook.addTab("Same Back", new UiList().render(sameBack));
+			final List<SimpleLookup> supplementaryList = supplementaries.get(supplementary);
+			if(supplementaryList.size() > 0)
+			{
+				notebook.addTab(supplementary, new UiList().render(supplementaryList));
+			}
 		}
 		return notebook;
 	}

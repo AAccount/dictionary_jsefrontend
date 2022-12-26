@@ -135,18 +135,19 @@ class UiList implements ItemListener, ActionListener
 
 	private void renderPageNavigation()
 	{
-		previousBtn.setText("<");
+		previousBtn.setText("🡰");
 		previousBtn.setName(BTN_PREVIOUS);
 		previousBtn.addActionListener(this);
 		previousBtn.setEnabled(false);
 		root.add(previousBtn, UiUtils.makeGridConstraint(UI_ROW_UTILITY, UI_COLUMN_BACK, false, false, UiConstants.nopadding));
 
-		forwardBtn.setText(">");
+		forwardBtn.setText("🡲");
 		forwardBtn.setName(BTN_FORWARD);
 		forwardBtn.addActionListener(this);
 		forwardBtn.setEnabled(pages.size() > 1);
 		root.add(forwardBtn, UiUtils.makeGridConstraint(UI_ROW_UTILITY, UI_COLUMN_FORWARD, false, false, UiConstants.nopadding));
 
+		pageCounter.setName(LABEL_COUNTER);
 		root.add(pageCounter,UiUtils.makeGridConstraint(UI_ROW_UTILITY, UI_COLUMN_PAGE_COUNTER, false, false, UiUtils.makeInsets(Set.of(Neighbor.LEFT, Neighbor.RIGHT))));
 	}
 

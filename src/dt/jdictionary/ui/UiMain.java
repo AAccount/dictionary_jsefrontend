@@ -6,10 +6,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.awt.Component;
 
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
@@ -198,26 +198,17 @@ public class UiMain implements ActionListener, EventListener
 		
 		final boolean shouldTry4Chars = !hasDirectResults && chinese.length() >= DbService.MIN_4CHARS_SUBSTRING;
 		final List<SimpleLookup> fourCharResults = shouldTry4Chars ? db.try4CharLookup(chinese) : List.of();
-		final boolean has4CharResults = fourCharResults.size() > 0;
 
-		// Last ditch probably sketchy results. Only do this if other attempts failed.
-		final boolean shouldTryTypo = !hasDirectResults && !has4CharResults;
+		final boolean shouldTryTypo = !hasDirectResults;
 		final List<SimpleLookup> typoResults = shouldTryTypo ? db.tryTypoMatch(chinese) : List.of();
-		final boolean hasTypoResults = typoResults.size() > 0;
 		
-		// If there are no alternative results, maybe the ui single char's related word tabs may be useful?
-		if(hasDirectResults || (!hasDirectResults && !has4CharResults && !hasTypoResults))
-		{
-			return new UiSingleChar().render(directResults, db.lookupSameFront(chinese), db.lookupSameBack(chinese));
-		}
-		else if(has4CharResults)
-		{
-			return new UiList().render(fourCharResults);
-		}
-		else
-		{
-			return new UiList().render(typoResults);
-		}
+		final Map<String, List<SimpleLookup>> supplementaries = new LinkedHashMap<>(); // linked hash map for predictable iteration order
+		supplementaries.put("Same Front", db.lookupSameFront(chinese));
+		supplementaries.put("Same Back", db.lookupSameBack(chinese));
+		supplementaries.put("~4 Char Saying", fourCharResults);
+		supplementaries.put("Typo", typoResults);
+
+		return new UiChineseLookup().render(directResults, supplementaries);
 	}
 
 	@Override
@@ -245,9 +236,9 @@ public class UiMain implements ActionListener, EventListener
 		final String title = (String)data.get(EventUtils.EVENT_ERR_CLASS);
 		final String errorMessage = (String)data.get(EventUtils.EVENT_ERR_MSG);
 		final String stackTrace = (String)data.get(EventUtils.EVENT_STACK_TRACE);
-		final String message = errorMessage + "\n" + stackTrace;
+		final String popupMessage = errorMessage + "\n" + stackTrace;
 
-		JOptionPane.showMessageDialog(null, message, title, JOptionPane.ERROR_MESSAGE);
+		JOptionPane.showMessageDialog(null, popupMessage, title, JOptionPane.ERROR_MESSAGE);
 	}
 
 	private void handleCedictEvent(Map<String, Object> data)

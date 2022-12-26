@@ -239,6 +239,10 @@ public class DbService
 			final List<String> substrings = generate4CharSubstrings(simpleLookup.getZh());
 			for(final String substring : substrings)
 			{
+				if(substring.equals(simpleLookup.getZh()))
+				{ // To generate all possible substrings, you will get the original string itself. Don't save that entry.
+					continue;
+				}
 				result.add(new Raw4CharRow(substring, simpleLookup.getZh()));
 			}
 		}
@@ -247,13 +251,13 @@ public class DbService
 
 	private List<String> generate4CharSubstrings(String saying)
 	{
-		if(saying.length() <= MIN_4CHARS_SUBSTRING)
+		if(saying.length() < MIN_4CHARS_SUBSTRING)
 		{
 			return List.of();
 		}
 
 		final List<String> result = new ArrayList<>();
-		for(int i = MIN_4CHARS_SUBSTRING; i < saying.length(); i++)
+		for(int i = MIN_4CHARS_SUBSTRING; i <= saying.length(); i++)
 		{
 			result.add(saying.substring(0, i));
 		}
