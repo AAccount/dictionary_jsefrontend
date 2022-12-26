@@ -18,7 +18,7 @@ import dt.jdictionary.sqlite.DbRepo.RelatedChar;
 
 public class DbService 
 {
-	public static final int MIN_4CHARS_SUBSTRING = 2;
+	private final int MIN_4CHARS_SUBSTRING = 2;
 	private DbRepo db;
 
 	public DbService()
@@ -87,6 +87,11 @@ public class DbService
 
 	public List<SimpleLookup> try4CharLookup(String compoundWord)
 	{
+		if(compoundWord.length() < MIN_4CHARS_SUBSTRING)
+		{
+			return List.of();
+		}
+
 		final List<String> possibleMatches = db.tryFourChars(compoundWord);
 		if(possibleMatches.size() == 0)
 		{
@@ -119,7 +124,7 @@ public class DbService
 		for(final SimpleLookup candidate : candidates)
 		{
 			final int similarity = pinyinLookupSimilarity(candidate, trueChars);
-			if(similarity == 0)
+			if(similarity == 0 || similarity == compoundWord.length())
 			{
 				continue;
 			}
@@ -196,6 +201,29 @@ public class DbService
 			final List<String> subresult = pinyinPermutations(individualPinyins.subList(1, individualPinyins.size()));
 			return pinyinPermutations(List.of(individualPinyins.get(0), subresult));
 		}
+	}
+
+	/**
+	 * Attempt to "deinterlace" an entry: chars 123 --> lookup 13; chars 1234 --> lookup 13 and 24
+	 */
+	public List<SimpleLookup> tryDeinterlace(String zh)
+	{
+		final int MIN_DEINTERLACE = 3;
+		final int MAX_DEINTERLACE = 4;
+		if(zh.length() < MIN_DEINTERLACE || zh.length() > MAX_DEINTERLACE)
+		{
+			return List.of();
+		}
+
+		final List<String> trueChars = Utils.trueChars(zh);
+		final List<SimpleLookup> oneThree = convertRawToSimple(db.lookupChinese(trueChars.get(0) + trueChars.get(2)));
+		if(zh.length() == MIN_DEINTERLACE)
+		{
+			return oneThree;
+		}
+		final List<SimpleLookup> twoFour = convertRawToSimple(db.lookupChinese(trueChars.get(1) + trueChars.get(3)));
+		oneThree.addAll(twoFour);
+		return oneThree;
 	}
 
 	public void saveCedictDump(CedictDump dump)

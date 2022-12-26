@@ -199,17 +199,16 @@ public class UiMain implements ActionListener, EventListener
 
 	private JComponent renderChineseLookup(String chinese)
 	{
-		final FullLookup directResults =  db.lookupChinese(chinese);
-		final boolean hasDirectResults = directResults.getResults().size() > 0;
-		
-		final boolean shouldTry4Chars = !hasDirectResults && chinese.length() >= DbService.MIN_4CHARS_SUBSTRING;
-		final List<SimpleLookup> fourCharResults = shouldTry4Chars ? db.try4CharLookup(chinese) : List.of();
-		final List<SimpleLookup> typoResults = !hasDirectResults ? db.tryTypoMatch(chinese) : List.of();
+		final FullLookup directResults =  db.lookupChinese(chinese);		
+		final List<SimpleLookup> fourCharResults = db.try4CharLookup(chinese);
+		final List<SimpleLookup> typoResults = db.tryTypoMatch(chinese);
+		final List<SimpleLookup> deinterlaced = db.tryDeinterlace(chinese);
 		
 		final Map<String, List<SimpleLookup>> supplementaries = new LinkedHashMap<>(); // linked hash map for predictable iteration order
 		supplementaries.put("Same Front", db.lookupSameFront(chinese));
 		supplementaries.put("Same Back", db.lookupSameBack(chinese));
 		supplementaries.put("~4 Char Saying", fourCharResults);
+		supplementaries.put("Deinterlace", deinterlaced);
 		supplementaries.put("Typo", typoResults);
 
 		return new UiChineseLookup().render(directResults, supplementaries);
