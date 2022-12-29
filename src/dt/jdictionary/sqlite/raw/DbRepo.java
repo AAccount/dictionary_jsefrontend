@@ -45,18 +45,18 @@ public class DbRepo
 		from ZhBase join English on ZhBase.id = English.zhBaseId where"""
 		, COL_ZH, COL_PINYIN, COL_PINYIN_NORM, COL_DEF, COL_FIRST_CHAR, COL_LAST_CHAR);
 
-	private final String user;
+	private final Object user;
 
-	public DbRepo(String user)
+	public DbRepo(Object caller)
 	{
-		this.user = user;
+		this.user = caller;
 		try 
 		{
 			final String sqlitePath = System.getProperty("user.home") + "/Programs/mdbg2.sqlite";
 			Class.forName("org.sqlite.JDBC");
 			this.db = DriverManager.getConnection("jdbc:sqlite:"+sqlitePath);
 			db.setAutoCommit(false);
-			Utils.logTimestamp("new db repo for " + user);
+			Utils.logTimestamp("new db repo for " + userToString());
 		} 
 		catch (SQLException e) 
 		{
@@ -73,12 +73,18 @@ public class DbRepo
 		try 
 		{
 			db.close();
-			Utils.logTimestamp("closed db repo for " + user);
+			Utils.logTimestamp("closed db repo for " + userToString());
 		} 
 		catch (SQLException e) 
 		{
 			EventUtils.sendError(e);
 		}
+	}
+
+	private String userToString()
+	{
+		final String[] classPath = user.getClass().getName().split("\\.");
+		return classPath[classPath.length-1] + " " + (user.hashCode() % 1000);
 	}
 
 	public void init()

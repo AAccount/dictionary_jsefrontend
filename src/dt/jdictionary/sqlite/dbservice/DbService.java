@@ -10,6 +10,7 @@ import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.cedict.CedictDump;
 import dt.jdictionary.sqlite.dbservice.alternative.DeinterlaceSearch;
 import dt.jdictionary.sqlite.dbservice.alternative.FourCharSearch;
+import dt.jdictionary.sqlite.dbservice.alternative.SubstringSearch;
 import dt.jdictionary.sqlite.dbservice.alternative.TypoSearch;
 import dt.jdictionary.sqlite.raw.DbRepo;
 import dt.jdictionary.sqlite.raw.RawDictionaryRow;
@@ -17,11 +18,9 @@ import dt.jdictionary.sqlite.raw.DbRepo.RelatedChar;
 
 public class DbService 
 {
-	private final String DB_USER = "DbService";
-
 	public FullLookup lookupChinese(String zh)
 	{
-		final DbRepo db = new DbRepo(DB_USER + " " + this.hashCode());
+		final DbRepo db = new DbRepo(this);
 		final List<RawDictionaryRow> rawResults = db.lookupChinese(zh);
 		final Map<String, List<String>> resultsByPinyin = new HashMap<>();
 		for(final RawDictionaryRow rawResult : rawResults)
@@ -42,7 +41,7 @@ public class DbService
 
 	public List<SimpleLookup> lookupSameFront(String zh)
 	{
-		final DbRepo db = new DbRepo(DB_USER + " " + this.hashCode());
+		final DbRepo db = new DbRepo(this);
 		final String firstChar = Character.toString(zh.charAt(0));
 		final List<RawDictionaryRow> rawResults = db.lookupRelatedWord(firstChar, RelatedChar.SAME_FRONT);
 		db.close();
@@ -51,7 +50,7 @@ public class DbService
 
 	public List<SimpleLookup> lookupSameBack(String zh)
 	{
-		final DbRepo db = new DbRepo(DB_USER + " " + this.hashCode());
+		final DbRepo db = new DbRepo(this);
 		final String lastChar = Character.toString(zh.charAt(zh.length()-1));
 		final List<RawDictionaryRow> rawResults = db.lookupRelatedWord(lastChar, RelatedChar.SAME_BACK);
 		db.close();
@@ -60,7 +59,7 @@ public class DbService
 
 	public List<SimpleLookup> lookupEnglish(String en)
 	{
-		final DbRepo db = new DbRepo(DB_USER + " " + this.hashCode());
+		final DbRepo db = new DbRepo(this);
 		final List<RawDictionaryRow> rawResults = db.lookupEnglish(en);
 		db.close();
 		return DbServiceUtils.convertRawToSimple(rawResults);
@@ -79,6 +78,11 @@ public class DbService
 	public List<SimpleLookup> tryTypoMatch(String zh)
 	{
 		return new TypoSearch().tryTypo(zh);
+	}
+
+	public List<SimpleLookup> trySubstringMatch(String zh)
+	{
+		return new SubstringSearch().trySubstring(zh);
 	}
 
 	public void saveCedictDump(CedictDump dump)

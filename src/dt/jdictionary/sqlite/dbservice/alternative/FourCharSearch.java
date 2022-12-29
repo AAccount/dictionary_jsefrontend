@@ -10,16 +10,14 @@ import dt.jdictionary.sqlite.raw.RawDictionaryRow;
 
 public class FourCharSearch 
 {
-	private final String DB_USER = "FourCharSearch";
-
  	public List<SimpleLookup> tryLookup(String compoundWord)
 	{
-		if(compoundWord.length() < DbServiceUtils.MIN_4CHARS_SUBSTRING)
+		if(compoundWord.length() < DbServiceUtils.MIN_SUBSTRING_LENGTH)
 		{
 			return List.of();
 		}
 
-		final DbRepo db = new DbRepo(DB_USER + " " + this.hashCode());
+		final DbRepo db = new DbRepo(this);
 		final List<String> possibleMatches = db.tryFourChars(compoundWord);
 		if(possibleMatches.size() == 0)
 		{

@@ -8,9 +8,7 @@ import dt.jdictionary.sqlite.dbservice.DbServiceUtils;
 import dt.jdictionary.sqlite.raw.DbRepo;
 
 public class DeinterlaceSearch 
-{
-	private final String DB_USER = "DeinterlaceSearch";
-	
+{	
 	/**
 	 * Attempt to "deinterlace" an entry: chars 123 --> lookup 13; chars 1234 --> lookup 13 and 24
 	 */
@@ -23,7 +21,7 @@ public class DeinterlaceSearch
 			return List.of();
 		}
 
-		final DbRepo db = new DbRepo(DB_USER + " " + this.hashCode());
+		final DbRepo db = new DbRepo(this);
 		final List<String> trueChars = Utils.trueChars(zh);
 		final List<SimpleLookup> oneThree = DbServiceUtils.convertRawToSimple(db.lookupChinese(trueChars.get(0) + trueChars.get(2)));
 		if(zh.length() == MIN_DEINTERLACE)

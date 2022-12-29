@@ -18,8 +18,6 @@ import dt.jdictionary.sqlite.raw.RawSimplifiedRow;
 
 public class SaveCedict 
 {
-	private final String DB_USER = "SaveCedict";
-
 	public void save(CedictDump dump)
 	{
 		if(dump.getDictionary().size() == 0)
@@ -28,7 +26,7 @@ public class SaveCedict
 			return;
 		}
 
-		final DbRepo db = new DbRepo(DB_USER + " " + this.hashCode());
+		final DbRepo db = new DbRepo(this);
 		final int dictionarySize = dump.getDictionary().size();
 		final int uptoDictTrxes = DbRepo.INIT_TRX_COUNT + dictionarySize + DbRepo.DICT_EN_TRX;
 		final int totalTrxes = uptoDictTrxes + DbRepo.POST_DICT_TRX;
@@ -56,33 +54,13 @@ public class SaveCedict
 		final Set<Raw4CharRow> result = new HashSet<>();
 		for(final SimpleLookup simpleLookup : fourCharEntries)
 		{
-			final List<String> substrings = generate4CharSubstrings(simpleLookup.getZh());
+			final List<String> substrings = DbServiceUtils.generateSubstrings(simpleLookup.getZh());
 			for(final String substring : substrings)
 			{
-				if(substring.equals(simpleLookup.getZh()))
-				{ // To generate all possible substrings, you will get the original string itself. Don't save that entry.
-					continue;
-				}
 				result.add(new Raw4CharRow(substring, simpleLookup.getZh()));
 			}
 		}
 		db.fill4Chars(new ArrayList<>(result));
-	}
-
-	private List<String> generate4CharSubstrings(String saying)
-	{
-		if(saying.length() < DbServiceUtils.MIN_4CHARS_SUBSTRING)
-		{
-			return List.of();
-		}
-
-		final List<String> result = new ArrayList<>();
-		for(int i = DbServiceUtils.MIN_4CHARS_SUBSTRING; i <= saying.length(); i++)
-		{
-			result.add(saying.substring(0, i));
-		}
-		result.addAll(generate4CharSubstrings(saying.substring(1)));
-		return result;
 	}
 
 	private void fillMeasureWords(CedictDump dump, DbRepo db)

@@ -15,11 +15,9 @@ import dt.jdictionary.sqlite.raw.DbRepo;
 
 public class TypoSearch 
 {
-	private final String DB_USER = "TypoSearch";
-
 	public List<SimpleLookup> tryTypo(String compoundWord)
 	{
-		final DbRepo db = new DbRepo(DB_USER + " " + this.hashCode());
+		final DbRepo db = new DbRepo(this);
 		final List<String> trueChars = Utils.trueChars(compoundWord);
 		final List<List<String>> normalizedPinyins = trueChars.stream().map(trueChar -> findPinyinForZh(trueChar, db)).toList();
 		if(compoundWord.length() != normalizedPinyins.size())
