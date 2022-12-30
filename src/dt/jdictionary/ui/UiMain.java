@@ -151,19 +151,26 @@ public class UiMain implements ActionListener, EventListener
 	@Override
 	public void actionPerformed(ActionEvent arg0)
 	{
-		final JComponent source = (JComponent)arg0.getSource();
-		switch(source.getName())
+		try
 		{
-			case UI_ENTRY:
-				handleTextEntry((JTextField)source, true);
-				break;
-			case MENU_INIT_SQLITE:
-				handleMenuSqliteInit();
-				break;
-			case UI_PREV:
-			case UI_FWD:
-				handleHistory((JButton)source);
-				break;
+			final JComponent source = (JComponent)arg0.getSource();
+			switch(source.getName())
+			{
+				case UI_ENTRY:
+					handleTextEntry((JTextField)source, true);
+					break;
+				case MENU_INIT_SQLITE:
+					handleMenuSqliteInit();
+					break;
+				case UI_PREV:
+				case UI_FWD:
+					handleHistory((JButton)source);
+					break;
+			}
+		}
+		catch(Exception e)
+		{
+			EventUtils.sendError(e);
 		}
 	}
 
@@ -219,34 +226,27 @@ public class UiMain implements ActionListener, EventListener
 
 		UiUtils.removeNamedComponents(root, Set.of(UI_RESULT, UiUtils.UI_FILLER));
 
-		try
+		final JComponent result = Utils.hasChinese(received) ? renderChineseLookup(received) : new UiList().render(db.lookupEnglish(received));
+		result.setName(UI_RESULT);
+		result.setBorder(UiConstants.TRACER);
+
+		final GridBagConstraints resultConstraints = UiUtils.makeGridConstraint(UI_ROW_RESULT, UI_MAIN_COLUMN, true, true, UiUtils.makeInsets(Set.of(Neighbor.TOP)));
+		resultConstraints.gridwidth = TOTAL_COLUMNS;
+		root.add(result, resultConstraints);
+
+		if(newSearch)
 		{
-			final JComponent result = Utils.hasChinese(received) ? renderChineseLookup(received) : new UiList().render(db.lookupEnglish(received));
-			result.setName(UI_RESULT);
-			result.setBorder(UiConstants.TRACER);
-
-			final GridBagConstraints resultConstraints = UiUtils.makeGridConstraint(UI_ROW_RESULT, UI_MAIN_COLUMN, true, true, UiUtils.makeInsets(Set.of(Neighbor.TOP)));
-			resultConstraints.gridwidth = TOTAL_COLUMNS;
-			root.add(result, resultConstraints);
-
-			if(newSearch)
+			if(historyPosition < history.size()-1)
 			{
-				if(historyPosition < history.size()-1)
-				{
-					history.subList(historyPosition+1, history.size()).clear();
-				}
-				history.add(received);
-				historyPosition++;
+				history.subList(historyPosition+1, history.size()).clear();
 			}
-			toggleHistoryButtons();
+			history.add(received);
+			historyPosition++;
+		}
+		toggleHistoryButtons();
 
-			root.revalidate();
-			root.repaint();
-		}
-		catch(Exception e)
-		{
-			EventUtils.sendError(e);
-		}
+		root.revalidate();
+		root.repaint();
 	}
 
 	private JComponent renderChineseLookup(String chinese)
