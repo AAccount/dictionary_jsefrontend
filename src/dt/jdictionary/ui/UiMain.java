@@ -1,16 +1,17 @@
 package dt.jdictionary.ui;
 import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.GridBagConstraints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -46,20 +47,34 @@ public class UiMain implements ActionListener, EventListener
 	private final int UI_ROW_ENTRY = 0;
 	private final int UI_ROW_PROGRESS = 1;
 	private final int UI_ROW_RESULT = 2;
-	private final int UI_SINGLE_COLUMN = 0;
+	private final int UI_MAIN_COLUMN = 0;
+	private final int TOTAL_COLUMNS = 3;
+
 
 	private final DbService db;
 	private final JTextField uiEntry;
 	private final JProgressBar progressBar;
+	private final JButton previous;
+	private final String UI_PREV = "previous button";
+	private final JButton forward;
+	private final String UI_FWD = "forward button";
+
+	private final List<String> history;
+	private int historyPosition;
 
 	public UiMain()
 	{
+		history = new ArrayList<>();
+		historyPosition = -1; // actually start with "before" anything happens
+
 		db = new DbService();
 		EventDispatcher.get().register(this);
 
 		final int ENTRY_INITIAL_WIDTH = 20;
 		uiEntry = new JTextField(ENTRY_INITIAL_WIDTH);
 		progressBar = new JProgressBar();
+		previous = new JButton();
+		forward = new JButton();
 	}
 
 	public void render()
@@ -102,31 +117,35 @@ public class UiMain implements ActionListener, EventListener
 		progressBar.setBorder(UiConstants.TRACER);
 		progressBar.setVisible(false);
 		progressBar.setStringPainted(true);
-		root.add(progressBar, uiMainConstraints(UI_ROW_PROGRESS, UI_SINGLE_COLUMN, false, UiUtils.makeInsets(Set.of(Neighbor.TOP, Neighbor.BOTTOM))));
+		final GridBagConstraints progressBarConstraints = UiUtils.makeGridConstraint(UI_ROW_PROGRESS, UI_MAIN_COLUMN, true, false, UiUtils.makeInsets(Set.of(Neighbor.TOP, Neighbor.BOTTOM)));
+		progressBarConstraints.gridwidth = TOTAL_COLUMNS;
+		root.add(progressBar, progressBarConstraints);
 	}
 
 	private void renderEntry(JPanel root)
 	{
+		final int COL_PREV = 0;
+		final int COL_FWD = 1;
+		final int COL_ENTRY = 2;
+
+		previous.setText("<");
+		previous.setName(UI_PREV);
+		previous.addActionListener(this);
+		previous.setEnabled(false);
+		root.add(previous, UiUtils.makeGridConstraint(UI_ROW_ENTRY, COL_PREV, false, false, UiUtils.makeInsets(Set.of(Neighbor.RIGHT))));
+
+		forward.setText(">");
+		forward.setName(UI_FWD);
+		forward.addActionListener(this);
+		forward.setEnabled(false);
+		root.add(forward, UiUtils.makeGridConstraint(UI_ROW_ENTRY, COL_FWD, false, false, UiUtils.makeInsets(Set.of(Neighbor.LEFT, Neighbor.RIGHT))));
+
 		uiEntry.setName(UI_ENTRY);
 		uiEntry.setFont(UiUtils.makeFont(uiEntry, UiConstants.FONT_MEDIUM));
 		uiEntry.setBorder(UiConstants.TRACER);
 
 		uiEntry.addActionListener(this);
-		root.add(uiEntry, uiMainConstraints(UI_ROW_ENTRY, UI_SINGLE_COLUMN, false, UiUtils.makeInsets(Set.of(Neighbor.BOTTOM))));
-	}
-
-	// Trial and error special constraints for the "main" program window
-	private GridBagConstraints uiMainConstraints(int row, int column, boolean expandy, Insets insets)
-	{
-		final GridBagConstraints entryConstraints = new GridBagConstraints();
-		entryConstraints.gridx = column;
-		entryConstraints.gridy = row;
-		entryConstraints.weightx = UiConstants.GRIDBAG_AUTOEXPAND;
-		entryConstraints.weighty = expandy ? UiConstants.GRIDBAG_AUTOEXPAND : UiConstants.GRIDBAG_NO_AUTOEXPAND;
-		entryConstraints.anchor = GridBagConstraints.NORTH;
-		entryConstraints.fill = expandy ? GridBagConstraints.BOTH : GridBagConstraints.HORIZONTAL;
-		entryConstraints.insets = insets;
-		return entryConstraints;
+		root.add(uiEntry, UiUtils.makeGridConstraint(UI_ROW_ENTRY, COL_ENTRY, true, false, UiUtils.makeInsets(Set.of(Neighbor.LEFT, Neighbor.BOTTOM))));
 	}
 
 	@Override
@@ -136,12 +155,33 @@ public class UiMain implements ActionListener, EventListener
 		switch(source.getName())
 		{
 			case UI_ENTRY:
-				handleTextEntry((JTextField)source);
+				handleTextEntry((JTextField)source, true);
 				break;
 			case MENU_INIT_SQLITE:
 				handleMenuSqliteInit();
 				break;
+			case UI_PREV:
+			case UI_FWD:
+				handleHistory((JButton)source);
+				break;
 		}
+	}
+
+	private void handleHistory(JButton source) 
+	{
+		final int positionChange = source == previous ? -1 : source == forward ? 1 : 0;
+		historyPosition = historyPosition + positionChange;
+		toggleHistoryButtons();
+	
+		final String historicalSearch = history.get(historyPosition);
+		uiEntry.setText(historicalSearch);
+		handleTextEntry(uiEntry, false);
+	}
+
+	private void toggleHistoryButtons()
+	{
+		previous.setEnabled(historyPosition > 0);
+		forward.setEnabled(historyPosition != history.size()-1);
 	}
 
 	private void handleMenuSqliteInit()
@@ -171,7 +211,7 @@ public class UiMain implements ActionListener, EventListener
 		}
 	}
 
-	private void handleTextEntry(JTextField entry)
+	private void handleTextEntry(JTextField entry, boolean newSearch)
 	{
 		final JPanel root = (JPanel)entry.getParent();
 		final String received = entry.getText().trim().toLowerCase();
@@ -181,12 +221,24 @@ public class UiMain implements ActionListener, EventListener
 
 		try
 		{
-			final JComponent result = Utils.hasChinese(received) ?
-			renderChineseLookup(received) :
-			new UiList().render(db.lookupEnglish(received));
+			final JComponent result = Utils.hasChinese(received) ? renderChineseLookup(received) : new UiList().render(db.lookupEnglish(received));
 			result.setName(UI_RESULT);
 			result.setBorder(UiConstants.TRACER);
-			root.add(result, uiMainConstraints(UI_ROW_RESULT, UI_SINGLE_COLUMN, true, UiUtils.makeInsets(Set.of(Neighbor.TOP))));
+
+			final GridBagConstraints resultConstraints = UiUtils.makeGridConstraint(UI_ROW_RESULT, UI_MAIN_COLUMN, true, true, UiUtils.makeInsets(Set.of(Neighbor.TOP)));
+			resultConstraints.gridwidth = TOTAL_COLUMNS;
+			root.add(result, resultConstraints);
+
+			if(newSearch)
+			{
+				if(historyPosition < history.size()-1)
+				{
+					history.subList(historyPosition+1, history.size()).clear();
+				}
+				history.add(received);
+				historyPosition++;
+			}
+			toggleHistoryButtons();
 
 			root.revalidate();
 			root.repaint();

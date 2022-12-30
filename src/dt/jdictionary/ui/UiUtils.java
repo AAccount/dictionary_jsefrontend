@@ -106,7 +106,7 @@ class UiUtils
 		final Component[] uiElements = (Component[])source.getComponents();
 		for(final Component uiElement : uiElements)
 		{
-			if(removals.contains(uiElement.getName()))
+			if(uiElement.getName() != null && removals.contains(uiElement.getName()))
 			{
 				source.remove(uiElement);
 			}

@@ -43,9 +43,7 @@ class UiList implements ItemListener, ActionListener
 	private final int UI_ROW_UTILITY = 0;
 	private final int UI_ROW_RESULTS = 1;
 
-	private final String BTN_FORWARD = "forward button";
 	private final JButton forwardBtn;
-	private final String BTN_PREVIOUS = "previous button";
 	private final JButton previousBtn;
 	private final String LABEL_COUNTER = "current page / total pages";
 	private final JLabel pageCounter;
@@ -142,16 +140,14 @@ class UiList implements ItemListener, ActionListener
 		}
 
 		previousBtn.setText("<");
-		previousBtn.setName(BTN_PREVIOUS);
 		previousBtn.addActionListener(this);
 		previousBtn.setEnabled(false);
-		root.add(previousBtn, UiUtils.makeGridConstraint(UI_ROW_UTILITY, UI_COLUMN_BACK, false, false, UiConstants.nopadding));
+		root.add(previousBtn, UiUtils.makeGridConstraint(UI_ROW_UTILITY, UI_COLUMN_BACK, false, false, UiUtils.makeInsets(Set.of(Neighbor.RIGHT))));
 
 		forwardBtn.setText(">");
-		forwardBtn.setName(BTN_FORWARD);
 		forwardBtn.addActionListener(this);
 		forwardBtn.setEnabled(true);
-		root.add(forwardBtn, UiUtils.makeGridConstraint(UI_ROW_UTILITY, UI_COLUMN_FORWARD, false, false, UiConstants.nopadding));
+		root.add(forwardBtn, UiUtils.makeGridConstraint(UI_ROW_UTILITY, UI_COLUMN_FORWARD, false, false, UiUtils.makeInsets(Set.of(Neighbor.LEFT, Neighbor.RIGHT))));
 
 		pageCounter.setName(LABEL_COUNTER);
 		root.add(pageCounter,UiUtils.makeGridConstraint(UI_ROW_UTILITY, UI_COLUMN_PAGE_COUNTER, false, false, UiUtils.makeInsets(Set.of(Neighbor.LEFT, Neighbor.RIGHT))));
@@ -242,14 +238,13 @@ class UiList implements ItemListener, ActionListener
 	public void actionPerformed(ActionEvent arg0) 
 	{
 		final JComponent source = (JComponent)arg0.getSource();
-		final String name = source.getName();
 
 		final int previousPage = currentPage;
-		if(name.equals(BTN_FORWARD) && currentPage != (pages.size() - 1))
+		if(source == forwardBtn && currentPage != (pages.size() - 1))
 		{
 			currentPage++;
 		}
-		else if(name.equals(BTN_PREVIOUS) && currentPage != 0)
+		else if(source == previousBtn && currentPage != 0)
 		{
 			currentPage--;
 		}
