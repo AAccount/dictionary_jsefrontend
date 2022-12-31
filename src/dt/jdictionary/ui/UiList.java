@@ -54,15 +54,14 @@ class UiList implements ItemListener, ActionListener
 
 	private final Map<String, List<JComponent>> flag2Ui;
 	private final JComponent root;
-	private int currentPage;
-	private List<List<SimpleLookup>> pages;
+	private final HistoryManager<List<SimpleLookup>> pages;
 
 	public UiList() 
 	{
 		flag2Ui = new HashMap<>();
 		root = new JPanel(new GridBagLayout());
 		root.setBorder(UiConstants.TRACER);
-		currentPage = 0;
+		pages = new HistoryManager<>();
 		
 		previousBtn = new JButton();
 		forwardBtn= new JButton();
@@ -72,19 +71,18 @@ class UiList implements ItemListener, ActionListener
 	public JComponent render(List<SimpleLookup> dbResults)
 	{
 		Utils.logTimestamp("start ui list");
-		pages = Utils.subdivideList(dbResults, PAGE_SIZE);
+		pages.addAllEntries(Utils.subdivideList(dbResults, PAGE_SIZE));
 
 		renderPageNavigation();
-		renderCurrentPageOfResults();
+		renderPageOfResults(pages.setIndex(0));
 		Utils.logTimestamp("stop ui list");
 		return root;
 	}
 
-	private void renderCurrentPageOfResults()
+	private void renderPageOfResults(List<SimpleLookup> results)
 	{
 		UiUtils.removeNamedComponents(root, Set.of(SCROLLVIEW_RESULTS, JPANEL_CHECKBOXES));
 		flag2Ui.clear();
-		final List<SimpleLookup> dbResults = pages.get(currentPage);
 
 		// Need to leave the scrollpane setup even after pagination because grid bag layout will render "funny" without it.
 		final JPanel dbResultPanel = new JPanel(new GridBagLayout());
@@ -93,9 +91,9 @@ class UiList implements ItemListener, ActionListener
 		scrollPane.setName(SCROLLVIEW_RESULTS);
 		scrollPane.setBorder(UiConstants.TRACER);
 
-		for(int row = 0; row < dbResults.size(); row++)
+		for(int row = 0; row < results.size(); row++)
 		{
-			renderSimpleLookup(dbResults.get(row), dbResultPanel, row);
+			renderSimpleLookup(results.get(row), dbResultPanel, row);
 		}
 		final GridBagConstraints constraints =  UiUtils.makeGridConstraint(UI_ROW_RESULTS, UI_COLUMN_RESULTS, true, true, UiConstants.nopadding);
 		constraints.gridwidth = UI_COLUMNS_TOTAL;
@@ -103,7 +101,7 @@ class UiList implements ItemListener, ActionListener
 
 		// Corresponding checkboxes need to be rendered per page.
 		renderFlagCheckboxes();
-		pageCounter.setText((currentPage+1)+"/"+(pages.size()));
+		pageCounter.setText((pages.getIndex()+1)+"/"+(pages.getSize()));
 	}
 
 	private void renderSimpleLookup(SimpleLookup dbresult, JComponent parent, int row)
@@ -134,7 +132,7 @@ class UiList implements ItemListener, ActionListener
 
 	private void renderPageNavigation()
 	{
-		if(pages.size() == 1)
+		if(pages.getSize() == 1)
 		{
 			return;
 		}
@@ -238,25 +236,16 @@ class UiList implements ItemListener, ActionListener
 	public void actionPerformed(ActionEvent arg0) 
 	{
 		final JComponent source = (JComponent)arg0.getSource();
-
-		final int previousPage = currentPage;
-		if(source == forwardBtn && currentPage != (pages.size() - 1))
-		{
-			currentPage++;
-		}
-		else if(source == previousBtn && currentPage != 0)
-		{
-			currentPage--;
-		}
-
-		previousBtn.setEnabled(currentPage != 0);
-		forwardBtn.setEnabled(currentPage != (pages.size()-1));
-		if(currentPage == previousPage)
+		if(!List.of(forwardBtn, previousBtn).contains(source))
 		{
 			return;
 		}
 
-		renderCurrentPageOfResults();
+		final List<SimpleLookup> page = source == forwardBtn ? pages.goFwd() : pages.goBack();
+		previousBtn.setEnabled(pages.canGoBack());
+		forwardBtn.setEnabled(pages.canGoFwd());
+
+		renderPageOfResults(page);
 		root.revalidate();
 		root.repaint();
 	}

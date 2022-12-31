@@ -59,14 +59,11 @@ public class UiMain implements ActionListener, EventListener
 	private final JButton forward;
 	private final String UI_FWD = "forward button";
 
-	private final List<String> history;
-	private int historyPosition;
+	private final HistoryManager<String> history;
 
 	public UiMain()
 	{
-		history = new ArrayList<>();
-		historyPosition = -1; // actually start with "before" anything happens
-
+		history = new HistoryManager<>();
 		db = new DbService();
 		EventDispatcher.get().register(this);
 
@@ -176,19 +173,17 @@ public class UiMain implements ActionListener, EventListener
 
 	private void handleHistory(JButton source) 
 	{
-		final int positionChange = source == previous ? -1 : source == forward ? 1 : 0;
-		historyPosition = historyPosition + positionChange;
+
+		final String historicalSearch = source == previous ? history.goBack() : history.goFwd();
 		toggleHistoryButtons();
-	
-		final String historicalSearch = history.get(historyPosition);
 		uiEntry.setText(historicalSearch);
 		handleTextEntry(uiEntry, false);
 	}
 
 	private void toggleHistoryButtons()
 	{
-		previous.setEnabled(historyPosition > 0);
-		forward.setEnabled(historyPosition != history.size()-1);
+		previous.setEnabled(history.canGoBack());
+		forward.setEnabled(history.canGoFwd());
 	}
 
 	private void handleMenuSqliteInit()
@@ -236,12 +231,7 @@ public class UiMain implements ActionListener, EventListener
 
 		if(newSearch)
 		{
-			if(historyPosition < history.size()-1)
-			{
-				history.subList(historyPosition+1, history.size()).clear();
-			}
-			history.add(received);
-			historyPosition++;
+			history.addSingleEntry(received);
 		}
 		toggleHistoryButtons();
 
