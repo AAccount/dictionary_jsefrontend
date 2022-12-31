@@ -1,8 +1,5 @@
 package dt.jdictionary.ui;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import javax.swing.JButton;
@@ -25,14 +22,6 @@ import java.awt.event.ActionListener;
 
 class UiList implements ItemListener, ActionListener
 {
-	private final String FLAG_CHINA_SPECIES = "china species";
-	private final String FLAG_NAME = "name"; // hard to detect reliably
-	private final String FLAG_VARIANT_OF = "variant_of";
-	private final String FLAG_LINK = "link";
-	private final String FLAG_TOO_LONG = "too long";
-	private final String FLAG_HYBRID_SLANG = "hybrid slang"; //entries with english and chinese letters
-	private final String FLAG_NONE = "";
-
 	private final int UI_COLUMN_RESULTS= 0;
 	private final int UI_COLUMN_BACK= 0;
 	private final int UI_COLUMN_FORWARD= 1;
@@ -52,13 +41,13 @@ class UiList implements ItemListener, ActionListener
 
 	private final int PAGE_SIZE = 10;
 
-	private final Map<String, List<JComponent>> flag2Ui;
 	private final JComponent root;
 	private final HistoryManager<List<SimpleLookup>> pages;
+	private final UiListFlags flagManager;
 
 	public UiList() 
 	{
-		flag2Ui = new HashMap<>();
+		flagManager = new UiListFlags();
 		root = new JPanel(new GridBagLayout());
 		root.setBorder(UiConstants.TRACER);
 		pages = new HistoryManager<>();
@@ -82,7 +71,7 @@ class UiList implements ItemListener, ActionListener
 	private void renderPageOfResults(List<SimpleLookup> results)
 	{
 		UiUtils.removeNamedComponents(root, Set.of(SCROLLVIEW_RESULTS, JPANEL_CHECKBOXES));
-		flag2Ui.clear();
+		flagManager.clear();
 
 		// Need to leave the scrollpane setup even after pagination because grid bag layout will render "funny" without it.
 		final JPanel dbResultPanel = new JPanel(new GridBagLayout());
@@ -116,18 +105,7 @@ class UiList implements ItemListener, ActionListener
 		final String definition = String.join(", ", dbresult.getDefinitions()).toLowerCase();
 		JComponent defLabel = UiUtils.renderLabelToGrid(parent, definition, row, COL_DEF, true);
 
-		final String flag = flagDbResult(dbresult);
-		if(flag.equals(FLAG_NONE))
-		{
-			return;
-		}
-
-		addToFlagMap(flag, zhLabel);
-		zhLabel.setVisible(false);
-		addToFlagMap(flag, pinyinLabel);
-		pinyinLabel.setVisible(false);
-		addToFlagMap(flag, defLabel);
-		defLabel.setVisible(false);
+		flagManager.flagDbResult(dbresult, List.of(zhLabel, pinyinLabel, defLabel));
 	}
 
 	private void renderPageNavigation()
@@ -158,7 +136,7 @@ class UiList implements ItemListener, ActionListener
 		flagCheckboxes.setBorder(UiConstants.TRACER);
 		root.add(flagCheckboxes, UiUtils.makeGridConstraint(UI_ROW_UTILITY, UI_COLUMN_CHECKBOXES, true, false, UiConstants.nopadding));
 
-		for(final String flag : flag2Ui.keySet())
+		for(final String flag : flagManager.allFlags())
 		{
 			final JCheckBox flagCheckBox = new JCheckBox(flag);
 			flagCheckBox.setBorder(UiConstants.TRACER);
@@ -168,66 +146,12 @@ class UiList implements ItemListener, ActionListener
 		}
 	}
 
-	private void addToFlagMap(String key, JComponent ui)
-	{
-		if(!flag2Ui.keySet().contains(key))
-		{
-			flag2Ui.put(key, new ArrayList<>());
-		}
-		flag2Ui.get(key).add(ui);
-	}
-
-	private String flagDbResult(SimpleLookup dbresult)
-	{
-		final String definition = String.join(", ", dbresult.getDefinitions()).toLowerCase();
-
-		final int FOUR_CHAR_EXPR = 4;
-		if(dbresult.getZh().length() > FOUR_CHAR_EXPR)
-		{
-			return FLAG_TOO_LONG;
-		}
-
-		if(definition.contains("species of china"))
-		{
-			return FLAG_CHINA_SPECIES;
-		}
-
-		if(definition.contains("variant of") && dbresult.getDefinitions().size() == 1)
-		{
-			return FLAG_VARIANT_OF; //flag it if its ONLY definition is "variant of ___"
-		}
-
-		final String linkFlagText = "see ";
-		if(definition.startsWith(linkFlagText, 0))
-		{
-			return FLAG_LINK;
-		}
-
-		if(!Utils.allChinese(dbresult.getZh()))
-		{
-			return FLAG_HYBRID_SLANG;
-		}
-
-		final String pinyinNoAccents = Utils.normalizePinyin(dbresult.getPinyin()).strip();
-		final String definitionNoAccents = Utils.normalizePinyin(definition).strip();
-		if(definition.contains(" county") || definition.contains("district of ") || definitionNoAccents.contains(pinyinNoAccents))
-		{
-			return FLAG_NAME;
-		}
-		
-		return FLAG_NONE;
-	}
-
 	@Override
 	public void itemStateChanged(ItemEvent arg0) 
 	{
 		final JComponent checkbox =(JComponent)arg0.getSource();
 		final String flag = checkbox.getName();
-		for(final JComponent ui : flag2Ui.get(flag))
-		{
-			final boolean currentVisibiliy = ui.isVisible();
-			ui.setVisible(!currentVisibiliy);
-		}
+		flagManager.toggleFlaggedComponents(flag);
 		root.revalidate();
 		root.repaint();
 	}
