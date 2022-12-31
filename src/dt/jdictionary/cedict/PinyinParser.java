@@ -93,9 +93,10 @@ class PinyinParser
 
 	private static String applyToneMap(String letters, int index, int tone)
 	{
+		final String fakeV = "u:";
 		char[] underlyingChars = letters.toCharArray();
-		final char actualToneChar = letters.contains("u:") ? 'v' : underlyingChars[index];
+		final char actualToneChar = letters.contains(fakeV) ? 'v' : underlyingChars[index];
 		underlyingChars[index] = TONEMAP.get(actualToneChar).get(tone);
-		return new String(underlyingChars).replace(":", ""); // get rid of the : in u: if it's there
+		return new String(underlyingChars).replace(fakeV, "");
 	}
 }
