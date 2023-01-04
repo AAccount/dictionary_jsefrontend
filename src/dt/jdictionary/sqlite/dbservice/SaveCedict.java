@@ -10,6 +10,7 @@ import dt.jdictionary.Utils;
 import dt.jdictionary.cedict.CedictDump;
 import dt.jdictionary.cedict.MeasureWords;
 import dt.jdictionary.cedict.ZhPinyin;
+import dt.jdictionary.events.EventUtils;
 import dt.jdictionary.sqlite.DbEvent;
 import dt.jdictionary.sqlite.raw.DbRepo;
 import dt.jdictionary.sqlite.raw.Raw4CharRow;
@@ -22,7 +23,7 @@ public class SaveCedict
 	{
 		if(dump.getDictionary().size() == 0)
 		{
-			System.out.println("Empty dump. Don't wipe!");
+			EventUtils.sendWarning("Empty dump. Don't wipe!");
 			return;
 		}
 

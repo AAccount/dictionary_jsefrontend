@@ -11,6 +11,7 @@ import javax.swing.JScrollPane;
 
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.Utils;
+import dt.jdictionary.events.EventUtils;
 import dt.jdictionary.ui.UiUtils.Neighbor;
 
 import java.awt.GridBagConstraints;
@@ -162,6 +163,7 @@ class UiList implements ItemListener, ActionListener
 		final JComponent source = (JComponent)arg0.getSource();
 		if(!List.of(forwardBtn, previousBtn).contains(source))
 		{
+			EventUtils.sendWarning("actionPerformed not from forwardBtn or previousBtn " + source);
 			return;
 		}
 

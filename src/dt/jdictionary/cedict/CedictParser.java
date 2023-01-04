@@ -120,7 +120,7 @@ public class CedictParser
 
 		if(pinyinStart == NOT_FOUND || pinyinEnd == NOT_FOUND || pinyinStart >= pinyinEnd)
 		{
-			System.out.println("Couldn't parse line: " + line);
+			EventUtils.sendWarning("Couldn't parse line: " + line);
 			return null;
 		}
 
@@ -128,7 +128,7 @@ public class CedictParser
 		final String[] zhParts = zhPortion.split(" ");
 		if(zhParts.length != 2)
 		{
-			System.out.println("Couldn't parse the simplified and traditional portion of: '" + zhPortion + "' from '" + line + "'");
+			EventUtils.sendWarning("Couldn't parse the simplified and traditional portion of: '" + zhPortion + "' from '" + line + "'");
 			return null;
 		}
 		final String zhTraditional = zhParts[0].strip();
@@ -182,7 +182,7 @@ public class CedictParser
 
 		if(!sameLength)
 		{
-			System.out.println(originalCleaned + " and " + simplified + " are not the same perceived length. Ignoring.");
+			EventUtils.sendWarning(originalCleaned + " and " + simplified + " are not the same perceived length. Ignoring.");
 			return result;
 		}
 

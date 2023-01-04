@@ -189,27 +189,25 @@ public class UiMain implements ActionListener, EventListener
 	{
 		final JFileChooser fc = new JFileChooser();
 		final int returnVal = fc.showOpenDialog(null);
-		if (returnVal == JFileChooser.APPROVE_OPTION) 
+		if (returnVal != JFileChooser.APPROVE_OPTION) 
 		{
-			final File file = fc.getSelectedFile();
-			uiEntry.setEditable(false);
-			uiEntry.setText("Importing " + file.getName());
-			progressBar.setVisible(true);
-
-			final Thread importer = new Thread(() -> { 
-				final CedictDump dump = new CedictParser().parse(file);
-				db.saveCedictDump(dump);
-
-				progressBar.setVisible(false);
-				uiEntry.setText("");
-				uiEntry.setEditable(true);
-			});
-			importer.start();
-		} 
-		else 
-		{
-			System.out.println("Open command cancelled by user.");
+			return;
 		}
+
+		final File file = fc.getSelectedFile();
+		uiEntry.setEditable(false);
+		uiEntry.setText("Importing " + file.getName());
+		progressBar.setVisible(true);
+
+		final Thread importer = new Thread(() -> { 
+			final CedictDump dump = new CedictParser().parse(file);
+			db.saveCedictDump(dump);
+
+			progressBar.setVisible(false);
+			uiEntry.setText("");
+			uiEntry.setEditable(true);
+		});
+		importer.start();		
 	}
 
 	private void handleTextEntry(JTextField entry, boolean newSearch)
@@ -266,10 +264,22 @@ public class UiMain implements ActionListener, EventListener
 			case JAVA_EXCEPTION:
 				printException(event.getData());
 				break;
+			case SELF_WARNING:
+				printWarning(event.getData());
+				break;
 			default:
 				JOptionPane.showMessageDialog(null, event.toString(), "Unknown Event", JOptionPane.WARNING_MESSAGE);
 				break;
 		}
+	}
+
+	private void printWarning(Map<String, Object> data)
+	{
+		final String warning = (String)data.get(EventUtils.EVENT_WARN_MSG);
+		final String stackTrace = (String)data.get(EventUtils.EVENT_STACK_TRACE);
+		final String popupMessage = warning + "\n" + stackTrace;
+
+		JOptionPane.showMessageDialog(null, popupMessage, "Warning", JOptionPane.WARNING_MESSAGE);
 	}
 
 	private void printException(Map<String, Object> data)

@@ -4,5 +4,6 @@ public enum EventType
 {
 	CEDICT_PARSE,
 	DB_SAVE,
-	JAVA_EXCEPTION
+	JAVA_EXCEPTION,
+	SELF_WARNING
 }

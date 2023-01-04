@@ -11,6 +11,7 @@ import javax.swing.JComponent;
 
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.Utils;
+import dt.jdictionary.events.EventUtils;
 
 public class UiListFlags 
 {
@@ -90,6 +91,7 @@ public class UiListFlags
 	{
 		if(!POSSIBLE_FLAGS.contains(flag))
 		{
+			EventUtils.sendWarning("Trying to toggle unknown flag " + flag);
 			return;
 		}
 		
