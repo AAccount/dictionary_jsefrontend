@@ -10,7 +10,7 @@ class PinyinParser
 		'i', Map.of(1, 'ī', 2, 'í', 3,'ǐ', 4,'ì', 5,'i'),
 		'o', Map.of(1, 'ō', 2, 'ó', 3,'ǒ', 4,'ò', 5,'o'),
 		'u', Map.of(1, 'ū', 2, 'ú', 3,'ǔ', 4,'ù', 5,'u'),
-		'v', Map.of(1, 'ǖ', 2, 'ǘ', 3,'ǚ', 4,'ǜ', 5,'ǚ')
+		'ü', Map.of(1, 'ǖ', 2, 'ǘ', 3,'ǚ', 4,'ǜ', 5,'ü')
 	);
 
 	public static String parse(String raw)
@@ -93,10 +93,11 @@ class PinyinParser
 
 	private static String applyToneMap(String letters, int index, int tone)
 	{
-		final String fakeV = "u:";
-		char[] underlyingChars = letters.toCharArray();
-		final char actualToneChar = letters.contains(fakeV) ? 'v' : underlyingChars[index];
-		underlyingChars[index] = TONEMAP.get(actualToneChar).get(tone);
-		return new String(underlyingChars).replace(fakeV, "");
+		// Keep the ":" so the index won't be off by 1. Remove it later.
+		final String fakeVFixed = letters.replace("u:", "ü:");
+		char[] underlyingChars = fakeVFixed.toCharArray();
+		underlyingChars[index] = TONEMAP.get(underlyingChars[index]).get(tone);
+		final String result =  new String(underlyingChars).replace(":", "");
+		return result;
 	}
 }
