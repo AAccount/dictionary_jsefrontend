@@ -27,23 +27,40 @@ public class DbRepo
 	public static final int DICT_EN_TRX = 2;
 	public static final int POST_DICT_TRX = 3; // measure words, simplified, 4 chars
 
+	public static final String VARIANT_SIMPLIFIED = "simplified";
+	public static final String VARIANT_GENERIC = "some variant";
+	public static final String VARIANT_OLD = "pre traditional";
+
 	private Connection db;
 
 	private static final String COL_ZH = "zh";
 	private static final String COL_DEF = "definition";
 	private static final String COL_PINYIN = "pinyin";
 	private static final String COL_PINYIN_NORM = "pinyinNormalized";
-	private static final String COL_SIMPLIFIED = "simplified";
+	private static final String COL_VARIANT = "simplified";
 	private static final String COL_OG = "original";
 	private static final String COL_MEASURE_WORD = "measure";
+	private static final String COL_MEASURE_PINYIN = "measurePinyin";
 	private static final String COL_FIRST_CHAR = "firstChar";
 	private static final String COL_LAST_CHAR = "lastChar";
-	private static final String COL_4_CHAR = "fourChar";
+	private static final String COL_ZHBASEID = "zhBaseId";
+	private static final String COL_ID = "id";
+	private static final String COL_VARIANT_TYPE = "variantType";
+	private static final String COL_SUBSTRING = "substring";
+	private static final String COL_FULL_STRING = "fullString";
+
+	private static final String TABLE_ZHBASE = "ZhBase";
+	private static final String TABLE_ENGLISH = "English";
+	private static final String TABLE_ENGLISH_FTS5 = "English_fts5";
+	private static final String TABLE_MEASUREWORD = "MeasureWord";
+	private static final String TABLE_VARIANTS = "Variants";
+	private static final String TABLE_SUBSTRING = "Substring";
 
 	private final String DictionaryBaseSql = String.format("""
 		select %s, %s, %s, %s, %s, %s 
-		from ZhBase join English on ZhBase.id = English.zhBaseId where"""
-		, COL_ZH, COL_PINYIN, COL_PINYIN_NORM, COL_DEF, COL_FIRST_CHAR, COL_LAST_CHAR);
+		from %s join %s on %s.%s = %s.%s where"""
+		, COL_ZH, COL_PINYIN, COL_PINYIN_NORM, COL_DEF, COL_FIRST_CHAR, COL_LAST_CHAR, 
+		TABLE_ZHBASE, TABLE_ENGLISH, TABLE_ZHBASE, COL_ID, TABLE_ENGLISH, COL_ZHBASEID);
 
 	private final Object user;
 
@@ -52,7 +69,7 @@ public class DbRepo
 		this.user = caller;
 		try 
 		{
-			final String sqlitePath = System.getProperty("user.home") + "/Programs/mdbg2.sqlite";
+			final String sqlitePath = System.getProperty("user.home") + "/Programs/mdbg2_1.sqlite";
 			Class.forName("org.sqlite.JDBC");
 			this.db = DriverManager.getConnection("jdbc:sqlite:"+sqlitePath);
 			db.setAutoCommit(false);
@@ -89,69 +106,85 @@ public class DbRepo
 
 	public void init()
 	{
-		final String createZhBase = """
-			CREATE TABLE ZhBase (
-				id	INTEGER NOT NULL, 
-				zh	TEXT NOT NULL, pinyin	TEXT NOT NULL, 
-				pinyinNormalized TEXT NOT NULL, 
-				firstChar TEXT, 
-				lastChar TEXT, 
-				PRIMARY KEY(id AUTOINCREMENT)
+		final List<List<String>> indexes = new ArrayList<>();
+		final String createZhBase = String.format("""
+			CREATE TABLE %s (
+				%s	INTEGER NOT NULL, 
+				%s	TEXT NOT NULL, 
+				%s	TEXT NOT NULL, 
+				%s TEXT NOT NULL, 
+				%s TEXT, 
+				%s TEXT, 
+				PRIMARY KEY(%s AUTOINCREMENT)
 			)
-			""";
-		final String createIndexZhBaseZh = "CREATE INDEX ZhBaseSortZh ON ZhBase (zh)";
-		final String createIndexZhBaseFirstChar = "CREATE INDEX ZhBaseSortFirst ON ZhBase (firstChar)";
-		final String createIndexZhBaseLastChar = "CREATE INDEX ZhBaseSortLast ON ZhBase (lastChar)";
-		final String createIndexZhBasePinyinNorm = "CREATE INDEX ZhBaseSortPinyinNorm ON ZhBase (pinyinNormalized)";
+			""", TABLE_ZHBASE, COL_ID, COL_ZH, COL_PINYIN, COL_PINYIN_NORM, COL_FIRST_CHAR, COL_LAST_CHAR, COL_ID);
+		indexes.add(List.of(TABLE_ZHBASE, COL_ZH));
+		indexes.add(List.of(TABLE_ZHBASE, COL_FIRST_CHAR));
+		indexes.add(List.of(TABLE_ZHBASE, COL_LAST_CHAR));
+		indexes.add(List.of(TABLE_ZHBASE, COL_PINYIN_NORM));
 
-		final String createEnglish = "CREATE TABLE English (zhBaseId	INTEGER NOT NULL, definition	TEXT NOT NULL);";
-		final String createEnglishFTS5 = "CREATE VIRTUAL TABLE English_fts5 using fts5(definition, zhBaseId)";
+		final String createEnglish = String.format("""
+			CREATE TABLE %s (
+				%s	INTEGER NOT NULL, 
+				%s	TEXT NOT NULL
+			);""", TABLE_ENGLISH, COL_ZHBASEID, COL_DEF);
+		final String createEnglishFTS5 = String.format("CREATE VIRTUAL TABLE %s using fts5(%s, %s)", TABLE_ENGLISH_FTS5, COL_DEF, COL_ZHBASEID);
 
-		final String createMeasureWords = """
-			CREATE TABLE measureword (
-				zh	TEXT NOT NULL, 
-				measure	TEXT NOT NULL, 
-				measurePinyin	TEXT  NOT NULL, 
-				PRIMARY KEY(zh,measure)
-				)""";
-		final String createIndexMeasureZh = "CREATE INDEX MeasureWordZh ON measureword (zh)";
+		final String createMeasureWords = String.format("""
+			CREATE TABLE %s (
+				%s	TEXT NOT NULL, 
+				%s	TEXT NOT NULL, 
+				%s	TEXT NOT NULL, 
+				PRIMARY KEY(%s,%s)
+				)""", TABLE_MEASUREWORD, COL_ZH, COL_MEASURE_WORD, COL_MEASURE_PINYIN, COL_ZH, COL_MEASURE_WORD);
+		indexes.add(List.of(TABLE_MEASUREWORD, COL_ZH));
 
-		final String createSimplified = """
-			CREATE TABLE simplified (
-				original	TEXT NOT NULL, 
-				simplified	TEXT NOT NULL, 
-				PRIMARY KEY(original,simplified)
-			)""";
-		final String createIndexSimplifiedOg = "CREATE INDEX SimplifiedSortOriginal ON simplified (original)";
-		final String createIndexSimplifiedS = "CREATE INDEX SimplifiedSortSimplified ON simplified (simplified)";
+		final String createVariants = String.format("""
+			CREATE TABLE %s (
+				%s	TEXT NOT NULL, 
+				%s	TEXT NOT NULL,
+				%s	TEXT NOT NULL,  
+				PRIMARY KEY(%s,%s)
+			)""", TABLE_VARIANTS, COL_OG, COL_VARIANT, COL_VARIANT_TYPE, COL_OG, COL_VARIANT);
+		indexes.add(List.of(TABLE_VARIANTS, COL_OG));
+		indexes.add(List.of(TABLE_VARIANTS, COL_VARIANT));
+		indexes.add(List.of(TABLE_VARIANTS, COL_VARIANT_TYPE));
 
-		final String create4Char = """
-			CREATE TABLE FourCharSubstring (
-				substring	TEXT NOT NULL, 
-				fourChar	TEXT NOT NULL, 
-				PRIMARY KEY(substring,fourChar)
-			)""";
-		final String create4CharIndex = "CREATE INDEX FourCharSubSortSub ON FourCharSubstring (substring)";
+		final String create4Char = String.format("""
+			CREATE TABLE %s (
+				%s	TEXT NOT NULL, 
+				%s	TEXT NOT NULL, 
+				PRIMARY KEY(%s,%s)
+			)""", TABLE_SUBSTRING, COL_SUBSTRING, COL_FULL_STRING, COL_SUBSTRING, COL_FULL_STRING);
+		indexes.add(List.of(TABLE_SUBSTRING, COL_SUBSTRING));
 
-		final String[] creates = {
-			createZhBase, createIndexZhBaseZh, createIndexZhBaseFirstChar, createIndexZhBaseLastChar, createIndexZhBasePinyinNorm,
+		final String[] tables = {
+			createZhBase,
 			createEnglish, createEnglishFTS5,
-			createMeasureWords, createIndexMeasureZh,
-			createSimplified, createIndexSimplifiedOg, createIndexSimplifiedS,
-			create4Char, create4CharIndex
+			createMeasureWords,
+			createVariants,
+			create4Char
 		};
 
-		for(final String creation : creates)
+		try 
 		{
-			try 
+			for(final String table : tables)
+			{
+					final Statement stmt = db.createStatement();
+					stmt.execute(table);
+			}
+
+			for(final List<String> index : indexes)
 			{
 				final Statement stmt = db.createStatement();
-				stmt.execute(creation);
-			} 
-			catch (SQLException e) 
-			{
-				EventUtils.sendError(e);
+				final String table = index.get(0);
+				final String column = index.get(1);
+				stmt.execute(String.format("CREATE INDEX %sSort%s ON %s (%s)", table, column, table, column));
 			}
+		} 
+		catch (SQLException e) 
+		{
+			EventUtils.sendError(e);
 		}
 	}
 
@@ -187,7 +220,7 @@ public class DbRepo
 
 	public List<RawDictionaryRow> lookupChinese(String zh)
 	{
-		final String sql = DictionaryBaseSql + " zh = ?";
+		final String sql = DictionaryBaseSql + " " + COL_ZH + " = ?";
 		return lookupDictionaryTable(sql, zh);
 	}
 
@@ -226,8 +259,8 @@ public class DbRepo
 		try
 		{
 			final String inQuestionMarks = "?, ".repeat(zh.length());
-			final String sql = "select * from simplified where original in ("+inQuestionMarks.substring(0, inQuestionMarks.length()-2)+")";
-			final PreparedStatement pst = db.prepareStatement(sql);
+			final String sql = "select * from %s where %s in ("+inQuestionMarks.substring(0, inQuestionMarks.length()-2)+") and %s = %s";
+			final PreparedStatement pst = db.prepareStatement(String.format(sql, TABLE_VARIANTS, COL_OG, COL_VARIANT_TYPE, VARIANT_SIMPLIFIED));
 			for(int pstIndex = 0; pstIndex<zh.length(); pstIndex++)
 			{
 				pst.setString(pstIndex+1, Character.toString(zh.charAt(pstIndex)));
@@ -237,7 +270,7 @@ public class DbRepo
 			final Map<String, String> charMapper = new HashMap<>();
 			while(results.next())
 			{
-				final String simplified = results.getString(COL_SIMPLIFIED);
+				final String simplified = results.getString(COL_VARIANT);
 				final String og = results.getString(COL_OG);
 				charMapper.put(og, simplified);
 			}
@@ -261,7 +294,7 @@ public class DbRepo
 		final List<String> measureWords = new ArrayList<>();
 		try
 		{
-			final String sql = "select measure from measureword where zh = ?";
+			final String sql = String.format("select %s from %s where %s = ?", COL_MEASURE_WORD, TABLE_MEASUREWORD, COL_ZH);
 			final PreparedStatement pst = db.prepareStatement(sql);
 			pst.setString(1, zh);
 			final ResultSet results = pst.executeQuery();
@@ -281,7 +314,7 @@ public class DbRepo
 	public List<RawDictionaryRow> lookupRelatedWord(String zh, RelatedChar similarity)
 	{
 		final String column = similarity == RelatedChar.SAME_FRONT ? COL_FIRST_CHAR : COL_LAST_CHAR;
-		final String sql = DictionaryBaseSql + " " + column+" = ?";
+		final String sql = DictionaryBaseSql + " " + column + " = ?";
 		return lookupDictionaryTable(sql, zh);
 	}
 
@@ -289,29 +322,45 @@ public class DbRepo
 	{
 		final String sql = String.format("""
 			select %s, %s, %s, English.%s, %s, %s 
-			from ZhBase 
-				join English_fts5 on ZhBase.id = English_fts5.zhBaseId 
-				join English on ZhBase.id = English.zhBaseId 
-			where English_fts5.definition match ?""",
-			COL_ZH, COL_PINYIN, COL_PINYIN_NORM, COL_DEF, COL_FIRST_CHAR, COL_LAST_CHAR);
+			from %s 
+				join %s on %s.%s = %s.%s 
+				join %s on %s.%s = %s.%s
+			where %s.%s match ?""",
+			COL_ZH, COL_PINYIN, COL_PINYIN_NORM, TABLE_ENGLISH, COL_DEF, COL_FIRST_CHAR, COL_LAST_CHAR,
+			TABLE_ZHBASE,
+			TABLE_ENGLISH_FTS5, TABLE_ZHBASE, COL_ID, TABLE_ENGLISH_FTS5, COL_ZHBASEID,
+			TABLE_ENGLISH, TABLE_ZHBASE, COL_ID, TABLE_ENGLISH, COL_ZHBASEID,
+			TABLE_ENGLISH_FTS5, COL_DEF);
 		return lookupDictionaryTable(sql, en);
 	}
 
-	public List<String> tryFourChars(String compoundWord)
+	public List<String> trySubstring(String compoundWord)
 	{
-		final String sql = "select "+COL_4_CHAR+" from FourCharSubstring where substring = ?";
-		return getListOfString(sql, compoundWord, COL_4_CHAR);
+		final String sql = String.format("select %s from %s where %s = ?", COL_FULL_STRING, TABLE_SUBSTRING, COL_SUBSTRING);
+		return getListOfString(sql, compoundWord, COL_FULL_STRING);
 	}
 
 	public List<String> findSimplifiedNormalizedPinyins(String zh)
 	{
-		final String sql = "select distinct "+COL_PINYIN_NORM+" from simplified join ZhBase on simplified.original = ZhBase.zh where simplified = ?";
+		final String sql = String.format("""
+			select 
+				distinct %s 
+			from %s 
+				join %s on %s.%s = %s.%s
+			where 
+				%s = ?
+				""", 
+			COL_PINYIN_NORM, 
+			TABLE_VARIANTS, 
+			TABLE_ZHBASE, TABLE_VARIANTS, COL_OG, TABLE_ZHBASE, COL_ZH, 
+			COL_VARIANT
+		);
 		return getListOfString(sql, zh, COL_PINYIN_NORM);
 	}
 
 	public List<RawDictionaryRow> findByNormalizedPinyin(String normalizedPinyin)
 	{
-		final String sql = DictionaryBaseSql + "  pinyinNormalized=?";
+		final String sql = DictionaryBaseSql + "  " + COL_PINYIN_NORM +  "=?";
 		return lookupDictionaryTable(sql, normalizedPinyin);
 	}
 
@@ -338,9 +387,9 @@ public class DbRepo
 
 	public void fillDictionary(List<SimpleLookup> allEntries)
 	{
-		final String sqlZhBase = "INSERT INTO ZhBase (zh, pinyin, pinyinNormalized, firstChar, lastChar) VALUES (?,?,?,?,?)";
-		final String sqlEnglish = "INSERT INTO English (zhBaseId, definition) VALUES (?,?)";
-		final String sqlEnglishFTS5 =  "INSERT INTO English_fts5 (zhBaseId, definition) VALUES (?,?)";
+		final String sqlZhBase = String.format("INSERT INTO %s (%s, %s, %s, %s, %s) VALUES (?,?,?,?,?)", TABLE_ZHBASE, COL_ZH, COL_PINYIN, COL_PINYIN_NORM, COL_FIRST_CHAR, COL_LAST_CHAR);
+		final String sqlEnglish = String.format("INSERT INTO %s (%s, %s) VALUES (?,?)", TABLE_ENGLISH, COL_ZHBASEID, COL_DEF);
+		final String sqlEnglishFTS5 =  String.format("INSERT INTO %s (%s, %s) VALUES (?,?)", TABLE_ENGLISH_FTS5, COL_ZHBASEID, COL_DEF);
 		try 
 		{
 			final PreparedStatement pstZhBase = db.prepareStatement(sqlZhBase);
@@ -392,7 +441,7 @@ public class DbRepo
 
 	public void fillMeasureWords(List<RawMeasureWordRow> allRows)
 	{
-		final String sql = "INSERT INTO measureword (zh, measure, measurePinyin) VALUES (?,?,?)";
+		final String sql = String.format("INSERT INTO %s (%s, %s, %s) VALUES (?,?,?)", TABLE_MEASUREWORD, COL_ZH, COL_MEASURE_WORD, COL_MEASURE_PINYIN);
 		try 
 		{
 			final PreparedStatement pst = db.prepareStatement(sql);
@@ -413,17 +462,18 @@ public class DbRepo
 		}
 	}
 
-	public void fillSimplified(List<RawSimplifiedRow> allRows)
+	public void fillSimplified(List<RawVariantRow> allRows)
 	{
-		final String sql = "INSERT INTO simplified (original, simplified) VALUES (?,?)";
+		final String sql = String.format("INSERT INTO %s (%s, %s, %s) VALUES (?,?,?)", TABLE_VARIANTS, COL_OG, COL_VARIANT, COL_VARIANT_TYPE);
 		try 
 		{
 			final PreparedStatement pst = db.prepareStatement(sql);
 		
-			for(final RawSimplifiedRow row : allRows)
+			for(final RawVariantRow row : allRows)
 			{
 				pst.setString(1, row.getOriginal());
-				pst.setString(2, row.getSimplified());
+				pst.setString(2, row.getVariant());
+				pst.setString(3, row.getVariantType());
 				pst.addBatch();
 			}
 			pst.executeBatch();
@@ -435,17 +485,17 @@ public class DbRepo
 		}
 	}
 
-	public void fill4Chars(List<Raw4CharRow> allRows)
+	public void fill4Chars(List<RawSubstringRow> allRows)
 	{
-		final String sql = "INSERT INTO FourCharSubstring (substring, fourChar) VALUES (?,?)";
+		final String sql = String.format("INSERT INTO %s (%s, %s) VALUES (?,?)", TABLE_SUBSTRING, COL_SUBSTRING, COL_FULL_STRING);
 		try 
 		{
 			final PreparedStatement pst = db.prepareStatement(sql);
 		
-			for(final Raw4CharRow row : allRows)
+			for(final RawSubstringRow row : allRows)
 			{
 				pst.setString(1, row.getSubstring());
-				pst.setString(2, row.getFourChar());
+				pst.setString(2, row.getFullString());
 				pst.addBatch();
 			}
 			pst.executeBatch();

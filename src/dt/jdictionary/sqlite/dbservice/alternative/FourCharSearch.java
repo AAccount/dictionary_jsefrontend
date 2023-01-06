@@ -18,7 +18,7 @@ public class FourCharSearch
 		}
 
 		final DbRepo db = new DbRepo(this);
-		final List<String> possibleMatches = db.tryFourChars(compoundWord);
+		final List<String> possibleMatches = db.trySubstring(compoundWord);
 		if(possibleMatches.size() == 0)
 		{
 			db.close();

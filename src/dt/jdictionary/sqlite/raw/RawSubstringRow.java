@@ -1,14 +1,14 @@
 package dt.jdictionary.sqlite.raw;
 
-public class Raw4CharRow 
+public class RawSubstringRow 
 {
 	final String substring;
-	final String fourChar;
+	final String fullString;
 
-	public Raw4CharRow(String substring, String fourChar) 
+	public RawSubstringRow(String substring, String fourChar) 
 	{
 		this.substring = substring;
-		this.fourChar = fourChar;
+		this.fullString = fourChar;
 	}
 
 	public String getSubstring() 
@@ -16,15 +16,15 @@ public class Raw4CharRow
 		return substring;
 	}
 
-	public String getFourChar() 
+	public String getFullString() 
 	{
-		return fourChar;
+		return fullString;
 	}
 
 	@Override
 	public String toString() 
 	{
-		return "Raw4CharRow [substring=" + substring + ", fourChar=" + fourChar + "]";
+		return "Raw4CharRow [substring=" + substring + ", fourChar=" + fullString + "]";
 	}
 
 	@Override
@@ -41,9 +41,9 @@ public class Raw4CharRow
 			return false;
 		}
 
-		final Raw4CharRow casted = (Raw4CharRow)obj;
+		final RawSubstringRow casted = (RawSubstringRow)obj;
 		return
 			casted.substring.equals(this.substring) &&
-			casted.fourChar.equals(this.fourChar);
+			casted.fullString.equals(this.fullString);
 	}
 }

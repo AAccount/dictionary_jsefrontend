@@ -13,9 +13,9 @@ import dt.jdictionary.cedict.ZhPinyin;
 import dt.jdictionary.events.EventUtils;
 import dt.jdictionary.sqlite.DbEvent;
 import dt.jdictionary.sqlite.raw.DbRepo;
-import dt.jdictionary.sqlite.raw.Raw4CharRow;
+import dt.jdictionary.sqlite.raw.RawSubstringRow;
 import dt.jdictionary.sqlite.raw.RawMeasureWordRow;
-import dt.jdictionary.sqlite.raw.RawSimplifiedRow;
+import dt.jdictionary.sqlite.raw.RawVariantRow;
 
 public class SaveCedict 
 {
@@ -52,13 +52,13 @@ public class SaveCedict
 		final List<SimpleLookup> fourCharEntries = dump.getDictionary().stream()
 			.filter(simplelookup -> List.of(3,4,5).indexOf(simplelookup.getZh().length()) != -1 && Utils.allChinese(simplelookup.getZh())).toList();
 
-		final Set<Raw4CharRow> result = new HashSet<>();
+		final Set<RawSubstringRow> result = new HashSet<>();
 		for(final SimpleLookup simpleLookup : fourCharEntries)
 		{
 			final List<String> substrings = DbServiceUtils.generateSubstrings(simpleLookup.getZh());
 			for(final String substring : substrings)
 			{
-				result.add(new Raw4CharRow(substring, simpleLookup.getZh()));
+				result.add(new RawSubstringRow(substring, simpleLookup.getZh()));
 			}
 		}
 		db.fill4Chars(new ArrayList<>(result));
@@ -79,10 +79,10 @@ public class SaveCedict
 
 	private void fillSimplified(CedictDump dump, DbRepo db)
 	{
-		final List<RawSimplifiedRow> simplifieds = new ArrayList<>();
+		final List<RawVariantRow> simplifieds = new ArrayList<>();
 		for(final String original : dump.getSimplifiedChars().keySet())
 		{
-			simplifieds.add(new RawSimplifiedRow(original, dump.getSimplifiedChars().get(original)));
+			simplifieds.add(new RawVariantRow(original, dump.getSimplifiedChars().get(original), DbRepo.VARIANT_SIMPLIFIED));
 		}
 		db.fillSimplified(simplifieds);
 	}
