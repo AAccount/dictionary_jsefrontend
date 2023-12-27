@@ -3,7 +3,6 @@ import java.util.List;
 import java.util.Set;
 
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -16,12 +15,10 @@ import dt.jdictionary.ui.UiUtils.Neighbor;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-class UiList implements ItemListener, ActionListener
+class UiList implements ActionListener
 {
 	private final int UI_COLUMN_RESULTS= 0;
 	private final int UI_COLUMN_BACK= 0;
@@ -120,15 +117,6 @@ class UiList implements ItemListener, ActionListener
 
 		pageCounter.setName(LABEL_COUNTER);
 		root.add(pageCounter,UiUtils.makeGridConstraint(UI_ROW_UTILITY, UI_COLUMN_PAGE_COUNTER, false, false, UiUtils.makeInsets(Set.of(Neighbor.LEFT, Neighbor.RIGHT))));
-	}
-
-	@Override
-	public void itemStateChanged(ItemEvent arg0) 
-	{
-		final JComponent checkbox =(JComponent)arg0.getSource();
-		final String flag = checkbox.getName();
-		root.revalidate();
-		root.repaint();
 	}
 
 	@Override
