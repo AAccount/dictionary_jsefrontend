@@ -35,7 +35,7 @@ public class CedictParser
 		long processedBytes = 0;
 		sendProgressEvent(processedBytes, cedictFile.length());
 
-		final CedictDump result = new CedictDump(new ArrayList<>(), new ArrayList<>(), new HashMap<>());
+		final CedictDump result = new CedictDump();
 		try 
 		{
 			final BufferedReader cedictReader =  new BufferedReader(new InputStreamReader(new FileInputStream(cedictFile), StandardCharsets.UTF_8));
@@ -104,7 +104,7 @@ public class CedictParser
 		final Map<String, String> selfSimplifiedChars = catalogSimplified(line.getOriginal(), line.getSimplified());
 		final Map<String, String> defsSimplifiedChars = procDefsEmbeddedSimplified(line.getRawDefinitions());
 		selfSimplifiedChars.putAll(defsSimplifiedChars);
-		return selfSimplifiedChars;
+return selfSimplifiedChars;
 	}
 
 	private RawCedictLine parseLine(String line)
@@ -287,7 +287,7 @@ public class CedictParser
 				}
 				final String cleanedDefWord = defWord.replace("(", "");
 				final int split = cleanedDefWord.indexOf(OG_SIMPLIFIED_SPLIT);
-				final String original = cleanedDefWord.substring(0, split).strip().replace("(", "");
+				final String original = cleanedDefWord.substring(0, split).strip();
 				final String rest = cleanedDefWord.substring(split*2+1).strip();
 				processedDef = processedDef + original + rest + " ";
 			}

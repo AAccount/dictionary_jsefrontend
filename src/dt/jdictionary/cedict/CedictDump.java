@@ -1,5 +1,7 @@
 package dt.jdictionary.cedict;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -11,14 +13,11 @@ public class CedictDump
 	private final List<MeasureWords> measureWords;
 	private final Map<String, String> simplifiedChars;
 
-	public CedictDump(
-		List<SimpleLookup> definitions, 
-		List<MeasureWords> measureWords, 
-		Map<String, String> simplifiedChars) 
+	public CedictDump() 
 	{
-		this.dictionary = definitions;
-		this.measureWords = measureWords;
-		this.simplifiedChars = simplifiedChars;
+		this.dictionary = new ArrayList<>();
+		this.measureWords = new ArrayList<>();
+		this.simplifiedChars = new HashMap<>();
 	}
 
 	public List<SimpleLookup> getDictionary() 

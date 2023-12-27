@@ -27,17 +27,13 @@ public class DbRepo
 	public static final int DICT_EN_TRX = 2;
 	public static final int POST_DICT_TRX = 3; // measure words, simplified, 4 chars
 
-	public static final String VARIANT_SIMPLIFIED = "simplified";
-	public static final String VARIANT_GENERIC = "some variant";
-	public static final String VARIANT_OLD = "pre traditional";
-
 	private Connection db;
 
 	private static final String COL_ZH = "zh";
 	private static final String COL_DEF = "definition";
 	private static final String COL_PINYIN = "pinyin";
 	private static final String COL_PINYIN_NORM = "pinyinNormalized";
-	private static final String COL_VARIANT = "simplified";
+	private static final String COL_SIMPLIFIED = "simplified";
 	private static final String COL_OG = "original";
 	private static final String COL_MEASURE_WORD = "measure";
 	private static final String COL_MEASURE_PINYIN = "measurePinyin";
@@ -45,7 +41,6 @@ public class DbRepo
 	private static final String COL_LAST_CHAR = "lastChar";
 	private static final String COL_ZHBASEID = "zhBaseId";
 	private static final String COL_ID = "id";
-	private static final String COL_VARIANT_TYPE = "variantType";
 	private static final String COL_SUBSTRING = "substring";
 	private static final String COL_FULL_STRING = "fullString";
 
@@ -53,7 +48,7 @@ public class DbRepo
 	private static final String TABLE_ENGLISH = "English";
 	private static final String TABLE_ENGLISH_FTS5 = "English_fts5";
 	private static final String TABLE_MEASUREWORD = "MeasureWord";
-	private static final String TABLE_VARIANTS = "Variants";
+	private static final String TABLE_SIMPLIFIED = "Simplified";
 	private static final String TABLE_SUBSTRING = "Substring";
 
 	private final String DictionaryBaseSql = String.format("""
@@ -69,7 +64,7 @@ public class DbRepo
 		this.user = caller;
 		try 
 		{
-			final String sqlitePath = System.getProperty("user.home") + "/Programs/mdbg2_1.sqlite";
+			final String sqlitePath = System.getProperty("user.home") + "/Programs/mdbg2_0.sqlite";
 			Class.forName("org.sqlite.JDBC");
 			this.db = DriverManager.getConnection("jdbc:sqlite:"+sqlitePath);
 			db.setAutoCommit(false);
@@ -139,16 +134,14 @@ public class DbRepo
 				)""", TABLE_MEASUREWORD, COL_ZH, COL_MEASURE_WORD, COL_MEASURE_PINYIN, COL_ZH, COL_MEASURE_WORD);
 		indexes.add(List.of(TABLE_MEASUREWORD, COL_ZH));
 
-		final String createVariants = String.format("""
+		final String createSimplified = String.format("""
 			CREATE TABLE %s (
 				%s	TEXT NOT NULL, 
 				%s	TEXT NOT NULL,
-				%s	TEXT NOT NULL,  
 				PRIMARY KEY(%s,%s)
-			)""", TABLE_VARIANTS, COL_OG, COL_VARIANT, COL_VARIANT_TYPE, COL_OG, COL_VARIANT);
-		indexes.add(List.of(TABLE_VARIANTS, COL_OG));
-		indexes.add(List.of(TABLE_VARIANTS, COL_VARIANT));
-		indexes.add(List.of(TABLE_VARIANTS, COL_VARIANT_TYPE));
+			)""", TABLE_SIMPLIFIED, COL_OG, COL_SIMPLIFIED, COL_OG, COL_SIMPLIFIED);
+		indexes.add(List.of(TABLE_SIMPLIFIED, COL_OG));
+		indexes.add(List.of(TABLE_SIMPLIFIED, COL_SIMPLIFIED));
 
 		final String create4Char = String.format("""
 			CREATE TABLE %s (
@@ -162,7 +155,7 @@ public class DbRepo
 			createZhBase,
 			createEnglish, createEnglishFTS5,
 			createMeasureWords,
-			createVariants,
+			createSimplified,
 			create4Char
 		};
 
@@ -259,8 +252,11 @@ public class DbRepo
 		try
 		{
 			final String inQuestionMarks = "?, ".repeat(zh.length());
-			final String sql = "select * from %s where %s in ("+inQuestionMarks.substring(0, inQuestionMarks.length()-2)+") and %s = %s";
-			final PreparedStatement pst = db.prepareStatement(String.format(sql, TABLE_VARIANTS, COL_OG, COL_VARIANT_TYPE, VARIANT_SIMPLIFIED));
+			final String sql = String.format("select * from %s where %s in ("+inQuestionMarks.substring(0, inQuestionMarks.length()-2) + ")", 
+				TABLE_SIMPLIFIED, 
+				COL_OG
+			);
+			final PreparedStatement pst = db.prepareStatement(sql);
 			for(int pstIndex = 0; pstIndex<zh.length(); pstIndex++)
 			{
 				pst.setString(pstIndex+1, Character.toString(zh.charAt(pstIndex)));
@@ -270,7 +266,7 @@ public class DbRepo
 			final Map<String, String> charMapper = new HashMap<>();
 			while(results.next())
 			{
-				final String simplified = results.getString(COL_VARIANT);
+				final String simplified = results.getString(COL_SIMPLIFIED);
 				final String og = results.getString(COL_OG);
 				charMapper.put(og, simplified);
 			}
@@ -351,9 +347,9 @@ public class DbRepo
 				%s = ?
 				""", 
 			COL_PINYIN_NORM, 
-			TABLE_VARIANTS, 
-			TABLE_ZHBASE, TABLE_VARIANTS, COL_OG, TABLE_ZHBASE, COL_ZH, 
-			COL_VARIANT
+			TABLE_SIMPLIFIED, 
+			TABLE_ZHBASE, TABLE_SIMPLIFIED, COL_OG, TABLE_ZHBASE, COL_ZH, 
+			COL_SIMPLIFIED
 		);
 		return getListOfString(sql, zh, COL_PINYIN_NORM);
 	}
@@ -462,18 +458,17 @@ public class DbRepo
 		}
 	}
 
-	public void fillSimplified(List<RawVariantRow> allRows)
+	public void fillSimplified(List<RawSimplifiedRow> allRows)
 	{
-		final String sql = String.format("INSERT INTO %s (%s, %s, %s) VALUES (?,?,?)", TABLE_VARIANTS, COL_OG, COL_VARIANT, COL_VARIANT_TYPE);
+		final String sql = String.format("INSERT INTO %s (%s, %s) VALUES (?,?)", TABLE_SIMPLIFIED, COL_OG, COL_SIMPLIFIED);
 		try 
 		{
 			final PreparedStatement pst = db.prepareStatement(sql);
 		
-			for(final RawVariantRow row : allRows)
+			for(final RawSimplifiedRow row : allRows)
 			{
 				pst.setString(1, row.getOriginal());
-				pst.setString(2, row.getVariant());
-				pst.setString(3, row.getVariantType());
+				pst.setString(2, row.getSimplified());
 				pst.addBatch();
 			}
 			pst.executeBatch();

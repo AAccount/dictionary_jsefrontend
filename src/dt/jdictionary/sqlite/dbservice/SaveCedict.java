@@ -15,7 +15,7 @@ import dt.jdictionary.sqlite.DbEvent;
 import dt.jdictionary.sqlite.raw.DbRepo;
 import dt.jdictionary.sqlite.raw.RawSubstringRow;
 import dt.jdictionary.sqlite.raw.RawMeasureWordRow;
-import dt.jdictionary.sqlite.raw.RawVariantRow;
+import dt.jdictionary.sqlite.raw.RawSimplifiedRow;
 
 public class SaveCedict 
 {
@@ -79,10 +79,10 @@ public class SaveCedict
 
 	private void fillSimplified(CedictDump dump, DbRepo db)
 	{
-		final List<RawVariantRow> simplifieds = new ArrayList<>();
+		final List<RawSimplifiedRow> simplifieds = new ArrayList<>();
 		for(final String original : dump.getSimplifiedChars().keySet())
 		{
-			simplifieds.add(new RawVariantRow(original, dump.getSimplifiedChars().get(original), DbRepo.VARIANT_SIMPLIFIED));
+			simplifieds.add(new RawSimplifiedRow(original, dump.getSimplifiedChars().get(original)));
 		}
 		db.fillSimplified(simplifieds);
 	}
