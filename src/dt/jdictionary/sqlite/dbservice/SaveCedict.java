@@ -50,7 +50,7 @@ public class SaveCedict
 	private void fill4Chars(CedictDump dump, DbRepo db)
 	{
 		final List<SimpleLookup> fourCharEntries = dump.getDictionary().stream()
-			.filter(simplelookup -> List.of(3,4,5).indexOf(simplelookup.getZh().length()) != -1 && Utils.allChinese(simplelookup.getZh())).toList();
+			.filter(simplelookup -> simplelookup.getZh().length() > 1 && Utils.allChinese(simplelookup.getZh())).toList();
 
 		final Set<RawSubstringRow> result = new HashSet<>();
 		for(final SimpleLookup simpleLookup : fourCharEntries)
