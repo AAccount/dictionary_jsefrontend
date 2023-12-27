@@ -52,7 +52,7 @@ class UiUtils
 		return "<html><div WIDTH=400>" + string + "</div></html>";
 	}
 
-	public static JComponent renderLabelToGrid(JComponent parent, String text, int row, int col, boolean expandx)
+	public static void renderLabelToGrid(JComponent parent, String text, int row, int col, boolean expandx)
 	{
 		final String renderedText = expandx ? wordWrapHack(text) : text;
 		final JTextPane textPane = new JTextPane();
@@ -71,8 +71,6 @@ class UiUtils
 		final Insets insets = makeInsets(Set.of(Neighbor.EVERYWHERE));
 		final GridBagConstraints labelConstraints = makeGridConstraint(row, col, expandx, false, insets);
 		parent.add(textPane, labelConstraints);
-
-		return textPane;
 	}
 
 	public static final String UI_FILLER = "filler";

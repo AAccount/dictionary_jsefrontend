@@ -27,7 +27,6 @@ class UiList implements ItemListener, ActionListener
 	private final int UI_COLUMN_BACK= 0;
 	private final int UI_COLUMN_FORWARD= 1;
 	private final int UI_COLUMN_PAGE_COUNTER= 2;
-	private final int UI_COLUMN_CHECKBOXES= 3;
 	private final int UI_COLUMNS_TOTAL= 4;
 
 	private final int UI_ROW_UTILITY = 0;
@@ -38,17 +37,14 @@ class UiList implements ItemListener, ActionListener
 	private final String LABEL_COUNTER = "current page / total pages";
 	private final JLabel pageCounter;
 	private final String SCROLLVIEW_RESULTS = "results scroll view";
-	private final String JPANEL_CHECKBOXES = "definition flag checkboxes";
 
 	private final int PAGE_SIZE = 10;
 
 	private final JComponent root;
 	private final HistoryManager<List<SimpleLookup>> pages;
-	private final UiListFlags flagManager;
 
 	public UiList() 
 	{
-		flagManager = new UiListFlags();
 		root = new JPanel(new GridBagLayout());
 		root.setBorder(UiConstants.TRACER);
 		pages = new HistoryManager<>();
@@ -71,8 +67,7 @@ class UiList implements ItemListener, ActionListener
 
 	private void renderPageOfResults(List<SimpleLookup> results)
 	{
-		UiUtils.removeNamedComponents(root, Set.of(SCROLLVIEW_RESULTS, JPANEL_CHECKBOXES));
-		flagManager.clear();
+		UiUtils.removeNamedComponents(root, Set.of(SCROLLVIEW_RESULTS));
 
 		// Need to leave the scrollpane setup even after pagination because grid bag layout will render "funny" without it.
 		final JPanel dbResultPanel = new JPanel(new GridBagLayout());
@@ -90,23 +85,20 @@ class UiList implements ItemListener, ActionListener
 		root.add(scrollPane, constraints);
 
 		// Corresponding checkboxes need to be rendered per page.
-		renderFlagCheckboxes();
 		pageCounter.setText((pages.getIndex()+1)+"/"+(pages.getSize()));
 	}
 
 	private void renderSimpleLookup(SimpleLookup dbresult, JComponent parent, int row)
 	{
 		final int COL_ZH = 0;
-		JComponent zhLabel = UiUtils.renderLabelToGrid(parent, dbresult.getZh(), row, COL_ZH, false);
+		UiUtils.renderLabelToGrid(parent, dbresult.getZh(), row, COL_ZH, false);
 		
 		final int COL_PINYIN = 1;
-		JComponent pinyinLabel = UiUtils.renderLabelToGrid(parent, dbresult.getPinyin(), row, COL_PINYIN, false);
+		UiUtils.renderLabelToGrid(parent, dbresult.getPinyin(), row, COL_PINYIN, false);
 		
 		final int COL_DEF = 2;
 		final String definition = String.join(", ", dbresult.getDefinitions()).toLowerCase();
-		JComponent defLabel = UiUtils.renderLabelToGrid(parent, definition, row, COL_DEF, true);
-
-		flagManager.flagDbResult(dbresult, List.of(zhLabel, pinyinLabel, defLabel));
+		UiUtils.renderLabelToGrid(parent, definition, row, COL_DEF, true);
 	}
 
 	private void renderPageNavigation()
@@ -130,29 +122,11 @@ class UiList implements ItemListener, ActionListener
 		root.add(pageCounter,UiUtils.makeGridConstraint(UI_ROW_UTILITY, UI_COLUMN_PAGE_COUNTER, false, false, UiUtils.makeInsets(Set.of(Neighbor.LEFT, Neighbor.RIGHT))));
 	}
 
-	private void renderFlagCheckboxes()
-	{
-		final JPanel flagCheckboxes = new JPanel();
-		flagCheckboxes.setName(JPANEL_CHECKBOXES);
-		flagCheckboxes.setBorder(UiConstants.TRACER);
-		root.add(flagCheckboxes, UiUtils.makeGridConstraint(UI_ROW_UTILITY, UI_COLUMN_CHECKBOXES, true, false, UiConstants.nopadding));
-
-		for(final String flag : flagManager.allFlags())
-		{
-			final JCheckBox flagCheckBox = new JCheckBox(flag);
-			flagCheckBox.setBorder(UiConstants.TRACER);
-			flagCheckBox.setName(flag);
-			flagCheckBox.addItemListener(this);
-			flagCheckboxes.add(flagCheckBox);
-		}
-	}
-
 	@Override
 	public void itemStateChanged(ItemEvent arg0) 
 	{
 		final JComponent checkbox =(JComponent)arg0.getSource();
 		final String flag = checkbox.getName();
-		flagManager.toggleFlaggedComponents(flag);
 		root.revalidate();
 		root.repaint();
 	}
