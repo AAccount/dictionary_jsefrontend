@@ -15,14 +15,12 @@ import dt.jdictionary.sqlite.raw.DbRepo;
 
 public class TypoSearch 
 {
-	public List<SimpleLookup> tryTypo(String compoundWord)
+	public List<SimpleLookup> tryTypo(String compoundWord, DbRepo db)
 	{
-		final DbRepo db = new DbRepo(this);
 		final List<String> trueChars = Utils.trueChars(compoundWord);
 		final List<List<String>> normalizedPinyins = trueChars.stream().map(trueChar -> findPinyinForZh(trueChar, db)).toList();
 		if(compoundWord.length() != normalizedPinyins.size())
 		{
-			db.close();
 			return List.of();
 		}
 
@@ -50,7 +48,6 @@ public class TypoSearch
 
 		final List<SimpleLookup> result = new ArrayList<>();
 		rankings.stream().forEach(rank -> result.addAll(candidatesRanked.get(rank)));
-		db.close();
 		return result;
 	}
 

@@ -12,7 +12,7 @@ public class DeinterlaceSearch
 	/**
 	 * Attempt to "deinterlace" an entry: chars 123 --> lookup 13; chars 1234 --> lookup 13 and 24
 	 */
-	public List<SimpleLookup> deinterlace(String zh)
+	public List<SimpleLookup> deinterlace(String zh, DbRepo db)
 	{
 		final int MIN_DEINTERLACE = 3;
 		final int MAX_DEINTERLACE = 4;
@@ -21,18 +21,15 @@ public class DeinterlaceSearch
 			return List.of();
 		}
 
-		final DbRepo db = new DbRepo(this);
 		final List<String> trueChars = Utils.trueChars(zh);
 		final List<SimpleLookup> oneThree = DbServiceUtils.convertRawToSimple(db.lookupChinese(trueChars.get(0) + trueChars.get(2)));
 		if(zh.length() == MIN_DEINTERLACE)
 		{
-			db.close();
 			return oneThree;
 		}
 		
 		final List<SimpleLookup> twoFour = DbServiceUtils.convertRawToSimple(db.lookupChinese(trueChars.get(1) + trueChars.get(3)));
 		oneThree.addAll(twoFour);
-		db.close();
 		return oneThree;
 	}
 }

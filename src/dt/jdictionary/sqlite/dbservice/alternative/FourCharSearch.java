@@ -10,18 +10,16 @@ import dt.jdictionary.sqlite.raw.RawDictionaryRow;
 
 public class FourCharSearch 
 {
- 	public List<SimpleLookup> tryLookup(String compoundWord)
+ 	public List<SimpleLookup> tryLookup(String compoundWord, DbRepo db)
 	{
 		if(compoundWord.length() < DbServiceUtils.MIN_SUBSTRING_LENGTH)
 		{
 			return List.of();
 		}
 
-		final DbRepo db = new DbRepo(this);
 		final List<String> possibleMatches = db.trySubstring(compoundWord);
 		if(possibleMatches.size() == 0)
 		{
-			db.close();
 			return List.of();
 		}
 
@@ -30,7 +28,6 @@ public class FourCharSearch
 		{
 			raws.addAll(db.lookupChinese(possibleMatch));
 		}
-		db.close();
 		return DbServiceUtils.convertRawToSimple(raws);
 	}
 }

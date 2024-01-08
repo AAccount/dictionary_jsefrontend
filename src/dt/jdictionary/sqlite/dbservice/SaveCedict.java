@@ -19,7 +19,7 @@ import dt.jdictionary.sqlite.raw.RawSimplifiedRow;
 
 public class SaveCedict 
 {
-	public void save(CedictDump dump)
+	public void save(CedictDump dump, DbRepo db)
 	{
 		if(dump.getDictionary().size() == 0)
 		{
@@ -27,7 +27,6 @@ public class SaveCedict
 			return;
 		}
 
-		final DbRepo db = new DbRepo(this);
 		final int dictionarySize = dump.getDictionary().size();
 		final int uptoDictTrxes = DbRepo.INIT_TRX_COUNT + dictionarySize + DbRepo.DICT_EN_TRX;
 		final int totalTrxes = uptoDictTrxes + DbRepo.POST_DICT_TRX;
@@ -44,7 +43,6 @@ public class SaveCedict
 		DbEvent.sendProgressEvent(uptoDictTrxes + 2, totalTrxes);
 		fill4Chars(dump, db);
 		DbEvent.sendProgressEvent(uptoDictTrxes + 3, totalTrxes);
-		db.close();
 	}
 
 	private void fill4Chars(CedictDump dump, DbRepo db)

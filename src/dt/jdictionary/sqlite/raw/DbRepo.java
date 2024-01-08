@@ -11,6 +11,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.sqlite.SQLiteConfig;
+
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.Utils;
 import dt.jdictionary.events.EventUtils;
@@ -59,14 +61,19 @@ public class DbRepo
 
 	private final Object user;
 
-	public DbRepo(Object caller)
+	public DbRepo(Object caller, boolean readonly)
 	{
 		this.user = caller;
 		try 
 		{
+			final SQLiteConfig config = new SQLiteConfig();
+			if(readonly)
+			{
+				config.setReadOnly(readonly);
+			}
 			final String sqlitePath = System.getProperty("user.home") + "/Programs/mdbg2_0.sqlite";
 			Class.forName("org.sqlite.JDBC");
-			this.db = DriverManager.getConnection("jdbc:sqlite:"+sqlitePath);
+			this.db = DriverManager.getConnection("jdbc:sqlite:"+sqlitePath, config.toProperties());
 			db.setAutoCommit(false);
 			Utils.logTimestamp("new db repo for " + userToString());
 		} 
