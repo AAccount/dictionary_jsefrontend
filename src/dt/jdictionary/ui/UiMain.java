@@ -214,7 +214,7 @@ public class UiMain implements ActionListener, EventListener
 	{
 		final JPanel root = (JPanel)entry.getParent();
 		final String received = entry.getText().trim().toLowerCase();
-		System.out.println("Input trimmed, to lower case: " + received);
+		Utils.logTimestamp("Input trimmed, to lower case: " + received);
 
 		UiUtils.removeNamedComponents(root, Set.of(UI_RESULT, UiUtils.UI_FILLER));
 
