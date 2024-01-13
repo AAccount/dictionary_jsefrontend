@@ -48,7 +48,9 @@ public class UiMain implements ActionListener, EventListener
 	private final int UI_ROW_RESULT = 2;
 	private final int UI_MAIN_COLUMN = 0;
 	private final int TOTAL_COLUMNS = 3;
-
+	private final int HISTORY_MANAGER_MAX = 10;
+	private final String HISTORY_MENU_UI_PREFIX = "kmFU2bYk"; // random string to easily identify history menu items's names
+	private final String HISTORY_MENU_UI_DELIM = ";";
 
 	private final DbService db;
 	private final JTextField uiEntry;
@@ -57,12 +59,13 @@ public class UiMain implements ActionListener, EventListener
 	private final String UI_PREV = "previous button";
 	private final JButton forward;
 	private final String UI_FWD = "forward button";
+	private final JMenu historyMenu;
 
-	private final HistoryManager<String> history;
+	private final HistoryManager<String> historyManager;
 
 	public UiMain()
 	{
-		history = new HistoryManager<>();
+		historyManager = new HistoryManager<>(HISTORY_MANAGER_MAX);
 		db = new DbService();
 		EventDispatcher.get().register(this);
 
@@ -71,6 +74,8 @@ public class UiMain implements ActionListener, EventListener
 		progressBar = new JProgressBar();
 		previous = new JButton();
 		forward = new JButton();
+
+		historyMenu = new JMenu("History");
 	}
 
 	public void render()
@@ -103,7 +108,11 @@ public class UiMain implements ActionListener, EventListener
 		sqliteInit.addActionListener(this);
 		sqliteMenu.add(sqliteInit);
 		
+		historyMenu.setMnemonic(KeyEvent.VK_H);
+		historyMenu.getAccessibleContext().setAccessibleDescription("Browse through the last "+HISTORY_MANAGER_MAX+" lookups.");
+
 		menuBar.add(sqliteMenu);
+		menuBar.add(historyMenu);
 		return menuBar;
 	}
 
@@ -150,18 +159,30 @@ public class UiMain implements ActionListener, EventListener
 		try
 		{
 			final JComponent source = (JComponent)arg0.getSource();
-			switch(source.getName())
+			final String sourceName = source.getName();
+			switch(sourceName)
 			{
 				case UI_ENTRY:
 					handleTextEntry((JTextField)source, true);
-					break;
+					return;
 				case MENU_INIT_SQLITE:
 					handleMenuSqliteInit();
-					break;
+					return;
 				case UI_PREV:
+					handleHistory(historyManager.goBack());
+					return;
 				case UI_FWD:
-					handleHistory((JButton)source);
-					break;
+					handleHistory(historyManager.goFwd());
+					return;
+			}
+
+			if(sourceName.substring(0, HISTORY_MENU_UI_PREFIX.length()).equals(HISTORY_MENU_UI_PREFIX))
+			{
+				final String[] sourceNameParts = sourceName.split(HISTORY_MENU_UI_DELIM);
+				final String entry = sourceNameParts[1];
+				final int historyIndex = Integer.parseInt(sourceNameParts[2]);
+				historyManager.setIndex(historyIndex);
+				handleHistory(entry);
 			}
 		}
 		catch(Exception e)
@@ -170,10 +191,8 @@ public class UiMain implements ActionListener, EventListener
 		}
 	}
 
-	private void handleHistory(JButton source) 
+	private void handleHistory(String historicalSearch) 
 	{
-
-		final String historicalSearch = source == previous ? history.goBack() : history.goFwd();
 		toggleHistoryButtons();
 		uiEntry.setText(historicalSearch);
 		handleTextEntry(uiEntry, false);
@@ -181,8 +200,8 @@ public class UiMain implements ActionListener, EventListener
 
 	private void toggleHistoryButtons()
 	{
-		previous.setEnabled(history.canGoBack());
-		forward.setEnabled(history.canGoFwd());
+		previous.setEnabled(historyManager.canGoBack());
+		forward.setEnabled(historyManager.canGoFwd());
 	}
 
 	private void handleMenuSqliteInit()
@@ -228,12 +247,30 @@ public class UiMain implements ActionListener, EventListener
 
 		if(newSearch)
 		{
-			history.addSingleEntry(received);
+			historyManager.addSingleEntry(received);
 		}
 		toggleHistoryButtons();
+		renderHistoryMenu();
 
 		root.revalidate();
 		root.repaint();
+	}
+
+	private void renderHistoryMenu()
+	{
+		historyMenu.removeAll();
+
+		final List<String> historicalLookups = historyManager.getCompleteHistoryReadonly();
+		int counter = 0;
+		for(final String historicalLookup : historicalLookups)
+		{
+			final JMenuItem testItem = new JMenuItem(counter+": " + historicalLookup);
+			testItem.setMnemonic(KeyEvent.VK_0 + counter);
+			testItem.setName(HISTORY_MENU_UI_PREFIX + HISTORY_MENU_UI_DELIM + historicalLookup + HISTORY_MENU_UI_DELIM + counter);
+			testItem.addActionListener(this);
+			historyMenu.add(testItem);
+			counter++;
+		}
 	}
 
 	private JComponent renderChineseLookup(String chinese)

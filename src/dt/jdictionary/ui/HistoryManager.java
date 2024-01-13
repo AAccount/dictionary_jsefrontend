@@ -5,13 +5,18 @@ import java.util.List;
 
 public class HistoryManager<T>
 {
-	private final List<T> entries;
-	private int index;
+	private final List<T> entries = new ArrayList<>();
+	private int index = -1; // actually start with "before" anything happens
+	private final int maxSize;
 
 	public HistoryManager()
 	{
-		entries = new ArrayList<>();
-		index = -1; // actually start with "before" anything happens
+		this.maxSize = 0;
+	}
+
+	public HistoryManager(int size)
+	{
+		this.maxSize = size;
 	}
 
 	public T setIndex(int requested)
@@ -67,6 +72,7 @@ public class HistoryManager<T>
 		clearAfterIndex();
 		entries.add(entry);
 		index++;
+		trimEntries();
 	}
 
 	public void addAllEntries(List<T> newEntries)
@@ -74,6 +80,18 @@ public class HistoryManager<T>
 		clearAfterIndex();
 		entries.addAll(newEntries);
 		index = entries.size() - 1; // move the index to the end
+		trimEntries();
+	}
+
+	private void trimEntries()
+	{
+		if(this.maxSize < 1 || entries.size() <= this.maxSize)
+		{
+			return;
+		}
+
+		entries.subList(0, entries.size() - maxSize).clear();
+		index = entries.size() - 1;
 	}
 
 	public int getIndex()
@@ -84,5 +102,10 @@ public class HistoryManager<T>
 	public int getSize()
 	{
 		return entries.size();
+	}
+
+	public List<T> getCompleteHistoryReadonly()
+	{
+		return entries.stream().toList();
 	}
 }
