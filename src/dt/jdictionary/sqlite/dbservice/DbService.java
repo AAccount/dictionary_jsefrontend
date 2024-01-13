@@ -20,11 +20,10 @@ import dt.jdictionary.sqlite.raw.DbRepo.RelatedChar;
 public class DbService 
 {
 	private DbRepo db;
-	private boolean isReadonly = true;
 
 	public DbService()
 	{
-		db = new DbRepo(this, isReadonly);
+		db = new DbRepo(this, true);
 	}
 
 	public FullLookup lookupChinese(String zh)
@@ -72,40 +71,42 @@ public class DbService
 
 	public List<SimpleLookup> tryDeinterlace(String zh)
 	{
+		checkDbRo();
 		return new DeinterlaceSearch().deinterlace(zh, db);
 	}
 
 	public List<SimpleLookup> try4CharLookup(String zh)
 	{
+		checkDbRo();
 		return new FourCharSearch().tryLookup(zh, db);
 	}
 
 	public List<SimpleLookup> tryTypoMatch(String zh)
 	{
+		checkDbRo();
 		return new TypoSearch().tryTypo(zh, db);
 	}
 
 	public List<SimpleLookup> trySubstringMatch(String zh)
 	{
+		checkDbRo();
 		return new SubstringSearch().trySubstring(zh, db);
 	}
 
 	public void saveCedictDump(CedictDump dump)
 	{
 		db.close();
-		isReadonly = false;
-		db = new DbRepo(this, isReadonly);
+		db = new DbRepo(this, false);
 
 		new SaveCedict().save(dump, db);
 
 		db.close();
-		isReadonly = true;
-		db = new DbRepo(this, isReadonly);
+		db = new DbRepo(this, true);
 	}
 
 	private void checkDbRo()
 	{
-		if(!isReadonly)
+		if(!db.isReadonly())
 		{
 			EventUtils.sendError(new Exception("DB is in rw mode."));
 		}

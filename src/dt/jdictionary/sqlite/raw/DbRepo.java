@@ -60,16 +60,18 @@ public class DbRepo
 		TABLE_ZHBASE, TABLE_ENGLISH, TABLE_ZHBASE, COL_ID, TABLE_ENGLISH, COL_ZHBASEID);
 
 	private final Object user;
+	private boolean readonly;
 
 	public DbRepo(Object caller, boolean readonly)
 	{
+		this.readonly = readonly;
 		this.user = caller;
 		try 
 		{
 			final SQLiteConfig config = new SQLiteConfig();
-			if(readonly)
+			if(this.readonly)
 			{
-				config.setReadOnly(readonly);
+				config.setReadOnly(this.readonly);
 			}
 			final String sqlitePath = System.getProperty("user.home") + "/Programs/mdbg2_0.sqlite";
 			Class.forName("org.sqlite.JDBC");
@@ -98,6 +100,11 @@ public class DbRepo
 		{
 			EventUtils.sendError(e);
 		}
+	}
+
+	public boolean isReadonly() 
+	{
+		return readonly;
 	}
 
 	private String userToString()
