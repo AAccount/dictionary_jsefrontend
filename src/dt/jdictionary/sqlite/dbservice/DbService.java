@@ -22,16 +22,9 @@ import dt.jdictionary.sqlite.raw.RawDictionaryRow;
 public class DbService 
 {
 	private DbRepo db = new DbRepo(this, true);;
-	private DbCache cache = new DbCache();
 
 	public FullLookup lookupChinese(String zh)
 	{
-		final FullLookup cached = cache.getFullLookup(zh);
-		if(cached != null)
-		{
-			return cached;
-		}
-
 		checkDbRo();
 		final List<RawDictionaryRow> rawResults = db.lookupChinese(zh);
 		final Map<String, List<String>> resultsByPinyin = new HashMap<>();
@@ -48,7 +41,6 @@ public class DbService
 		final String simplified = db.lookupSimplified(zh);
 		final List<String> measureWords = db.lookupMeasureWords(zh);
 		final FullLookup result = new FullLookup(zh, resultsByPinyin, simplified, measureWords);
-		cache.setFullLookup(zh, result);
 		return result;
 	}
 
@@ -86,21 +78,13 @@ public class DbService
 
 	public List<SimpleLookup> trySubstringMatch(String zh)
 	{
-		return tryAlternateSearch(new SubstringSearch(cache), zh);
+		return tryAlternateSearch(new SubstringSearch(), zh);
 	}
 
 	private List<SimpleLookup> tryAlternateSearch(AlternateSearch alternateSearch, String zh)
 	{
-		final List<SimpleLookup> cached = cache.getSimpleLookup(alternateSearch, zh);
-		if(cached != null)
-		{
-			return cached;
-		}
-
 		checkDbRo();
-		final List<SimpleLookup> result =  alternateSearch.trySearch(zh, db);
-		cache.setSimpleLookup(alternateSearch, zh, result);
-		return result;
+		return alternateSearch.trySearch(zh, db);
 	}
 
 	public void saveCedictDump(CedictDump dump)

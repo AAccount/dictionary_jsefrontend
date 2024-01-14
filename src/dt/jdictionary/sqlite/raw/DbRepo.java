@@ -17,6 +17,10 @@ import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.Utils;
 import dt.jdictionary.events.EventUtils;
 import dt.jdictionary.sqlite.DbEvent;
+import dt.jdictionary.sqlite.cache.DbRepoCache;
+import dt.jdictionary.sqlite.cache.ListStringsResp;
+import dt.jdictionary.sqlite.cache.RawDictionaryRowResp;
+import dt.jdictionary.sqlite.cache.StringResp;
 
 public class DbRepo 
 {
@@ -218,6 +222,7 @@ public class DbRepo
 			final Statement vaccuum = db.createStatement();
 			vaccuum.execute("vacuum;");
 			db.setAutoCommit(false);
+			DbRepoCache.getInstance().wipe();
 		} 
 		catch (SQLException e) 
 		{
@@ -233,6 +238,12 @@ public class DbRepo
 
 	private List<RawDictionaryRow> lookupDictionaryTable(String sql, String target)
 	{
+		final RawDictionaryRowResp cached = DbRepoCache.getInstance().getTableCache(sql, target);
+		if(cached.foundResult())
+		{
+			return cached.getRawDictionaryRow();
+		}
+
 		final List<RawDictionaryRow> rawDbRows = new ArrayList<>();
 		try 
 		{
@@ -257,11 +268,18 @@ public class DbRepo
 		{
 			EventUtils.sendError(e);
 		}
+		DbRepoCache.getInstance().setTableCache(sql, target, rawDbRows);
 		return rawDbRows;
 	}
 
 	public String lookupSimplified(String zh)
 	{
+		final StringResp cached = DbRepoCache.getInstance().getSimplifiedCache(zh);
+		if(cached.foundResult())
+		{
+			return cached.getResult();
+		}
+
 		String zhSimplified = "";
 		try
 		{
@@ -296,11 +314,18 @@ public class DbRepo
 		{
 			EventUtils.sendError(e);
 		}
+		DbRepoCache.getInstance().setSimplfiedCache(zh, zhSimplified);
 		return zhSimplified;
 	}
 
 	public List<String> lookupMeasureWords(String zh)
 	{
+		final ListStringsResp cached = DbRepoCache.getInstance().getMeasureWordCache(zh);
+		if(cached.foundResult())
+		{
+			return cached.getResult();
+		}
+
 		final List<String> measureWords = new ArrayList<>();
 		try
 		{
@@ -318,6 +343,7 @@ public class DbRepo
 		{
 			EventUtils.sendError(e);
 		}
+		DbRepoCache.getInstance().setMeasureWordCache(zh, measureWords);
 		return measureWords;
 	}
 
@@ -376,6 +402,12 @@ public class DbRepo
 
 	private List<String> getListOfString(String sql, String search, String column)
 	{
+		final ListStringsResp cached = DbRepoCache.getInstance().getListOfStringsCache(sql, search, column);
+		if(cached.foundResult())
+		{
+			return cached.getResult();
+		}
+
 		final List<String> result = new ArrayList<>();
 		try
 		{
@@ -392,6 +424,7 @@ public class DbRepo
 		{
 			EventUtils.sendError(e);
 		}
+		DbRepoCache.getInstance().setListOfStringsCache(sql, search, column, result);
 		return result;	
 	}
 
@@ -442,6 +475,7 @@ public class DbRepo
 			pstEnglishFts5.executeBatch();
 			DbEvent.sendProgressEvent(uptoDictTrxes, totalTrxes);
 			db.commit();
+			DbRepoCache.getInstance().wipe();
 		} 
 		catch (SQLException e) 
 		{
