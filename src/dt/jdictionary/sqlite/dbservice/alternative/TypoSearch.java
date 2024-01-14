@@ -15,6 +15,7 @@ import dt.jdictionary.sqlite.raw.DbRepo;
 
 public class TypoSearch implements AlternateSearch
 {
+	@Override
 	public List<SimpleLookup> trySearch(String compoundWord, DbRepo db)
 	{
 		final List<String> trueChars = Utils.trueChars(compoundWord);
@@ -49,12 +50,6 @@ public class TypoSearch implements AlternateSearch
 		final List<SimpleLookup> result = new ArrayList<>();
 		rankings.stream().forEach(rank -> result.addAll(candidatesRanked.get(rank)));
 		return result;
-	}
-
-	@Override
-	public String getAltSearchType() 
-	{
-		return this.getClass().getName();
 	}
 
 	private int pinyinLookupSimilarity(SimpleLookup candidate, List<String> targetChars)

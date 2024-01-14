@@ -15,7 +15,7 @@ public class DbCache
 
 	public List<SimpleLookup> getSimpleLookup(AlternateSearch altSearch, String zh)
 	{
-		final String producer = altSearch.getAltSearchType();
+		final String producer = altSearch.getClass().getName();
 		if(!simpleLookupByProducer.containsKey(producer))
 		{
 			return null;
@@ -32,7 +32,7 @@ public class DbCache
 
 	public void setSimpleLookup(AlternateSearch altSearch, String zh, List<SimpleLookup> results)
 	{
-		final String producer = altSearch.getAltSearchType();
+		final String producer = altSearch.getClass().getName();
 		if(!simpleLookupByProducer.containsKey(producer))
 		{
 			simpleLookupByProducer.put(producer, new HashMap<>());

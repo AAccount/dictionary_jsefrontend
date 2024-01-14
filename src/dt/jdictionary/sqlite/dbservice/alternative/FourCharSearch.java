@@ -10,6 +10,7 @@ import dt.jdictionary.sqlite.raw.RawDictionaryRow;
 
 public class FourCharSearch implements AlternateSearch
 {
+	@Override
  	public List<SimpleLookup> trySearch(String compoundWord, DbRepo db)
 	{
 		if(compoundWord.length() < DbServiceUtils.MIN_SUBSTRING_LENGTH)
@@ -29,11 +30,5 @@ public class FourCharSearch implements AlternateSearch
 			raws.addAll(db.lookupChinese(possibleMatch));
 		}
 		return DbServiceUtils.convertRawToSimple(raws);
-	}
-
-	@Override
-	public String getAltSearchType() 
-	{
-		return this.getClass().getName();
 	}
 }

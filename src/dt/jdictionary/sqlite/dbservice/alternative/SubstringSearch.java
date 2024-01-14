@@ -10,6 +10,7 @@ import dt.jdictionary.sqlite.raw.RawDictionaryRow;
 
 public class SubstringSearch implements AlternateSearch
 {
+	@Override
 	public List<SimpleLookup> trySearch(String zh, DbRepo db)
 	{
 		if(zh.length() < DbServiceUtils.MIN_SUBSTRING_LENGTH)
@@ -25,11 +26,5 @@ public class SubstringSearch implements AlternateSearch
 			result.addAll(DbServiceUtils.convertRawToSimple(substringResults));
 		}
 		return result;
-	}
-
-	@Override
-	public String getAltSearchType() 
-	{
-		return this.getClass().getName();
 	}
 }
