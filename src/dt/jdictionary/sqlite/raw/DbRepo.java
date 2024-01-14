@@ -157,7 +157,7 @@ public class DbRepo
 		indexes.add(List.of(TABLE_SIMPLIFIED, COL_OG));
 		indexes.add(List.of(TABLE_SIMPLIFIED, COL_SIMPLIFIED));
 
-		final String create4Char = String.format("""
+		final String createSubstrings = String.format("""
 			CREATE TABLE %s (
 				%s	TEXT NOT NULL, 
 				%s	TEXT NOT NULL, 
@@ -170,7 +170,7 @@ public class DbRepo
 			createEnglish, createEnglishFTS5,
 			createMeasureWords,
 			createSimplified,
-			create4Char
+			createSubstrings
 		};
 
 		try 
@@ -494,7 +494,7 @@ public class DbRepo
 		}
 	}
 
-	public void fill4Chars(List<RawSubstringRow> allRows)
+	public void fillSubstrings(List<RawSubstringRow> allRows)
 	{
 		final String sql = String.format("INSERT INTO %s (%s, %s) VALUES (?,?)", TABLE_SUBSTRING, COL_SUBSTRING, COL_FULL_STRING);
 		try 

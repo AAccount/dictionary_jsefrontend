@@ -11,7 +11,7 @@ import dt.jdictionary.cedict.CedictDump;
 import dt.jdictionary.events.EventUtils;
 import dt.jdictionary.sqlite.dbservice.alternative.AlternateSearch;
 import dt.jdictionary.sqlite.dbservice.alternative.DeinterlaceSearch;
-import dt.jdictionary.sqlite.dbservice.alternative.FourCharSearch;
+import dt.jdictionary.sqlite.dbservice.alternative.SubstringOfSearch;
 import dt.jdictionary.sqlite.dbservice.alternative.SameBackSearch;
 import dt.jdictionary.sqlite.dbservice.alternative.SameFrontSearch;
 import dt.jdictionary.sqlite.dbservice.alternative.SubstringSearch;
@@ -74,9 +74,9 @@ public class DbService
 		return tryAlternateSearch(new DeinterlaceSearch(), zh);
 	}
 
-	public List<SimpleLookup> try4CharLookup(String zh)
+	public List<SimpleLookup> trySubstringOfLookup(String zh)
 	{
-		return tryAlternateSearch(new FourCharSearch(), zh);
+		return tryAlternateSearch(new SubstringOfSearch(), zh);
 	}
 
 	public List<SimpleLookup> tryTypoMatch(String zh)

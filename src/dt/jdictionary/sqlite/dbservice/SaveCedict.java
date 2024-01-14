@@ -41,17 +41,17 @@ public class SaveCedict
 		DbEvent.sendProgressEvent(uptoDictTrxes + 1, totalTrxes);
 		fillSimplified(dump, db);
 		DbEvent.sendProgressEvent(uptoDictTrxes + 2, totalTrxes);
-		fill4Chars(dump, db);
+		fillSubstrings(dump, db);
 		DbEvent.sendProgressEvent(uptoDictTrxes + 3, totalTrxes);
 	}
 
-	private void fill4Chars(CedictDump dump, DbRepo db)
+	private void fillSubstrings(CedictDump dump, DbRepo db)
 	{
-		final List<SimpleLookup> fourCharEntries = dump.getDictionary().stream()
+		final List<SimpleLookup> substringEntries = dump.getDictionary().stream()
 			.filter(simplelookup -> simplelookup.getZh().length() > 1 && Utils.allChinese(simplelookup.getZh())).toList();
 
 		final Set<RawSubstringRow> result = new HashSet<>();
-		for(final SimpleLookup simpleLookup : fourCharEntries)
+		for(final SimpleLookup simpleLookup : substringEntries)
 		{
 			final List<String> substrings = DbServiceUtils.generateSubstrings(simpleLookup.getZh());
 			for(final String substring : substrings)
@@ -59,7 +59,7 @@ public class SaveCedict
 				result.add(new RawSubstringRow(substring, simpleLookup.getZh()));
 			}
 		}
-		db.fill4Chars(new ArrayList<>(result));
+		db.fillSubstrings(new ArrayList<>(result));
 	}
 
 	private void fillMeasureWords(CedictDump dump, DbRepo db)

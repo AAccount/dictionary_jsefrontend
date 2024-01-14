@@ -8,7 +8,7 @@ import dt.jdictionary.sqlite.dbservice.DbServiceUtils;
 import dt.jdictionary.sqlite.raw.DbRepo;
 import dt.jdictionary.sqlite.raw.RawDictionaryRow;
 
-public class FourCharSearch implements AlternateSearch
+public class SubstringOfSearch implements AlternateSearch
 {
 	@Override
  	public List<SimpleLookup> trySearch(String compoundWord, DbRepo db)

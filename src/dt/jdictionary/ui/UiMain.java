@@ -279,10 +279,10 @@ public class UiMain implements ActionListener, EventListener
 		final Map<String, List<SimpleLookup>> supplementaries = new LinkedHashMap<>(); // linked hash map for predictable iteration order
 		supplementaries.put("Same Front", db.lookupSameFront(chinese));
 		supplementaries.put("Same Back", db.lookupSameBack(chinese));
-		supplementaries.put("~4 Char Saying", db.try4CharLookup(chinese));
+		supplementaries.put("Substring", db.trySubstringMatch(chinese));
+		supplementaries.put("Substring Of", db.trySubstringOfLookup(chinese));
 		supplementaries.put("Deinterlace", db.tryDeinterlace(chinese));
 		supplementaries.put("Typo", db.tryTypoMatch(chinese));
-		supplementaries.put("Substring", db.trySubstringMatch(chinese));
 
 		return new UiChineseLookup().render(directResults, supplementaries);
 	}

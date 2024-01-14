@@ -5,10 +5,10 @@ public class RawSubstringRow
 	final String substring;
 	final String fullString;
 
-	public RawSubstringRow(String substring, String fourChar) 
+	public RawSubstringRow(String substring, String fullString) 
 	{
 		this.substring = substring;
-		this.fullString = fourChar;
+		this.fullString = fullString;
 	}
 
 	public String getSubstring() 
@@ -24,7 +24,7 @@ public class RawSubstringRow
 	@Override
 	public String toString() 
 	{
-		return "Raw4CharRow [substring=" + substring + ", fourChar=" + fullString + "]";
+		return "RawSubstringRow [substring=" + substring + ", fullString=" + fullString + "]";
 	}
 
 	@Override
