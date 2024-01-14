@@ -86,7 +86,7 @@ public class DbService
 
 	public List<SimpleLookup> trySubstringMatch(String zh)
 	{
-		return tryAlternateSearch(new SubstringSearch(), zh);
+		return tryAlternateSearch(new SubstringSearch(cache), zh);
 	}
 
 	private List<SimpleLookup> tryAlternateSearch(AlternateSearch alternateSearch, String zh)
