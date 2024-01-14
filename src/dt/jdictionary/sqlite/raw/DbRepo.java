@@ -17,10 +17,10 @@ import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.Utils;
 import dt.jdictionary.events.EventUtils;
 import dt.jdictionary.sqlite.DbEvent;
-import dt.jdictionary.sqlite.cache.DbRepoCache;
-import dt.jdictionary.sqlite.cache.ListStringsResp;
-import dt.jdictionary.sqlite.cache.RawDictionaryRowResp;
-import dt.jdictionary.sqlite.cache.StringResp;
+import dt.jdictionary.sqlite.raw.cache.DbRepoCache;
+import dt.jdictionary.sqlite.raw.cache.ListStringsResp;
+import dt.jdictionary.sqlite.raw.cache.RawDictionaryRowResp;
+import dt.jdictionary.sqlite.raw.cache.StringResp;
 
 public class DbRepo 
 {

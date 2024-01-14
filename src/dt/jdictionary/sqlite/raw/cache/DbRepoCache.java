@@ -1,4 +1,4 @@
-package dt.jdictionary.sqlite.cache;
+package dt.jdictionary.sqlite.raw.cache;
 
 import java.util.HashMap;
 import java.util.List;
