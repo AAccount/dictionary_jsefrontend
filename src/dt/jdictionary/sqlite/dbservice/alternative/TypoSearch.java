@@ -13,9 +13,9 @@ import dt.jdictionary.Utils;
 import dt.jdictionary.sqlite.dbservice.DbServiceUtils;
 import dt.jdictionary.sqlite.raw.DbRepo;
 
-public class TypoSearch 
+public class TypoSearch implements AlternateSearch
 {
-	public List<SimpleLookup> tryTypo(String compoundWord, DbRepo db)
+	public List<SimpleLookup> trySearch(String compoundWord, DbRepo db)
 	{
 		final List<String> trueChars = Utils.trueChars(compoundWord);
 		final List<List<String>> normalizedPinyins = trueChars.stream().map(trueChar -> findPinyinForZh(trueChar, db)).toList();
@@ -49,6 +49,12 @@ public class TypoSearch
 		final List<SimpleLookup> result = new ArrayList<>();
 		rankings.stream().forEach(rank -> result.addAll(candidatesRanked.get(rank)));
 		return result;
+	}
+
+	@Override
+	public String getAltSearchType() 
+	{
+		return this.getClass().getName();
 	}
 
 	private int pinyinLookupSimilarity(SimpleLookup candidate, List<String> targetChars)

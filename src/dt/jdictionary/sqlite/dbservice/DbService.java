@@ -9,25 +9,29 @@ import dt.jdictionary.FullLookup;
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.cedict.CedictDump;
 import dt.jdictionary.events.EventUtils;
+import dt.jdictionary.sqlite.dbservice.alternative.AlternateSearch;
 import dt.jdictionary.sqlite.dbservice.alternative.DeinterlaceSearch;
 import dt.jdictionary.sqlite.dbservice.alternative.FourCharSearch;
+import dt.jdictionary.sqlite.dbservice.alternative.SameBackSearch;
+import dt.jdictionary.sqlite.dbservice.alternative.SameFrontSearch;
 import dt.jdictionary.sqlite.dbservice.alternative.SubstringSearch;
 import dt.jdictionary.sqlite.dbservice.alternative.TypoSearch;
 import dt.jdictionary.sqlite.raw.DbRepo;
 import dt.jdictionary.sqlite.raw.RawDictionaryRow;
-import dt.jdictionary.sqlite.raw.DbRepo.RelatedChar;
 
 public class DbService 
 {
-	private DbRepo db;
-
-	public DbService()
-	{
-		db = new DbRepo(this, true);
-	}
+	private DbRepo db = new DbRepo(this, true);;
+	private DbCache cache = new DbCache();
 
 	public FullLookup lookupChinese(String zh)
 	{
+		final FullLookup cached = cache.getFullLookup(zh);
+		if(cached != null)
+		{
+			return cached;
+		}
+
 		checkDbRo();
 		final List<RawDictionaryRow> rawResults = db.lookupChinese(zh);
 		final Map<String, List<String>> resultsByPinyin = new HashMap<>();
@@ -43,23 +47,19 @@ public class DbService
 
 		final String simplified = db.lookupSimplified(zh);
 		final List<String> measureWords = db.lookupMeasureWords(zh);
-		return new FullLookup(zh, resultsByPinyin, simplified, measureWords);
+		final FullLookup result = new FullLookup(zh, resultsByPinyin, simplified, measureWords);
+		cache.setFullLookup(zh, result);
+		return result;
 	}
 
 	public List<SimpleLookup> lookupSameFront(String zh)
 	{
-		checkDbRo();
-		final String firstChar = Character.toString(zh.charAt(0));
-		final List<RawDictionaryRow> rawResults = db.lookupRelatedWord(firstChar, RelatedChar.SAME_FRONT);
-		return DbServiceUtils.convertRawToSimple(rawResults);
+		return tryAlternateSearch(new SameFrontSearch(), zh);
 	}
 
 	public List<SimpleLookup> lookupSameBack(String zh)
 	{
-		checkDbRo();
-		final String lastChar = Character.toString(zh.charAt(zh.length()-1));
-		final List<RawDictionaryRow> rawResults = db.lookupRelatedWord(lastChar, RelatedChar.SAME_BACK);
-		return DbServiceUtils.convertRawToSimple(rawResults);
+		return tryAlternateSearch(new SameBackSearch(), zh);
 	}
 
 	public List<SimpleLookup> lookupEnglish(String en)
@@ -71,26 +71,36 @@ public class DbService
 
 	public List<SimpleLookup> tryDeinterlace(String zh)
 	{
-		checkDbRo();
-		return new DeinterlaceSearch().deinterlace(zh, db);
+		return tryAlternateSearch(new DeinterlaceSearch(), zh);
 	}
 
 	public List<SimpleLookup> try4CharLookup(String zh)
 	{
-		checkDbRo();
-		return new FourCharSearch().tryLookup(zh, db);
+		return tryAlternateSearch(new FourCharSearch(), zh);
 	}
 
 	public List<SimpleLookup> tryTypoMatch(String zh)
 	{
-		checkDbRo();
-		return new TypoSearch().tryTypo(zh, db);
+		return tryAlternateSearch(new TypoSearch(), zh);
 	}
 
 	public List<SimpleLookup> trySubstringMatch(String zh)
 	{
+		return tryAlternateSearch(new SubstringSearch(), zh);
+	}
+
+	private List<SimpleLookup> tryAlternateSearch(AlternateSearch alternateSearch, String zh)
+	{
+		final List<SimpleLookup> cached = cache.getSimpleLookup(alternateSearch, zh);
+		if(cached != null)
+		{
+			return cached;
+		}
+
 		checkDbRo();
-		return new SubstringSearch().trySubstring(zh, db);
+		final List<SimpleLookup> result =  alternateSearch.trySearch(zh, db);
+		cache.setSimpleLookup(alternateSearch, zh, result);
+		return result;
 	}
 
 	public void saveCedictDump(CedictDump dump)

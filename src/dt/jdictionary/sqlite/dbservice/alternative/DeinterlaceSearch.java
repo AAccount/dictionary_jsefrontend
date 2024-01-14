@@ -7,12 +7,12 @@ import dt.jdictionary.Utils;
 import dt.jdictionary.sqlite.dbservice.DbServiceUtils;
 import dt.jdictionary.sqlite.raw.DbRepo;
 
-public class DeinterlaceSearch 
+public class DeinterlaceSearch implements AlternateSearch
 {	
 	/**
 	 * Attempt to "deinterlace" an entry: chars 123 --> lookup 13; chars 1234 --> lookup 13 and 24
 	 */
-	public List<SimpleLookup> deinterlace(String zh, DbRepo db)
+	public List<SimpleLookup> trySearch(String zh, DbRepo db)
 	{
 		final int MIN_DEINTERLACE = 3;
 		final int MAX_DEINTERLACE = 4;
@@ -31,5 +31,11 @@ public class DeinterlaceSearch
 		final List<SimpleLookup> twoFour = DbServiceUtils.convertRawToSimple(db.lookupChinese(trueChars.get(1) + trueChars.get(3)));
 		oneThree.addAll(twoFour);
 		return oneThree;
+	}
+
+	@Override
+	public String getAltSearchType() 
+	{
+		return this.getClass().getName();
 	}
 }
