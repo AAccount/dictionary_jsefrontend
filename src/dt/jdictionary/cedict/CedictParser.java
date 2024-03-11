@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.Utils;
@@ -234,37 +235,13 @@ return selfSimplifiedChars;
 				continue;
 			}
 
-			final String[] defWords = rawDef.split(" ");
-			for(final String defWord : defWords)
-			{
-				if(!defWord.contains(OG_SIMPLIFIED_SPLIT))
-				{
-					continue;
-				}
-				final String cleanedDefWord = defWord.replace("(", "");
-				final int split = cleanedDefWord.indexOf(OG_SIMPLIFIED_SPLIT);
-
-				/*
-				 * The end of the original substring is where the split "|" is.
-				 * It doesn't matter if the last char of the original was parseable by java or not.
-				 * The "|" will always come after it.
-				 */
-				final String original = cleanedDefWord.substring(0, split).strip();
-
-				/*
-				 * Unlike the original, there is no predictable text that comes after the simplified.
-				 * Can't use the original's string length. What if the simplified has unparseable chars, inflating the length?
-				 * At the mercy of java's string parseability. It will need to be cleaned downstream.
-				 */
-				final String simplified = cleanedDefWord.substring(split+1, cleanedDefWord.length()).strip();
-
-				final Map<String, String> defResult = catalogSimplified(original, simplified);
-				result.putAll(defResult);
-			}
+			parseEmbeddedSimplifed(rawDef.split(" ")).stream()
+				.filter(tuple -> tuple.getSimplified() != null)
+				.forEach(tuple -> result.putAll(catalogSimplified(tuple.getOriginal(), tuple.getSimplified())));
 		}
 		return result;
 	}
-
+	
 	private List<String> procDefsRmSimplified(List<String> rawDefinitions)
 	{
 		final List<String> result = new ArrayList<>();
@@ -276,26 +253,70 @@ return selfSimplifiedChars;
 				continue;
 			}
 
-			final String[] defWords = rawDef.split(" ");
-			String processedDef = "";
-			for(final String defWord : defWords)
-			{
-				if(!defWord.contains(OG_SIMPLIFIED_SPLIT))
-				{
-					processedDef = processedDef + defWord + " ";
-					continue;
-				}
-				final String cleanedDefWord = defWord.replace("(", "");
-				final int split = cleanedDefWord.indexOf(OG_SIMPLIFIED_SPLIT);
-				final String original = cleanedDefWord.substring(0, split).strip();
-				final String rest = cleanedDefWord.substring(split*2+1).strip();
-				processedDef = processedDef + original + rest + " ";
-			}
-			result.add(processedDef.strip());
+
+			final String processedDef = parseEmbeddedSimplifed(rawDef.split(" ")).stream()
+				.map(SimpOgTuple::getOriginal)
+				.collect(Collectors.joining(" "));
+			result.add(processedDef);
 		}
 		return result;
 	}
 
+	private List<SimpOgTuple> parseEmbeddedSimplifed(String[] defWords)
+	{
+		final List<SimpOgTuple> result = new ArrayList<>();
+		boolean skipDefWord = false;
+		for(int i=0; i<defWords.length; i++)
+		{
+			if(skipDefWord)
+			{
+				skipDefWord = false;
+				continue;
+			}
+			
+			final String defWord = defWords[i];
+			if(!defWord.contains(OG_SIMPLIFIED_SPLIT))
+			{
+				result.add(new SimpOgTuple(defWord, null));
+				continue;
+			}
+			final String cleanedDefWord = defWord.replace("(", "");
+			final int split = cleanedDefWord.indexOf(OG_SIMPLIFIED_SPLIT);
+
+			/*
+			 * The end of the original substring is where the split "|" is.
+			 * It doesn't matter if the last char of the original was parseable by java or not.
+			 * The "|" will always come after it.
+			 */
+			final String original = cleanedDefWord.substring(0, split).strip();
+
+			/*
+			 * Some times definitions have"traidional| simplified". 
+			 * That space between "|" and the beginning of simplified messes up the parsing.
+			 * The assumption was "traditional|simplified" which used "|" to remove the simplified portion.
+			 * If there is nothing to remove after the "|", the simplified is the next word.
+			 */
+			final int simplifiedStart = split+1;
+			if(simplifiedStart >= defWord.length())
+			{
+				result.add(new SimpOgTuple(original, defWords[i+1].strip()));
+				skipDefWord = true;
+			}
+			else
+			{
+				/*
+				 * Unlike the original, there is no predictable text that comes after the simplified.
+				 * Can't use the original's string length. What if the simplified has unparseable chars, inflating the length?
+				 * At the mercy of java's string parseability. It will need to be cleaned downstream.
+				 */
+				final String simplified = cleanedDefWord.substring(simplifiedStart, cleanedDefWord.length()).strip();
+				result.add(new SimpOgTuple(original, simplified));
+			}
+		}
+		return result;
+	}
+
+	
 	private List<String> procDefsRmMeasureWords(List<String> rawDefinitions)
 	{
 		return rawDefinitions.stream().filter(rawDef -> !rawDef.contains(MEASURE_WORD_INDICATOR)).toList();
