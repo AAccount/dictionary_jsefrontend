@@ -1,12 +1,10 @@
 package dt.jdictionary.sqlite.dbservice.alternative;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.sqlite.dbservice.DbServiceUtils;
 import dt.jdictionary.sqlite.raw.DbRepo;
-import dt.jdictionary.sqlite.raw.RawDictionaryRow;
 
 public class SubstringOfSearch implements AlternateSearch
 {
