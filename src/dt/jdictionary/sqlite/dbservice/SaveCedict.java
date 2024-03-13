@@ -3,12 +3,14 @@ package dt.jdictionary.sqlite.dbservice;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.Utils;
 import dt.jdictionary.cedict.CedictDump;
 import dt.jdictionary.cedict.MeasureWords;
+import dt.jdictionary.cedict.UnrankedLookup;
 import dt.jdictionary.cedict.ZhPinyin;
 import dt.jdictionary.events.EventUtils;
 import dt.jdictionary.sqlite.DbEvent;
@@ -36,7 +38,10 @@ public class SaveCedict
 		db.init();
 		DbEvent.sendProgressEvent(2, totalTrxes);
 
-		db.fillDictionary(dump.getDictionary());
+		final Map<Character, Double> freqCountMap = RankingUtilities.rankSingleChars(dump.getDictionary());
+		final List<SimpleLookup> dictionaryRankedList = dump.getDictionary().stream()
+			.map(unranked -> new SimpleLookup(unranked, RankingUtilities.rank(unranked, freqCountMap))).toList();
+		db.fillDictionary(dictionaryRankedList);
 		fillMeasureWords(dump, db);
 		DbEvent.sendProgressEvent(uptoDictTrxes + 1, totalTrxes);
 		fillSimplified(dump, db);
@@ -47,11 +52,11 @@ public class SaveCedict
 
 	private void fillSubstrings(CedictDump dump, DbRepo db)
 	{
-		final List<SimpleLookup> substringEntries = dump.getDictionary().stream()
-			.filter(simplelookup -> simplelookup.getZh().length() > 1 && Utils.allChinese(simplelookup.getZh())).toList();
+		final List<UnrankedLookup> substringEntries = dump.getDictionary().stream()
+			.filter(unrankedlookup -> unrankedlookup.getZh().length() > 1 && Utils.allChinese(unrankedlookup.getZh())).toList();
 
 		final Set<RawSubstringRow> result = new HashSet<>();
-		for(final SimpleLookup simpleLookup : substringEntries)
+		for(final UnrankedLookup simpleLookup : substringEntries)
 		{
 			final List<String> substrings = DbServiceUtils.generateSubstrings(simpleLookup.getZh());
 			for(final String substring : substrings)

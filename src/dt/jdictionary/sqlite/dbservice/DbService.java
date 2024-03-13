@@ -89,7 +89,6 @@ public class DbService
 
 	public void saveCedictDump(CedictDump dump)
 	{
-		db.close();
 		db = new DbRepo(this, false);
 
 		new SaveCedict().save(dump, db);

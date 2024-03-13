@@ -5,11 +5,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import dt.jdictionary.SimpleLookup;
-
 public class CedictDump 
 {
-	private final List<SimpleLookup> dictionary;
+	private final List<UnrankedLookup> dictionary;
 	private final List<MeasureWords> measureWords;
 	private final Map<String, String> simplifiedChars;
 
@@ -20,7 +18,7 @@ public class CedictDump
 		this.simplifiedChars = new HashMap<>();
 	}
 
-	public List<SimpleLookup> getDictionary() 
+	public List<UnrankedLookup> getDictionary() 
 	{
 		return dictionary;
 	}

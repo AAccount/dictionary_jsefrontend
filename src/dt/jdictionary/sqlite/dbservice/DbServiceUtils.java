@@ -22,7 +22,7 @@ public class DbServiceUtils
 			final String key = rawResult.getZh() + ":" + rawResult.getPinyin();
 			if(!mapper.keySet().contains(key))
 			{
-				final SimpleLookup simpleLookup = new SimpleLookup(rawResult.getZh(), rawResult.getPinyin(), new ArrayList<>());
+				final SimpleLookup simpleLookup = new SimpleLookup(rawResult.getZh(), rawResult.getPinyin(), new ArrayList<>(), rawResult.getRank());
 				result.add(simpleLookup);
 				mapper.put(key, simpleLookup);
 			}

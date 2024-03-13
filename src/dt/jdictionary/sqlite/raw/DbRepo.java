@@ -49,6 +49,7 @@ public class DbRepo
 	private static final String COL_ID = "id";
 	private static final String COL_SUBSTRING = "substring";
 	private static final String COL_FULL_STRING = "fullString";
+	private static final String COL_RANK = "rank";
 
 	private static final String TABLE_ZHBASE = "ZhBase";
 	private static final String TABLE_ENGLISH = "English";
@@ -58,9 +59,9 @@ public class DbRepo
 	private static final String TABLE_SUBSTRING = "Substring";
 
 	private final String DictionaryBaseSql = String.format("""
-		select %s, %s, %s, %s, %s, %s 
+		select %s, %s, %s, %s, %s, %s, %s 
 		from %s join %s on %s.%s = %s.%s where"""
-		, COL_ZH, COL_PINYIN, COL_PINYIN_NORM, COL_DEF, COL_FIRST_CHAR, COL_LAST_CHAR, 
+		, COL_ZH, COL_PINYIN, COL_PINYIN_NORM, COL_DEF, COL_FIRST_CHAR, COL_LAST_CHAR, COL_RANK,
 		TABLE_ZHBASE, TABLE_ENGLISH, TABLE_ZHBASE, COL_ID, TABLE_ENGLISH, COL_ZHBASEID);
 
 	private final Object user;
@@ -77,7 +78,7 @@ public class DbRepo
 			{
 				config.setReadOnly(this.readonly);
 			}
-			final String sqlitePath = System.getProperty("user.home") + "/Programs/mdbg2_0.sqlite";
+			final String sqlitePath = System.getProperty("user.home") + "/Programs/mdbg2_1.sqlite";
 			Class.forName("org.sqlite.JDBC");
 			this.db = DriverManager.getConnection("jdbc:sqlite:"+sqlitePath, config.toProperties());
 			db.setAutoCommit(false);
@@ -97,8 +98,11 @@ public class DbRepo
 	{
 		try 
 		{
-			db.close();
-			Utils.logTimestamp("closed db repo for " + userToString());
+			if(db != null)
+			{
+				db.close();
+				Utils.logTimestamp("closed db repo for " + userToString());
+			}
 		} 
 		catch (SQLException e) 
 		{
@@ -128,9 +132,10 @@ public class DbRepo
 				%s TEXT NOT NULL, 
 				%s TEXT, 
 				%s TEXT, 
+				%s REAL,
 				PRIMARY KEY(%s AUTOINCREMENT)
 			)
-			""", TABLE_ZHBASE, COL_ID, COL_ZH, COL_PINYIN, COL_PINYIN_NORM, COL_FIRST_CHAR, COL_LAST_CHAR, COL_ID);
+			""", TABLE_ZHBASE, COL_ID, COL_ZH, COL_PINYIN, COL_PINYIN_NORM, COL_FIRST_CHAR, COL_LAST_CHAR, COL_RANK, COL_ID);
 		indexes.add(List.of(TABLE_ZHBASE, COL_ZH));
 		indexes.add(List.of(TABLE_ZHBASE, COL_FIRST_CHAR));
 		indexes.add(List.of(TABLE_ZHBASE, COL_LAST_CHAR));
@@ -259,8 +264,8 @@ public class DbRepo
 					results.getString(COL_PINYIN_NORM),
 					results.getString(COL_DEF), 
 					results.getString(COL_FIRST_CHAR), 
-					results.getString(COL_LAST_CHAR)
-				);
+					results.getString(COL_LAST_CHAR),
+					results.getDouble(COL_RANK));
 				rawDbRows.add(row);
 			}
 		}
@@ -430,7 +435,7 @@ public class DbRepo
 
 	public void fillDictionary(List<SimpleLookup> allEntries)
 	{
-		final String sqlZhBase = String.format("INSERT INTO %s (%s, %s, %s, %s, %s) VALUES (?,?,?,?,?)", TABLE_ZHBASE, COL_ZH, COL_PINYIN, COL_PINYIN_NORM, COL_FIRST_CHAR, COL_LAST_CHAR);
+		final String sqlZhBase = String.format("INSERT INTO %s (%s, %s, %s, %s, %s, %s) VALUES (?,?,?,?,?, ?)", TABLE_ZHBASE, COL_ZH, COL_PINYIN, COL_PINYIN_NORM, COL_FIRST_CHAR, COL_LAST_CHAR, COL_RANK);
 		final String sqlEnglish = String.format("INSERT INTO %s (%s, %s) VALUES (?,?)", TABLE_ENGLISH, COL_ZHBASEID, COL_DEF);
 		final String sqlEnglishFTS5 =  String.format("INSERT INTO %s (%s, %s) VALUES (?,?)", TABLE_ENGLISH_FTS5, COL_ZHBASEID, COL_DEF);
 		try 
@@ -446,12 +451,13 @@ public class DbRepo
 			int saved = 0;
 			for(final SimpleLookup entry : allEntries)
 			{
-				final RawDictionaryRow zhBase = new RawDictionaryRow(entry.getZh(), entry.getPinyin());
+				final RawDictionaryRow zhBase = new RawDictionaryRow(entry.getZh(), entry.getPinyin(), entry.getRank());
 				pstZhBase.setString(1, zhBase.getZh());
 				pstZhBase.setString(2, zhBase.getPinyin());
 				pstZhBase.setString(3, zhBase.getPinyinNormalized());
 				pstZhBase.setString(4, zhBase.getFirstChar());
 				pstZhBase.setString(5, zhBase.getLastChar());
+				pstZhBase.setDouble(6, zhBase.getRank());
 				pstZhBase.execute();
 
 				final PreparedStatement getId = db.prepareStatement("select last_insert_rowid() as id;");

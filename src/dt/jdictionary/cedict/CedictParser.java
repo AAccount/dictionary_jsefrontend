@@ -16,7 +16,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.Utils;
 import dt.jdictionary.events.Event;
 import dt.jdictionary.events.EventDispatcher;
@@ -54,7 +53,7 @@ public class CedictParser
 				}
 
 				final List<String> definitions = parseDefinitions(parsedLine);
-				result.getDictionary().add(new SimpleLookup(parsedLine.getOriginal(), parsedLine.getPinyin(), definitions));
+				result.getDictionary().add(new UnrankedLookup(parsedLine.getOriginal(), parsedLine.getPinyin(), definitions));
 				final Map<String, String> simplifiedChars = getSimplifiedChars(parsedLine);
 				result.getSimplifiedChars().putAll(simplifiedChars);
 				final List<ZhPinyin> measureWords = procDefsMeasureWords(parsedLine);

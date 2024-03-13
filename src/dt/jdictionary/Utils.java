@@ -4,7 +4,9 @@ import java.text.Normalizer;
 import java.text.Normalizer.Form;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Utils 
 {
@@ -90,5 +92,17 @@ public class Utils
 	public static void logTimestamp(String message)
 	{
 		System.out.println(Instant.now() + " " + message);
+	}
+	
+	public static double stdev(Collection<Double> numbers)
+	{
+		final double mean = average(numbers);
+		final double sd = numbers.stream().collect(Collectors.summingDouble(val -> Math.pow(val - mean, 2)));
+		return Math.sqrt(sd / numbers.size());
+	}
+	
+	public static double average(Collection<Double> numbers)
+	{
+		return numbers.stream().mapToDouble(i -> i).average().orElse(0);
 	}
 }

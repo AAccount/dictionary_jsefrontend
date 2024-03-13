@@ -1,4 +1,5 @@
 package dt.jdictionary.ui;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -54,6 +55,8 @@ class UiList implements ActionListener
 	public JComponent render(List<SimpleLookup> dbResults)
 	{
 		Utils.logTimestamp("start ui list");
+		Collections.sort(dbResults);
+		Collections.reverse(dbResults);
 		pages.addAllEntries(Utils.subdivideList(dbResults, PAGE_SIZE));
 
 		renderPageNavigation();
@@ -96,6 +99,12 @@ class UiList implements ActionListener
 		final int COL_DEF = 2;
 		final String definition = String.join(", ", dbresult.getDefinitions()).toLowerCase();
 		UiUtils.renderLabelToGrid(parent, definition, row, COL_DEF, true);
+		
+		if(UiConstants.SHOW_RANK)
+		{
+			final int COL_RANK = 3;
+			UiUtils.renderLabelToGrid(parent, String.valueOf(dbresult.getRank()), row, COL_RANK, true);
+		}
 	}
 
 	private void renderPageNavigation()

@@ -12,20 +12,21 @@ public class RawDictionaryRow
 	private final String singleDefinition;
 	private final String firstChar;
 	private final String lastChar;
+	private final double rank;
 
-	public RawDictionaryRow(String zh, String pinyin) 
+	public RawDictionaryRow(String zh, String pinyin, double rank) 
 	{
 		this.zh = zh;
 		this.pinyin = pinyin;
 		this.pinyinNormalized = Utils.normalizePinyin(pinyin);
 		this.singleDefinition = null;
-
+		this.rank = rank;
 		final List<String> trueChars = Utils.trueChars(zh);
 		this.firstChar = trueChars.size() > 1 ? trueChars.get(0) : null;
 		this.lastChar = trueChars.size() > 1 ? trueChars.get(trueChars.size()-1) : null;
 	}
 
-	public RawDictionaryRow(String zh, String pinyin, String pinyinNormalized, String singleDefinition, String firstChar, String lastChar) 
+	public RawDictionaryRow(String zh, String pinyin, String pinyinNormalized, String singleDefinition, String firstChar, String lastChar, double rank) 
 	{
 		this.zh = zh;
 		this.pinyin = pinyin;
@@ -33,8 +34,9 @@ public class RawDictionaryRow
 		this.singleDefinition = singleDefinition;
 		this.firstChar = firstChar;
 		this.lastChar = lastChar;
+		this.rank = rank;
 	}
-
+	
 	public String getZh() 
 	{
 		return zh;
@@ -65,6 +67,11 @@ public class RawDictionaryRow
 		return pinyinNormalized;
 	}
 
+	public double getRank()
+	{
+		return rank;
+	}
+
 	@Override
 	public int hashCode()
 	{
@@ -72,9 +79,9 @@ public class RawDictionaryRow
 	}
 
 	@Override
-	public String toString() 
+	public String toString()
 	{
-		return "RawDictionaryRow [zh=" + zh + ", pinyin=" + pinyin + ", singleDefinition=" + singleDefinition + "]";
+		return "RawDictionaryRow [zh=" + zh + ", pinyin=" + pinyin + ", singleDefinition=" + singleDefinition + ", rank=" + rank + "]";
 	}
 
 	@Override
