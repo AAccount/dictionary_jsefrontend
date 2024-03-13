@@ -1,5 +1,6 @@
 package dt.jdictionary.sqlite.dbservice.alternative;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import dt.jdictionary.SimpleLookup;
@@ -23,14 +24,12 @@ public class DeinterlaceSearch implements AlternateSearch
 		}
 
 		final List<String> trueChars = Utils.trueChars(zh);
-		final List<SimpleLookup> oneThree = DbServiceUtils.convertRawToSimple(db.lookupChinese(trueChars.get(0) + trueChars.get(2)));
-		if(zh.length() == MIN_DEINTERLACE)
+		final List<String> candidates = new ArrayList<String>();
+		candidates.add(trueChars.get(0) + trueChars.get(2));
+		if(trueChars.size() == MAX_DEINTERLACE)
 		{
-			return oneThree;
+			candidates.add(trueChars.get(1) + trueChars.get(3));
 		}
-		
-		final List<SimpleLookup> twoFour = DbServiceUtils.convertRawToSimple(db.lookupChinese(trueChars.get(1) + trueChars.get(3)));
-		oneThree.addAll(twoFour);
-		return oneThree;
+		return DbServiceUtils.convertRawToSimple(db.lookupChinese(candidates));
 	}
 }

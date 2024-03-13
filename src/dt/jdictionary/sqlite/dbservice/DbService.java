@@ -26,7 +26,7 @@ public class DbService
 	public FullLookup lookupChinese(String zh)
 	{
 		checkDbRo();
-		final List<RawDictionaryRow> rawResults = db.lookupChinese(zh);
+		final List<RawDictionaryRow> rawResults = db.lookupChinese(List.of(zh));
 		final Map<String, List<String>> resultsByPinyin = new HashMap<>();
 		for(final RawDictionaryRow rawResult : rawResults)
 		{

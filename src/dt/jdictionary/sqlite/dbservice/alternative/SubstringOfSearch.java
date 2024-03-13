@@ -23,12 +23,6 @@ public class SubstringOfSearch implements AlternateSearch
 		{
 			return List.of();
 		}
-
-		final List<RawDictionaryRow> raws = new ArrayList<>();
-		for(final String possibleMatch : possibleMatches)
-		{
-			raws.addAll(db.lookupChinese(possibleMatch));
-		}
-		return DbServiceUtils.convertRawToSimple(raws);
+		return DbServiceUtils.convertRawToSimple(db.lookupChinese(possibleMatches));
 	}
 }

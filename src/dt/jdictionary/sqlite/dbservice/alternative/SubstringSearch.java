@@ -13,19 +13,12 @@ public class SubstringSearch implements AlternateSearch
 	@Override
 	public List<SimpleLookup> trySearch(String zh, DbRepo db)
 	{
-		if(zh.length() < DbServiceUtils.MIN_SUBSTRING_LENGTH)
+		if(zh.length() <= DbServiceUtils.MIN_SUBSTRING_LENGTH)
 		{
 			return List.of();
 		}
 
 		final List<String> allSubstrings = DbServiceUtils.generateSubstrings(zh);
-		final List<SimpleLookup> result = new ArrayList<>();
-		for(final String substring : allSubstrings)
-		{
-			final List<RawDictionaryRow> substringResults = db.lookupChinese(substring);
-			final List<SimpleLookup> converted = DbServiceUtils.convertRawToSimple(substringResults);
-			result.addAll(converted);
-		}
-		return result;
+		return DbServiceUtils.convertRawToSimple(db.lookupChinese(allSubstrings));
 	}
 }

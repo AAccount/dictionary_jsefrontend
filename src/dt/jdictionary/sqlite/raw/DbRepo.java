@@ -235,10 +235,35 @@ public class DbRepo
 		}
 	}
 
-	public List<RawDictionaryRow> lookupChinese(String zh)
+	public List<RawDictionaryRow> lookupChinese(List<String> zhsStrings)
 	{
-		final String sql = DictionaryBaseSql + " " + COL_ZH + " = ?";
-		return lookupDictionaryTable(sql, zh);
+		final String zhsStringsKeyString = String.join(" ", zhsStrings);		
+		final String repeaterRawString = "?, ".repeat(zhsStrings.size());
+		final String repeaterString = repeaterRawString.substring(0, repeaterRawString.length() - 2);
+		final String sql = DictionaryBaseSql + " " + COL_ZH + " in (" + repeaterString + ")";
+		final RawDictionaryRowResp cached = DbRepoCache.getInstance().getTableCache(sql, zhsStringsKeyString);
+		if(cached.foundResult())
+		{
+			return cached.getRawDictionaryRow();
+		}
+		
+		final List<RawDictionaryRow> rawDbRows = new ArrayList<>();
+		try 
+		{
+			final PreparedStatement pst = db.prepareStatement(sql);
+			for(int i=0; i<zhsStrings.size(); i++)
+			{
+				pst.setString(i+1, zhsStrings.get(i));
+			}
+			final ResultSet results = pst.executeQuery();
+			rawDbRows.addAll(processRawDbRows(results));
+		}
+		catch (SQLException e) 
+		{
+			EventUtils.sendError(e);
+		}
+		DbRepoCache.getInstance().setTableCache(sql, zhsStringsKeyString, rawDbRows);
+		return rawDbRows;
 	}
 
 	private List<RawDictionaryRow> lookupDictionaryTable(String sql, String target)
@@ -255,25 +280,31 @@ public class DbRepo
 			final PreparedStatement pst = db.prepareStatement(sql);
 			pst.setString(1, target);
 			final ResultSet results = pst.executeQuery();
-
-			while(results.next())
-			{
-				final RawDictionaryRow row =  new RawDictionaryRow(
-					results.getString(COL_ZH), 
-					results.getString(COL_PINYIN), 
-					results.getString(COL_PINYIN_NORM),
-					results.getString(COL_DEF), 
-					results.getString(COL_FIRST_CHAR), 
-					results.getString(COL_LAST_CHAR),
-					results.getDouble(COL_RANK));
-				rawDbRows.add(row);
-			}
+			rawDbRows.addAll(processRawDbRows(results));
 		}
 		catch (SQLException e) 
 		{
 			EventUtils.sendError(e);
 		}
 		DbRepoCache.getInstance().setTableCache(sql, target, rawDbRows);
+		return rawDbRows;
+	}
+	
+	private List<RawDictionaryRow> processRawDbRows(ResultSet results) throws SQLException
+	{
+		final List<RawDictionaryRow> rawDbRows = new ArrayList<>();
+		while(results.next())
+		{
+			final RawDictionaryRow row =  new RawDictionaryRow(
+				results.getString(COL_ZH), 
+				results.getString(COL_PINYIN), 
+				results.getString(COL_PINYIN_NORM),
+				results.getString(COL_DEF), 
+				results.getString(COL_FIRST_CHAR), 
+				results.getString(COL_LAST_CHAR),
+				results.getDouble(COL_RANK));
+			rawDbRows.add(row);
+		}
 		return rawDbRows;
 	}
 

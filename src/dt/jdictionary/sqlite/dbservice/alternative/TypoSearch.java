@@ -71,7 +71,7 @@ public class TypoSearch implements AlternateSearch
 
 	private List<String> findPinyinForZh(String singleChar, DbRepo db)
 	{
-		final List<SimpleLookup> directResults = DbServiceUtils.convertRawToSimple(db.lookupChinese(singleChar));
+		final List<SimpleLookup> directResults = DbServiceUtils.convertRawToSimple(db.lookupChinese(List.of(singleChar)));
 		if(directResults.size() > 0)
 		{
 			final Set<String> pinyinsUnique = new HashSet<>();
