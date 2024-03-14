@@ -232,12 +232,17 @@ public class DbRepo
 		}
 	}
 
-	public List<RawDictionaryRow> lookupChinese(List<String> zhsStrings)
+	public List<RawDictionaryRow> lookupChinese(List<String> zhStrings)
 	{
-		final String zhsStringsKeyString = String.join(" ", zhsStrings);		
-		final String repeaterRawString = "?, ".repeat(zhsStrings.size());
+		return lookupChineseByColumn(COL_ZH, zhStrings);
+	}
+	
+	public List<RawDictionaryRow> lookupChineseByColumn(String column, List<String> zhStrings)
+	{
+		final String zhsStringsKeyString = String.join(" ", zhStrings);		
+		final String repeaterRawString = "?, ".repeat(zhStrings.size());
 		final String repeaterString = repeaterRawString.substring(0, repeaterRawString.length() - 2);
-		final String sql = DictionaryBaseSql + " " + COL_ZH + " in (" + repeaterString + ")";
+		final String sql = DictionaryBaseSql + " " + column + " in (" + repeaterString + ")";
 		final Optional<List<RawDictionaryRow>> cached = DbRepoCache.getInstance().getTableCache(sql, zhsStringsKeyString);
 		if(cached.isPresent())
 		{
@@ -248,9 +253,9 @@ public class DbRepo
 		try 
 		{
 			final PreparedStatement pst = db.prepareStatement(sql);
-			for(int i=0; i<zhsStrings.size(); i++)
+			for(int i=0; i<zhStrings.size(); i++)
 			{
-				pst.setString(i+1, zhsStrings.get(i));
+				pst.setString(i+1, zhStrings.get(i));
 			}
 			final ResultSet results = pst.executeQuery();
 			rawDbRows.addAll(processRawDbRows(results));
@@ -427,10 +432,9 @@ public class DbRepo
 		return getListOfString(sql, zh, COL_PINYIN_NORM);
 	}
 
-	public List<RawDictionaryRow> findByNormalizedPinyin(String normalizedPinyin)
+	public List<RawDictionaryRow> findByNormalizedPinyin(List<String> normalizedPinyins)
 	{
-		final String sql = DictionaryBaseSql + "  " + COL_PINYIN_NORM +  "=?";
-		return lookupDictionaryTable(sql, normalizedPinyin);
+		return lookupChineseByColumn(COL_PINYIN_NORM, normalizedPinyins);
 	}
 
 	private List<String> getListOfString(String sql, String search, String column)

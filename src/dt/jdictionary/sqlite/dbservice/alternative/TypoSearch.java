@@ -19,15 +19,14 @@ public class TypoSearch implements AlternateSearch
 	public List<SimpleLookup> trySearch(String compoundWord, DbRepo db)
 	{
 		final List<String> trueChars = Utils.trueChars(compoundWord);
-		final List<List<String>> normalizedPinyins = trueChars.stream().map(trueChar -> findPinyinForZh(trueChar, db)).toList();
+		final List<List<String>> normalizedPinyins = findPinyinForZh(trueChars, db);
 		if(compoundWord.length() != normalizedPinyins.size())
 		{
 			return List.of();
 		}
 
 		final List<String> permutations = pinyinPermutations(normalizedPinyins);
-		final List<SimpleLookup> candidates = new ArrayList<>();
-		permutations.stream().forEach(permutation -> candidates.addAll(DbServiceUtils.convertRawToSimple(db.findByNormalizedPinyin(permutation))));
+		final List<SimpleLookup> candidates = DbServiceUtils.convertRawToSimple(db.findByNormalizedPinyin(permutations));
 
 		final Map<Integer, List<SimpleLookup>> candidatesRanked = new HashMap<>();
 		for(final SimpleLookup candidate : candidates)
@@ -65,21 +64,28 @@ public class TypoSearch implements AlternateSearch
 				similarity++;
 			}
 		}
-
 		return similarity;
 	}
 
-	private List<String> findPinyinForZh(String singleChar, DbRepo db)
+	private List<List<String>> findPinyinForZh(List<String> chars, DbRepo db)
 	{
-		final List<SimpleLookup> directResults = DbServiceUtils.convertRawToSimple(db.lookupChinese(List.of(singleChar)));
-		if(directResults.size() > 0)
+		final HashMap<String, Set<String>> pinyinMap = new HashMap<>();
+		final List<SimpleLookup> dictionaryEntries = DbServiceUtils.convertRawToSimple(db.lookupChinese(chars));
+		for(final SimpleLookup entry : dictionaryEntries)
 		{
-			final Set<String> pinyinsUnique = new HashSet<>();
-			directResults.stream().forEach(result -> pinyinsUnique.add(Utils.normalizePinyin(result.getPinyin())));
-			return new ArrayList<>(pinyinsUnique);
+			if(!pinyinMap.containsKey(entry.getZh()))
+			{
+				pinyinMap.put(entry.getZh(), new HashSet<>());
+			}
+			pinyinMap.get(entry.getZh()).add(Utils.normalizePinyin(entry.getPinyin()));
 		}
-
-		return db.findSimplifiedNormalizedPinyins(singleChar);
+		
+		final List<List<String>> result = new ArrayList<>();
+		for(final String singleChar : chars)
+		{
+			result.add(new ArrayList<String>(pinyinMap.get(singleChar)));
+		}
+		return result;
 	}
 
 	private List<String> pinyinPermutations(List<List<String>> individualPinyins)
