@@ -1,10 +1,9 @@
-package dt.jdictionary.sqlite.raw.cache;
+package dt.jdictionary.sqlite.raw;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import dt.jdictionary.sqlite.raw.RawDictionaryRow;
+import java.util.Optional;
 
 // Need to wrap all cache responses in a "response" object because sometimes null is the answer.
 public class DbRepoCache 
@@ -30,15 +29,15 @@ public class DbRepoCache
 
 	private DbRepoCache() {}
 
-	public RawDictionaryRowResp getTableCache(String sql, String target)
+	public Optional<List<RawDictionaryRow>> getTableCache(String sql, String target)
 	{
 		final String key = stringMergedKey(new String[]{sql, target});
 		if(!tableCache.containsKey(key))
 		{
-			return new RawDictionaryRowResp(false, null);
+			return Optional.empty();
 		}
 
-		return new RawDictionaryRowResp(true, tableCache.get(key));
+		return Optional.of(tableCache.get(key));
 	}
 
 	public void setTableCache(String sql, String target, List<RawDictionaryRow> result)
@@ -47,13 +46,13 @@ public class DbRepoCache
 		tableCache.put(key, result);
 	}
 
-	public StringResp getSimplifiedCache(String zh)
+	public Optional<String> getSimplifiedCache(String zh)
 	{
 		if(!simplifiedCache.containsKey(zh))
 		{
-			return new StringResp(false, null);
+			return Optional.empty();
 		}
-		return new StringResp(true, simplifiedCache.get(zh));
+		return Optional.of(simplifiedCache.get(zh));
 	}
 
 	public void setSimplfiedCache(String zh, String simplified)
@@ -61,14 +60,14 @@ public class DbRepoCache
 		simplifiedCache.put(zh, simplified);
 	}
 
-	public ListStringsResp getMeasureWordCache(String zh)
+	public Optional<List<String>> getMeasureWordCache(String zh)
 	{
 		if(!measureWordCache.containsKey(zh))
 		{
-			return new ListStringsResp(false, null);
+			return Optional.empty();
 		}
 
-		return new ListStringsResp(true, measureWordCache.get(zh));
+		return Optional.of(measureWordCache.get(zh));
 	}
 
 	public void setMeasureWordCache(String zh, List<String> measureWords)
@@ -76,14 +75,14 @@ public class DbRepoCache
 		measureWordCache.put(zh, measureWords);
 	}
 
-	public ListStringsResp getListOfStringsCache(String sql, String search, String column)
+	public Optional<List<String>> getListOfStringsCache(String sql, String search, String column)
 	{
 		final String key = stringMergedKey(new String[]{sql, search, column});
 		if(!listOfStringsCache.containsKey(key))
 		{
-			return new ListStringsResp(false, null);
+			return Optional.empty();
 		}
-		return new ListStringsResp(true, listOfStringsCache.get(key));
+		return Optional.of(listOfStringsCache.get(key));
 	}
 
 	public void setListOfStringsCache(String sql, String search, String column, List<String> results)

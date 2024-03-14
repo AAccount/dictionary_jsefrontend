@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.sqlite.SQLiteConfig;
 
@@ -17,10 +18,6 @@ import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.Utils;
 import dt.jdictionary.events.EventUtils;
 import dt.jdictionary.sqlite.DbEvent;
-import dt.jdictionary.sqlite.raw.cache.DbRepoCache;
-import dt.jdictionary.sqlite.raw.cache.ListStringsResp;
-import dt.jdictionary.sqlite.raw.cache.RawDictionaryRowResp;
-import dt.jdictionary.sqlite.raw.cache.StringResp;
 
 public class DbRepo 
 {
@@ -241,10 +238,10 @@ public class DbRepo
 		final String repeaterRawString = "?, ".repeat(zhsStrings.size());
 		final String repeaterString = repeaterRawString.substring(0, repeaterRawString.length() - 2);
 		final String sql = DictionaryBaseSql + " " + COL_ZH + " in (" + repeaterString + ")";
-		final RawDictionaryRowResp cached = DbRepoCache.getInstance().getTableCache(sql, zhsStringsKeyString);
-		if(cached.foundResult())
+		final Optional<List<RawDictionaryRow>> cached = DbRepoCache.getInstance().getTableCache(sql, zhsStringsKeyString);
+		if(cached.isPresent())
 		{
-			return cached.getRawDictionaryRow();
+			return cached.get();
 		}
 		
 		final List<RawDictionaryRow> rawDbRows = new ArrayList<>();
@@ -268,10 +265,10 @@ public class DbRepo
 
 	private List<RawDictionaryRow> lookupDictionaryTable(String sql, String target)
 	{
-		final RawDictionaryRowResp cached = DbRepoCache.getInstance().getTableCache(sql, target);
-		if(cached.foundResult())
+		final Optional<List<RawDictionaryRow>> cached = DbRepoCache.getInstance().getTableCache(sql, target);
+		if(cached.isPresent())
 		{
-			return cached.getRawDictionaryRow();
+			return cached.get();
 		}
 
 		final List<RawDictionaryRow> rawDbRows = new ArrayList<>();
@@ -310,10 +307,10 @@ public class DbRepo
 
 	public String lookupSimplified(String zh)
 	{
-		final StringResp cached = DbRepoCache.getInstance().getSimplifiedCache(zh);
-		if(cached.foundResult())
+		final Optional<String> cached = DbRepoCache.getInstance().getSimplifiedCache(zh);
+		if(cached.isPresent())
 		{
-			return cached.getResult();
+			return cached.get();
 		}
 
 		String zhSimplified = "";
@@ -356,10 +353,10 @@ public class DbRepo
 
 	public List<String> lookupMeasureWords(String zh)
 	{
-		final ListStringsResp cached = DbRepoCache.getInstance().getMeasureWordCache(zh);
-		if(cached.foundResult())
+		final Optional<List<String>> cached = DbRepoCache.getInstance().getMeasureWordCache(zh);
+		if(cached.isPresent())
 		{
-			return cached.getResult();
+			return cached.get();
 		}
 
 		final List<String> measureWords = new ArrayList<>();
@@ -438,10 +435,10 @@ public class DbRepo
 
 	private List<String> getListOfString(String sql, String search, String column)
 	{
-		final ListStringsResp cached = DbRepoCache.getInstance().getListOfStringsCache(sql, search, column);
-		if(cached.foundResult())
+		final Optional<List<String>> cached = DbRepoCache.getInstance().getListOfStringsCache(sql, search, column);
+		if(cached.isPresent())
 		{
-			return cached.getResult();
+			return cached.get();
 		}
 
 		final List<String> result = new ArrayList<>();
