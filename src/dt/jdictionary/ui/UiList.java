@@ -55,8 +55,7 @@ class UiList implements ActionListener
 	public JComponent render(List<SimpleLookup> dbResults)
 	{
 		Utils.logTimestamp("start ui list");
-		Collections.sort(dbResults);
-		Collections.reverse(dbResults);
+		Collections.sort(dbResults, Collections.reverseOrder());
 		pages.addAllEntries(Utils.subdivideList(dbResults, PAGE_SIZE));
 
 		renderPageNavigation();

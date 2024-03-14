@@ -1,12 +1,11 @@
 package dt.jdictionary.sqlite.dbservice.alternative;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.Utils;
@@ -28,27 +27,10 @@ public class TypoSearch implements AlternateSearch
 		final List<String> permutations = pinyinPermutations(normalizedPinyins);
 		final List<SimpleLookup> candidates = DbServiceUtils.convertRawToSimple(db.findByNormalizedPinyin(permutations));
 
-		final Map<Integer, List<SimpleLookup>> candidatesRanked = new HashMap<>();
-		for(final SimpleLookup candidate : candidates)
-		{
-			final int similarity = pinyinLookupSimilarity(candidate, trueChars);
-			if(similarity == 0 || similarity == compoundWord.length())
-			{
-				continue;
-			}
-			if(!candidatesRanked.keySet().contains(similarity))
-			{
-				candidatesRanked.put(similarity, new ArrayList<>());
-			}
-			candidatesRanked.get(similarity).add(candidate);
-		}
-
-		final List<Integer> rankings = new ArrayList<>(candidatesRanked.keySet());
-		rankings.sort(Comparator.reverseOrder());
-
-		final List<SimpleLookup> result = new ArrayList<>();
-		rankings.stream().forEach(rank -> result.addAll(candidatesRanked.get(rank)));
-		return result;
+		return candidates.stream()
+				.map(candidate -> new SimpleLookup(candidate.getZh(), candidate.getPinyin(), candidate.getDefinitions(), pinyinLookupSimilarity(candidate, trueChars)))
+				.filter(candidate -> candidate.getRank() >0 && candidate.getRank() < compoundWord.length())
+				.collect(Collectors.toCollection(ArrayList::new));
 	}
 
 	private int pinyinLookupSimilarity(SimpleLookup candidate, List<String> targetChars)
