@@ -1,9 +1,13 @@
 package dt.jdictionary.ui;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 import java.awt.GridBagLayout;
+import java.awt.Component;
 import java.awt.GridBagConstraints;
 
 import javax.swing.JComponent;
@@ -29,32 +33,60 @@ class UiChineseLookup
 	public JComponent render(FullLookup dictionaryResult, Map<String, List<SimpleLookup>> supplementaries)
 	{
 		// Return the raw notebook. Don't prepackage it in a panel.
-		Utils.logTimestamp("start single char");
-
 		final JTabbedPane notebook = new JTabbedPane();
+		final Map<String, CompletableFuture<Component>> tabFutures= new HashMap<>();
+	
 		notebook.setBorder(UiConstants.TRACER);
-		notebook.addTab("Definition", renderZhDefinition(dictionaryResult));
-		Utils.logTimestamp("end single char");
 
-		for(final String supplementary : supplementaries.keySet())
-		{
-			final List<SimpleLookup> supplementaryList = supplementaries.get(supplementary);
-			if(supplementaryList.size() > 0)
-			{
-				notebook.addTab(supplementary, new UiList().render(supplementaryList));
-			}
-		}
+		tabFutures.put("Definition", definitionCompletable(dictionaryResult));
+		supplementaries.keySet().stream()
+			.filter(supplementary -> !supplementaries.get(supplementary).isEmpty())
+			.forEach(supplementary -> tabFutures.put(supplementary, tabCompletable(supplementaries.get(supplementary))));
+		tabFutures.values().forEach(CompletableFuture::join);
+		
+		notebook.addTab("Definition", tabFutures.get("Definition").join());
+		supplementaries.keySet().stream()
+			.filter(supplementary -> !supplementaries.get(supplementary).isEmpty())
+			.forEach(supplementary -> notebook.addTab(supplementary, tabFutures.get(supplementary).join()));
 		return notebook;
+	}
+	
+	private CompletableFuture<Component> definitionCompletable(FullLookup dictionaryResult)
+	{
+		return CompletableFuture.supplyAsync(new Supplier<Component>() {
+
+			@Override
+			public Component get()
+			{
+				return renderZhDefinition(dictionaryResult);
+			}
+		});
+	}
+	
+	private CompletableFuture<Component> tabCompletable(List<SimpleLookup> lookups)
+	{
+		return CompletableFuture.supplyAsync(new Supplier<Component>() {
+
+			@Override
+			public Component get()
+			{
+				return new UiList().render(new ArrayList<SimpleLookup>(lookups));
+			}
+		});
 	}
 
 	private JPanel renderZhDefinition(FullLookup dictionaryResult)
 	{
+		Utils.logTimestamp("start single char");
+
 		final JPanel result = new JPanel(new GridBagLayout());
 		result.setBorder(UiConstants.TRACER);
 
 		final int rowsRendered = renderDictionaryResults(result, dictionaryResult);
 		renderZhCharBig(dictionaryResult.getZh(), result);
 		UiUtils.renderFiller(result, rowsRendered+1);
+
+		Utils.logTimestamp("end single char");
 		return result;
 	}
 

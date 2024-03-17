@@ -71,9 +71,5 @@ public class RankingUtilities
 			total = total + normalizedMap.getOrDefault(zhchar, 0.0);
 		}
 		return total / (double)zh.length();
-//		return zh.chars()
-//				.map(zhchar -> normalizedMap.getOrDefault((char)zhchar, 0.0))
-//				.reduce(0.0, (total, rank) -> total+rank) 
-//			/ (double)zh.length();
 	}
 }
