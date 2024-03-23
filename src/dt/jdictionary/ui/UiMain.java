@@ -236,7 +236,8 @@ public class UiMain implements ActionListener, EventListener
 		Utils.logTimestamp("Input trimmed, to lower case: " + received);
 
 		UiUtils.removeNamedComponents(root, Set.of(UI_RESULT, UiUtils.UI_FILLER));
-
+		Utils.logTimestamp("removed ui filler");
+		
 		final JComponent result = Utils.hasChinese(received) ? renderChineseLookup(received) : new UiList().render(db.lookupEnglish(received));
 		result.setName(UI_RESULT);
 		result.setBorder(UiConstants.TRACER);
@@ -275,15 +276,23 @@ public class UiMain implements ActionListener, EventListener
 
 	private JComponent renderChineseLookup(String chinese)
 	{
-		final FullLookup directResults =  db.lookupChinese(chinese);		
+		Utils.logTimestamp("definition start");
+		final FullLookup directResults =  db.lookupChinese(chinese);
+		Utils.logTimestamp("definition end");
 		final Map<String, List<SimpleLookup>> supplementaries = new LinkedHashMap<>(); // linked hash map for predictable iteration order
+		Utils.logTimestamp("same front");
 		supplementaries.put("Same Front", db.lookupSameFront(chinese));
+		Utils.logTimestamp("same back");
 		supplementaries.put("Same Back", db.lookupSameBack(chinese));
+		Utils.logTimestamp("substring");
 		supplementaries.put("Substring", db.trySubstringMatch(chinese));
+		Utils.logTimestamp("substring of");
 		supplementaries.put("Substring Of", db.trySubstringOfLookup(chinese));
+		Utils.logTimestamp("deinterlace");
 		supplementaries.put("Deinterlace", db.tryDeinterlace(chinese));
+		Utils.logTimestamp("typo");
 		supplementaries.put("Typo", db.tryTypoMatch(chinese));
-
+		Utils.logTimestamp("finished lookups");
 		return new UiChineseLookup().render(directResults, supplementaries);
 	}
 
