@@ -23,13 +23,14 @@ import dt.jdictionary.FullLookup;
 
 class UiChineseLookup
 {
-	public UiChineseLookup() {}
-
+	private final String DEFINITION_TAB = "Definition";
 	private final int COL_LABEL = 0;
 	private final int COL_VALUE = 1;
 	private final int ROW_BIG_CHAR = 0;
 	private final int ROW_START_DEFINITIONS = 1;
 
+	public UiChineseLookup() {}
+	
 	public JComponent render(FullLookup dictionaryResult, Map<String, List<SimpleLookup>> supplementaries)
 	{
 		// Return the raw notebook. Don't prepackage it in a panel.
@@ -38,13 +39,13 @@ class UiChineseLookup
 	
 		notebook.setBorder(UiConstants.TRACER);
 
-		tabFutures.put("Definition", definitionCompletable(dictionaryResult));
+		tabFutures.put(DEFINITION_TAB, definitionCompletable(dictionaryResult));
 		supplementaries.keySet().stream()
 			.filter(supplementary -> !supplementaries.get(supplementary).isEmpty())
 			.forEach(supplementary -> tabFutures.put(supplementary, tabCompletable(supplementaries.get(supplementary))));
 		tabFutures.values().forEach(CompletableFuture::join);
 		
-		notebook.addTab("Definition", tabFutures.get("Definition").join());
+		notebook.addTab(DEFINITION_TAB, tabFutures.get(DEFINITION_TAB).join());
 		supplementaries.keySet().stream()
 			.filter(supplementary -> !supplementaries.get(supplementary).isEmpty())
 			.forEach(supplementary -> notebook.addTab(supplementary, tabFutures.get(supplementary).join()));
