@@ -71,10 +71,8 @@ public class DbRepo
 		try 
 		{
 			final SQLiteConfig config = new SQLiteConfig();
-			if(this.readonly)
-			{
-				config.setReadOnly(this.readonly);
-			}
+			config.setReadOnly(this.readonly);
+
 			final String sqlitePath = System.getProperty("user.home") + "/Programs/mdbg2_1.sqlite";
 			Class.forName("org.sqlite.JDBC");
 			this.db = DriverManager.getConnection("jdbc:sqlite:"+sqlitePath, config.toProperties());
@@ -93,7 +91,7 @@ public class DbRepo
 
 	public void close()
 	{
-		try 
+		try
 		{
 			if(db != null)
 			{
@@ -133,6 +131,7 @@ public class DbRepo
 				PRIMARY KEY(%s AUTOINCREMENT)
 			)
 			""", TABLE_ZHBASE, COL_ID, COL_ZH, COL_PINYIN, COL_PINYIN_NORM, COL_FIRST_CHAR, COL_LAST_CHAR, COL_RANK, COL_ID);
+		indexes.add(List.of(TABLE_ZHBASE, COL_ID));
 		indexes.add(List.of(TABLE_ZHBASE, COL_ZH));
 		indexes.add(List.of(TABLE_ZHBASE, COL_FIRST_CHAR));
 		indexes.add(List.of(TABLE_ZHBASE, COL_LAST_CHAR));
@@ -144,6 +143,7 @@ public class DbRepo
 				%s	TEXT NOT NULL
 			);""", TABLE_ENGLISH, COL_ZHBASEID, COL_DEF);
 		final String createEnglishFTS5 = String.format("CREATE VIRTUAL TABLE %s using fts5(%s, %s)", TABLE_ENGLISH_FTS5, COL_DEF, COL_ZHBASEID);
+		indexes.add(List.of(TABLE_ENGLISH, COL_ZHBASEID));
 
 		final String createMeasureWords = String.format("""
 			CREATE TABLE %s (
@@ -179,7 +179,7 @@ public class DbRepo
 			createSubstrings
 		};
 
-		try 
+		try
 		{
 			for(final String table : tables)
 			{
