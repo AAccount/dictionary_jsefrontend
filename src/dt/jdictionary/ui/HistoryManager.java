@@ -69,10 +69,13 @@ public class HistoryManager<T>
 
 	public void addSingleEntry(T entry)
 	{
-		clearAfterIndex();
-		entries.add(entry);
-		index++;
-		trimEntries();
+		if(entries.size() == 0 || !entries.get(entries.size()-1).equals(entry))
+		{
+			clearAfterIndex();
+			entries.add(entry);
+			index++;
+			trimEntries();
+		}
 	}
 
 	public void addAllEntries(List<T> newEntries)
