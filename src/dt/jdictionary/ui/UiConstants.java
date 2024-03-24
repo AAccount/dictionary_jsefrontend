@@ -3,19 +3,33 @@ import javax.swing.BorderFactory;
 import javax.swing.border.Border;
 import java.awt.Color;
 import java.awt.Insets;
+import java.util.HashMap;
+import java.util.Map;
 
-class UiConstants 
+public class UiConstants 
 {
 	public static final int FONT_MEDIUM = 20;
 	public static final int FONT_LARGE = 45;
 
-	public static final boolean SHOW_TRACER = false;
-	public static final boolean SHOW_RANK = false;
+	public static String FLAG_TRACER = "SHOW_TRACER";
+	public static String FLAG_RANK = "SHOW_RANK";
+	public static final Map<String, Boolean> flagMap = new HashMap<String, Boolean>();
+
 
 	//DO NOT USE ON BUTTONS Causes weird rendering.
-	public static final Border TRACER = SHOW_TRACER ? BorderFactory.createLineBorder(Color.BLUE, 2) : null;
+	public static Border TRACER()
+	{
+		return flagMap.getOrDefault(FLAG_TRACER, false) ? BorderFactory.createLineBorder(Color.BLUE, 2) : null;
+	}
+	
 	public static final int GRIDBAG_NO_AUTOEXPAND = 0;
 	public static final int GRIDBAG_AUTOEXPAND = 1; //anything > 0 will work
 
 	public static final Insets nopadding = new Insets(0,0,0,0);
+	
+	public static void initFlags()
+	{
+		flagMap.put(FLAG_TRACER, false);
+		flagMap.put(FLAG_RANK, false);
+	}
 }

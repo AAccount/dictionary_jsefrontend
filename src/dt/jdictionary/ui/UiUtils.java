@@ -59,7 +59,7 @@ class UiUtils
 		textPane.setContentType("text/html");
 		textPane.setText(renderedText);
 		textPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
-		textPane.setBorder(UiConstants.TRACER);
+		textPane.setBorder(UiConstants.TRACER());
 		textPane.setBackground(null);
 		textPane.setEditable(false);
 
@@ -79,7 +79,7 @@ class UiUtils
 		final int FIRST_COLUMN = 0;
 		final JLabel filler = new JLabel();
 		filler.setName(UI_FILLER);
-		filler.setBorder(UiConstants.TRACER);
+		filler.setBorder(UiConstants.TRACER());
 		parent.add(filler, UiUtils.makeGridConstraint(row, FIRST_COLUMN, false, true, UiConstants.nopadding));
 	}
 

@@ -37,7 +37,7 @@ class UiChineseLookup
 		final JTabbedPane notebook = new JTabbedPane();
 		final Map<String, CompletableFuture<Component>> tabFutures= new HashMap<>();
 	
-		notebook.setBorder(UiConstants.TRACER);
+		notebook.setBorder(UiConstants.TRACER());
 
 		tabFutures.put(DEFINITION_TAB, definitionCompletable(dictionaryResult));
 		supplementaries.keySet().stream()
@@ -81,7 +81,7 @@ class UiChineseLookup
 		Utils.logTimestamp("start single char");
 
 		final JPanel result = new JPanel(new GridBagLayout());
-		result.setBorder(UiConstants.TRACER);
+		result.setBorder(UiConstants.TRACER());
 
 		final int rowsRendered = renderDictionaryResults(result, dictionaryResult);
 		renderZhCharBig(dictionaryResult.getZh(), result);
@@ -130,11 +130,11 @@ class UiChineseLookup
 	{
 		final JTextPane zhPane = new JTextPane();
 		zhPane.setText(zhchar);
-		zhPane.setBorder(UiConstants.TRACER);
+		zhPane.setBorder(UiConstants.TRACER());
 		zhPane.setFont(UiUtils.makeFont(zhPane, UiConstants.FONT_LARGE));
 		zhPane.setBackground(null);
 		zhPane.setEditable(false);
-		zhPane.setBorder(UiConstants.TRACER);
+		zhPane.setBorder(UiConstants.TRACER());
 
 		final int ALL_COLUMNS = 2;
 		final GridBagConstraints constraints = new GridBagConstraints();

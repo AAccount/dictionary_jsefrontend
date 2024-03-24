@@ -50,7 +50,8 @@ public class UiMain implements ActionListener, EventListener
 	private final int TOTAL_COLUMNS = 3;
 	private final int HISTORY_MANAGER_MAX = 10;
 	private final String HISTORY_MENU_UI_PREFIX = "kmFU2bYk"; // random string to easily identify history menu items's names
-	private final String HISTORY_MENU_UI_DELIM = ";";
+	private final String JMENU_ITEM_UI_DELIM = ";";
+	private final String FLAG_MENU_UI_PREFIX = "sjkhfca"; // random string to easily identify flag menu items's names
 
 	private final DbService db;
 	private final JTextField uiEntry;
@@ -60,6 +61,7 @@ public class UiMain implements ActionListener, EventListener
 	private final JButton forward;
 	private final String UI_FWD = "forward button";
 	private final JMenu historyMenu;
+	private final JMenu flagMenu;
 
 	private final HistoryManager<String> historyManager;
 
@@ -76,6 +78,7 @@ public class UiMain implements ActionListener, EventListener
 		forward = new JButton();
 
 		historyMenu = new JMenu("History");
+		flagMenu = new JMenu("Flags");
 	}
 
 	public void render()
@@ -84,7 +87,7 @@ public class UiMain implements ActionListener, EventListener
 		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		final JPanel root = new JPanel(new GridBagLayout());
 		root.setName(UI_ROOT);
-		root.setBorder(UiConstants.TRACER);
+		root.setBorder(UiConstants.TRACER());
 		renderEntry(root);
 		renderProgressBar(root);
 		UiUtils.renderFiller(root, UI_ROW_RESULT);
@@ -110,16 +113,35 @@ public class UiMain implements ActionListener, EventListener
 		
 		historyMenu.setMnemonic(KeyEvent.VK_H);
 		historyMenu.getAccessibleContext().setAccessibleDescription("Browse through the last "+HISTORY_MANAGER_MAX+" lookups.");
+		
+		flagMenu.setMnemonic(KeyEvent.VK_F);
+		flagMenu.getAccessibleContext().setAccessibleDescription("Toggle behind the scenes flags.");
+		renderFlagMenu();
 
 		menuBar.add(sqliteMenu);
 		menuBar.add(historyMenu);
+		menuBar.add(flagMenu);
 		return menuBar;
+	}
+	
+	private void renderFlagMenu()
+	{
+		flagMenu.removeAll();
+		for(final String flagName : UiConstants.flagMap.keySet())
+		{
+			final String label = (UiConstants.flagMap.get(flagName) ? "Disable" : "Enable") + " " + flagName;
+			final JMenuItem flagItem = new JMenuItem(label);
+			
+			flagItem.setName(FLAG_MENU_UI_PREFIX + JMENU_ITEM_UI_DELIM + flagName);
+			flagItem.addActionListener(this);
+			flagMenu.add(flagItem);
+		}
 	}
 
 	private void renderProgressBar(JPanel root)
 	{
 		progressBar.setName(UI_PROGRESS);
-		progressBar.setBorder(UiConstants.TRACER);
+		progressBar.setBorder(UiConstants.TRACER());
 		progressBar.setVisible(false);
 		progressBar.setStringPainted(true);
 		final GridBagConstraints progressBarConstraints = UiUtils.makeGridConstraint(UI_ROW_PROGRESS, UI_MAIN_COLUMN, true, false, UiUtils.makeInsets(Set.of(Neighbor.TOP, Neighbor.BOTTOM)));
@@ -147,7 +169,7 @@ public class UiMain implements ActionListener, EventListener
 
 		uiEntry.setName(UI_ENTRY);
 		uiEntry.setFont(UiUtils.makeFont(uiEntry, UiConstants.FONT_MEDIUM));
-		uiEntry.setBorder(UiConstants.TRACER);
+		uiEntry.setBorder(UiConstants.TRACER());
 
 		uiEntry.addActionListener(this);
 		root.add(uiEntry, UiUtils.makeGridConstraint(UI_ROW_ENTRY, COL_ENTRY, true, false, UiUtils.makeInsets(Set.of(Neighbor.LEFT, Neighbor.BOTTOM))));
@@ -178,12 +200,20 @@ public class UiMain implements ActionListener, EventListener
 
 			if(sourceName.substring(0, HISTORY_MENU_UI_PREFIX.length()).equals(HISTORY_MENU_UI_PREFIX))
 			{
-				final String[] sourceNameParts = sourceName.split(HISTORY_MENU_UI_DELIM);
+				final String[] sourceNameParts = sourceName.split(JMENU_ITEM_UI_DELIM);
 				final String entry = sourceNameParts[1];
 				final int historyIndex = Integer.parseInt(sourceNameParts[2]);
 				historyManager.setIndex(historyIndex);
 				handleHistory(entry);
 			}
+			
+			if(sourceName.substring(0, FLAG_MENU_UI_PREFIX.length()).equals(FLAG_MENU_UI_PREFIX))
+			{
+				final String flagName = sourceName.substring(FLAG_MENU_UI_PREFIX.length()+JMENU_ITEM_UI_DELIM.length());
+				UiConstants.flagMap.put(flagName, !UiConstants.flagMap.get(flagName));
+				renderFlagMenu();
+			}
+
 		}
 		catch(Exception e)
 		{
@@ -240,7 +270,7 @@ public class UiMain implements ActionListener, EventListener
 		
 		final JComponent result = Utils.hasChinese(received) ? renderChineseLookup(received) : new UiList().render(db.lookupEnglish(received));
 		result.setName(UI_RESULT);
-		result.setBorder(UiConstants.TRACER);
+		result.setBorder(UiConstants.TRACER());
 
 		final GridBagConstraints resultConstraints = UiUtils.makeGridConstraint(UI_ROW_RESULT, UI_MAIN_COLUMN, true, true, UiUtils.makeInsets(Set.of(Neighbor.TOP)));
 		resultConstraints.gridwidth = TOTAL_COLUMNS;
@@ -265,11 +295,11 @@ public class UiMain implements ActionListener, EventListener
 		int counter = 0;
 		for(final String historicalLookup : historicalLookups)
 		{
-			final JMenuItem testItem = new JMenuItem(counter+": " + historicalLookup);
-			testItem.setMnemonic(KeyEvent.VK_0 + counter);
-			testItem.setName(HISTORY_MENU_UI_PREFIX + HISTORY_MENU_UI_DELIM + historicalLookup + HISTORY_MENU_UI_DELIM + counter);
-			testItem.addActionListener(this);
-			historyMenu.add(testItem);
+			final JMenuItem historyItem = new JMenuItem(counter+": " + historicalLookup);
+			historyItem.setMnemonic(KeyEvent.VK_0 + counter);
+			historyItem.setName(HISTORY_MENU_UI_PREFIX + JMENU_ITEM_UI_DELIM + historicalLookup + JMENU_ITEM_UI_DELIM + counter);
+			historyItem.addActionListener(this);
+			historyMenu.add(historyItem);
 			counter++;
 		}
 	}

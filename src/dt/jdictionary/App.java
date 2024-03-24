@@ -1,5 +1,6 @@
 package dt.jdictionary;
 
+import dt.jdictionary.ui.UiConstants;
 import dt.jdictionary.ui.UiMain;
 
 // V1.2: 2024-01-13: add history drop down menu and cache results
@@ -12,6 +13,7 @@ public class App
 	{
 		System.setProperty("apple.laf.useScreenMenuBar", "true");
 		Utils.logTimestamp("Starting V1.2");
+		UiConstants.initFlags();
 		new UiMain().render();
 	}
 }

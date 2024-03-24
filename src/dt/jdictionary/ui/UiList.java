@@ -44,7 +44,7 @@ class UiList implements ActionListener
 	public UiList() 
 	{
 		root = new JPanel(new GridBagLayout());
-		root.setBorder(UiConstants.TRACER);
+		root.setBorder(UiConstants.TRACER());
 		pages = new HistoryManager<>();
 		
 		previousBtn = new JButton();
@@ -70,10 +70,10 @@ class UiList implements ActionListener
 
 		// Need to leave the scrollpane setup even after pagination because grid bag layout will render "funny" without it.
 		final JPanel dbResultPanel = new JPanel(new GridBagLayout());
-		dbResultPanel.setBorder(UiConstants.TRACER);
+		dbResultPanel.setBorder(UiConstants.TRACER());
 		final JScrollPane scrollPane = new JScrollPane(dbResultPanel);
 		scrollPane.setName(SCROLLVIEW_RESULTS);
-		scrollPane.setBorder(UiConstants.TRACER);
+		scrollPane.setBorder(UiConstants.TRACER());
 
 		for(int row = 0; row < results.size(); row++)
 		{
@@ -99,7 +99,7 @@ class UiList implements ActionListener
 		final String definition = String.join(", ", dbresult.getDefinitions()).toLowerCase();
 		UiUtils.renderLabelToGrid(parent, definition, row, COL_DEF, true);
 		
-		if(UiConstants.SHOW_RANK)
+		if(UiConstants.flagMap.get(UiConstants.FLAG_RANK))
 		{
 			final int COL_RANK = 3;
 			UiUtils.renderLabelToGrid(parent, String.valueOf(dbresult.getRank()), row, COL_RANK, true);
