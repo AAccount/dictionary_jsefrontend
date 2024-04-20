@@ -22,7 +22,6 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 
-import dt.jdictionary.FullLookup;
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.Utils;
 import dt.jdictionary.cedict.CedictDump;
@@ -268,7 +267,7 @@ public class UiMain implements ActionListener, EventListener
 		UiUtils.removeNamedComponents(root, Set.of(UI_RESULT, UiUtils.UI_FILLER));
 		Utils.logTimestamp("removed ui filler");
 		
-		final JComponent result = Utils.hasChinese(received) ? renderChineseLookup(received) : new UiList().render(db.lookupEnglish(received));
+		final JComponent result = Utils.hasChinese(received) ? new UiChineseLookup().render(db.lookupChinese(received)) : new UiList().render(db.lookupEnglish(received));
 		result.setName(UI_RESULT);
 		result.setBorder(UiConstants.TRACER());
 
@@ -302,28 +301,6 @@ public class UiMain implements ActionListener, EventListener
 			historyMenu.add(historyItem);
 			counter++;
 		}
-	}
-
-	private JComponent renderChineseLookup(String chinese)
-	{
-		Utils.logTimestamp("definition start");
-		final FullLookup directResults =  db.lookupChinese(chinese);
-		Utils.logTimestamp("definition end");
-		final Map<String, List<SimpleLookup>> supplementaries = new LinkedHashMap<>(); // linked hash map for predictable iteration order
-		Utils.logTimestamp("same front");
-		supplementaries.put("Same Front", db.lookupSameFront(chinese));
-		Utils.logTimestamp("same back");
-		supplementaries.put("Same Back", db.lookupSameBack(chinese));
-		Utils.logTimestamp("substring");
-		supplementaries.put("Substring", db.trySubstringMatch(chinese));
-		Utils.logTimestamp("substring of");
-		supplementaries.put("Substring Of", db.trySubstringOfLookup(chinese));
-		Utils.logTimestamp("deinterlace");
-		supplementaries.put("Deinterlace", db.tryDeinterlace(chinese));
-		Utils.logTimestamp("typo");
-		supplementaries.put("Typo", db.tryTypoMatch(chinese));
-		Utils.logTimestamp("finished lookups");
-		return new UiChineseLookup().render(directResults, supplementaries);
 	}
 
 	@Override

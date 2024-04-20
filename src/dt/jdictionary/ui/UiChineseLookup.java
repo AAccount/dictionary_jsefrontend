@@ -15,10 +15,11 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextPane;
 
+import dt.jdictionary.ExhaustiveChineseLookup;
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.Utils;
+import dt.jdictionary.sqlite.dbservice.ChineseDefinitionLookup;
 import dt.jdictionary.ui.UiUtils.Neighbor;
-import dt.jdictionary.FullLookup;
 
 
 class UiChineseLookup
@@ -31,7 +32,7 @@ class UiChineseLookup
 
 	public UiChineseLookup() {}
 	
-	public JComponent render(FullLookup dictionaryResult, Map<String, List<SimpleLookup>> supplementaries)
+	public JComponent render(ExhaustiveChineseLookup dictionaryResult)
 	{
 		// Return the raw notebook. Don't prepackage it in a panel.
 		final JTabbedPane notebook = new JTabbedPane();
@@ -39,7 +40,9 @@ class UiChineseLookup
 	
 		notebook.setBorder(UiConstants.TRACER());
 
-		tabFutures.put(DEFINITION_TAB, definitionCompletable(dictionaryResult));
+		tabFutures.put(DEFINITION_TAB, definitionCompletable(dictionaryResult.getDefinition()));
+		
+		final Map<String, List<SimpleLookup>> supplementaries = dictionaryResult.getSupplementaries();
 		supplementaries.keySet().stream()
 			.filter(supplementary -> !supplementaries.get(supplementary).isEmpty())
 			.forEach(supplementary -> tabFutures.put(supplementary, tabCompletable(supplementaries.get(supplementary))));
@@ -52,7 +55,7 @@ class UiChineseLookup
 		return notebook;
 	}
 	
-	private CompletableFuture<Component> definitionCompletable(FullLookup dictionaryResult)
+	private CompletableFuture<Component> definitionCompletable(ChineseDefinitionLookup dictionaryResult)
 	{
 		return CompletableFuture.supplyAsync(new Supplier<Component>() {
 
@@ -76,7 +79,7 @@ class UiChineseLookup
 		});
 	}
 
-	private JPanel renderZhDefinition(FullLookup dictionaryResult)
+	private JPanel renderZhDefinition(ChineseDefinitionLookup dictionaryResult)
 	{
 		Utils.logTimestamp("start single char");
 
@@ -91,7 +94,7 @@ class UiChineseLookup
 		return result;
 	}
 
-	private int renderDictionaryResults(JComponent parent, FullLookup dictionaryResult)
+	private int renderDictionaryResults(JComponent parent, ChineseDefinitionLookup dictionaryResult)
 	{
 		int row = ROW_START_DEFINITIONS;
 		for(final String pinyin : dictionaryResult.getResults().keySet())
