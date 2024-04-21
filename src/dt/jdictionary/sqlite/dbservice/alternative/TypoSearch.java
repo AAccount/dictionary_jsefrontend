@@ -14,22 +14,31 @@ import dt.jdictionary.sqlite.raw.DbRepo;
 
 public class TypoSearch implements AlternateSearch
 {
-	@Override
-	public List<SimpleLookup> trySearch(String compoundWord, DbRepo db)
+	private final String zh;
+	private final DbRepo db;
+	
+	public TypoSearch(String zh, DbRepo db)
 	{
-		final List<String> trueChars = Utils.trueChars(compoundWord);
-		final List<List<String>> normalizedPinyins = findPinyinForZh(trueChars, db);
-		if(compoundWord.length() != normalizedPinyins.size())
+		this.zh = zh;
+		this.db = db;
+	}
+
+	@Override
+	public List<SimpleLookup> trySearch()
+	{
+		final List<String> trueChars = Utils.trueChars(this.zh);
+		final List<List<String>> normalizedPinyins = findPinyinForZh(trueChars);
+		if(this.zh.length() != normalizedPinyins.size())
 		{
 			return List.of();
 		}
 
 		final List<String> permutations = pinyinPermutations(normalizedPinyins);
-		final List<SimpleLookup> candidates = DbServiceUtils.convertRawToSimple(db.findByNormalizedPinyin(permutations));
+		final List<SimpleLookup> candidates = DbServiceUtils.convertRawToSimple(this.db.findByNormalizedPinyin(permutations));
 
 		return candidates.stream()
 				.map(candidate -> new SimpleLookup(candidate.getZh(), candidate.getPinyin(), candidate.getDefinitions(), pinyinLookupSimilarity(candidate, trueChars)))
-				.filter(candidate -> candidate.getRank() >0 && candidate.getRank() < compoundWord.length())
+				.filter(candidate -> candidate.getRank() >0 && candidate.getRank() < this.zh.length())
 				.collect(Collectors.toCollection(ArrayList::new));
 	}
 
@@ -49,10 +58,10 @@ public class TypoSearch implements AlternateSearch
 		return similarity;
 	}
 
-	private List<List<String>> findPinyinForZh(List<String> chars, DbRepo db)
+	private List<List<String>> findPinyinForZh(List<String> chars)
 	{
 		final HashMap<String, Set<String>> pinyinMap = new HashMap<>();
-		final List<SimpleLookup> dictionaryEntries = DbServiceUtils.convertRawToSimple(db.lookupChinese(chars));
+		final List<SimpleLookup> dictionaryEntries = DbServiceUtils.convertRawToSimple(this.db.lookupChinese(chars));
 		for(final SimpleLookup entry : dictionaryEntries)
 		{
 			if(!pinyinMap.containsKey(entry.getZh()))
@@ -97,5 +106,11 @@ public class TypoSearch implements AlternateSearch
 			final List<String> subresult = pinyinPermutations(individualPinyins.subList(1, individualPinyins.size()));
 			return pinyinPermutations(List.of(individualPinyins.get(0), subresult));
 		}
+	}
+
+	@Override
+	public String LOOKUP_NAME()
+	{
+		return "Typo";
 	}
 }

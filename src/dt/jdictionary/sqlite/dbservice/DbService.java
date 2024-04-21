@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import dt.jdictionary.ExhaustiveChineseLookup;
 import dt.jdictionary.SimpleLookup;
@@ -28,23 +29,26 @@ public class DbService
 	public ExhaustiveChineseLookup lookupChinese(String chinese)
 	{
 		Utils.logTimestamp("definition start");
-		final ChineseDefinitionLookup directResults = this.lookupChineseDefinition(chinese);
-		Utils.logTimestamp("definition end");
+		final CompletableFuture<ChineseDefinitionLookup> directResults = CompletableFuture.supplyAsync(() -> {return this.lookupChineseDefinition(chinese);});
+		
+		final List<AlternateSearch> alts = List.of(
+			new SameFrontSearch(chinese, db), 
+			new SameBackSearch(chinese, db), 
+			new SubstringSearch(chinese, db), 
+			new SubstringOfSearch(chinese, db), 
+			new DeinterlaceSearch(chinese, db), 
+			new TypoSearch(chinese, db)
+		);
+		
+		Utils.logTimestamp("start exhaustive Chinese search");
+		final Map<String, CompletableFuture<List<SimpleLookup>>> supplementaryFutures = new LinkedHashMap<>(); 
+		alts.forEach(alt -> supplementaryFutures.put(alt.LOOKUP_NAME(), CompletableFuture.supplyAsync(() -> {return alt.trySearch();})));
+		
 		final Map<String, List<SimpleLookup>> supplementaries = new LinkedHashMap<>(); // linked hash map for predictable iteration order
-		Utils.logTimestamp("same front");
-		supplementaries.put("Same Front", this.lookupSameFront(chinese));
-		Utils.logTimestamp("same back");
-		supplementaries.put("Same Back", this.lookupSameBack(chinese));
-		Utils.logTimestamp("substring");
-		supplementaries.put("Substring", this.trySubstringMatch(chinese));
-		Utils.logTimestamp("substring of");
-		supplementaries.put("Substring Of", this.trySubstringOfLookup(chinese));
-		Utils.logTimestamp("deinterlace");
-		supplementaries.put("Deinterlace", this.tryDeinterlace(chinese));
-		Utils.logTimestamp("typo");
-		supplementaries.put("Typo", this.tryTypoMatch(chinese));
-		Utils.logTimestamp("finished lookups");
-		return new ExhaustiveChineseLookup(directResults, supplementaries);
+		supplementaryFutures.keySet().forEach(altName -> supplementaries.put(altName, supplementaryFutures.get(altName).join()));
+		Utils.logTimestamp("finish exhaustive Chinese search");
+		
+		return new ExhaustiveChineseLookup(directResults.join(), supplementaries);
 	}
 	
 	private ChineseDefinitionLookup lookupChineseDefinition(String zh)
@@ -66,42 +70,6 @@ public class DbService
 		final List<String> measureWords = db.lookupMeasureWords(zh);
 		final ChineseDefinitionLookup result = new ChineseDefinitionLookup(zh, resultsByPinyin, simplified, measureWords);
 		return result;
-	}
-
-	private List<SimpleLookup> lookupSameFront(String zh)
-	{
-		return tryAlternateSearch(new SameFrontSearch(), zh);
-	}
-
-	private List<SimpleLookup> lookupSameBack(String zh)
-	{
-		return tryAlternateSearch(new SameBackSearch(), zh);
-	}
-
-	private List<SimpleLookup> tryDeinterlace(String zh)
-	{
-		return tryAlternateSearch(new DeinterlaceSearch(), zh);
-	}
-
-	private List<SimpleLookup> trySubstringOfLookup(String zh)
-	{
-		return tryAlternateSearch(new SubstringOfSearch(), zh);
-	}
-
-	private List<SimpleLookup> tryTypoMatch(String zh)
-	{
-		return tryAlternateSearch(new TypoSearch(), zh);
-	}
-
-	private List<SimpleLookup> trySubstringMatch(String zh)
-	{
-		return tryAlternateSearch(new SubstringSearch(), zh);
-	}
-
-	private List<SimpleLookup> tryAlternateSearch(AlternateSearch alternateSearch, String zh)
-	{
-		checkDbRo();
-		return alternateSearch.trySearch(zh, db);
 	}
 	
 	public List<SimpleLookup> lookupEnglish(String en)

@@ -10,11 +10,26 @@ import dt.jdictionary.sqlite.raw.RawDictionaryRow;
 
 public class SameFrontSearch implements AlternateSearch
 {
-	@Override
-	public List<SimpleLookup> trySearch(String zh, DbRepo db)
+	private final String zh;
+	private final DbRepo db;
+	
+	public SameFrontSearch(String zh, DbRepo db)
 	{
-		final String firstChar = Character.toString(zh.charAt(0));
-		final List<RawDictionaryRow> rawResults = db.lookupRelatedWord(firstChar, RelatedChar.SAME_FRONT);
+		this.zh = zh;
+		this.db = db;
+	}
+
+	@Override
+	public List<SimpleLookup> trySearch()
+	{
+		final String firstChar = Character.toString(this.zh.charAt(0));
+		final List<RawDictionaryRow> rawResults = this.db.lookupRelatedWord(firstChar, RelatedChar.SAME_FRONT);
 		return DbServiceUtils.convertRawToSimple(rawResults);
+	}
+
+	@Override
+	public String LOOKUP_NAME()
+	{
+		return "Same Front";
 	}
 }

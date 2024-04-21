@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
 import java.awt.GridBagLayout;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
@@ -40,7 +39,7 @@ class UiChineseLookup
 	
 		notebook.setBorder(UiConstants.TRACER());
 
-		tabFutures.put(DEFINITION_TAB, definitionCompletable(dictionaryResult.getDefinition()));
+		tabFutures.put(DEFINITION_TAB, CompletableFuture.supplyAsync(() -> {return this.renderZhDefinition(dictionaryResult.getDefinition());}));
 		
 		final Map<String, List<SimpleLookup>> supplementaries = dictionaryResult.getSupplementaries();
 		supplementaries.keySet().stream()
@@ -55,28 +54,9 @@ class UiChineseLookup
 		return notebook;
 	}
 	
-	private CompletableFuture<Component> definitionCompletable(ChineseDefinitionLookup dictionaryResult)
-	{
-		return CompletableFuture.supplyAsync(new Supplier<Component>() {
-
-			@Override
-			public Component get()
-			{
-				return renderZhDefinition(dictionaryResult);
-			}
-		});
-	}
-	
 	private CompletableFuture<Component> tabCompletable(List<SimpleLookup> lookups)
 	{
-		return CompletableFuture.supplyAsync(new Supplier<Component>() {
-
-			@Override
-			public Component get()
-			{
-				return new UiList().render(new ArrayList<SimpleLookup>(lookups));
-			}
-		});
+		return CompletableFuture.supplyAsync(() -> {return new UiList().render(new ArrayList<SimpleLookup>(lookups));});
 	}
 
 	private JPanel renderZhDefinition(ChineseDefinitionLookup dictionaryResult)

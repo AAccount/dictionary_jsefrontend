@@ -8,19 +8,34 @@ import dt.jdictionary.sqlite.raw.DbRepo;
 
 public class SubstringOfSearch implements AlternateSearch
 {
-	@Override
- 	public List<SimpleLookup> trySearch(String compoundWord, DbRepo db)
+	private final String zh;
+	private final DbRepo db;
+	
+	public SubstringOfSearch(String zh, DbRepo db)
 	{
-		if(compoundWord.length() < DbServiceUtils.MIN_SUBSTRING_LENGTH)
+		this.zh = zh;
+		this.db = db;
+	}
+
+	@Override
+ 	public List<SimpleLookup> trySearch()
+	{
+		if(this.zh.length() < DbServiceUtils.MIN_SUBSTRING_LENGTH)
 		{
 			return List.of();
 		}
 
-		final List<String> possibleMatches = db.trySubstring(compoundWord);
+		final List<String> possibleMatches = this.db.trySubstring(this.zh);
 		if(possibleMatches.size() == 0)
 		{
 			return List.of();
 		}
-		return DbServiceUtils.convertRawToSimple(db.lookupChinese(possibleMatches));
+		return DbServiceUtils.convertRawToSimple(this.db.lookupChinese(possibleMatches));
+	}
+
+	@Override
+	public String LOOKUP_NAME()
+	{
+		return "Substring Of";
 	}
 }
