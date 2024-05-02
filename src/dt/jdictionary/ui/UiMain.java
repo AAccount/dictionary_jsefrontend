@@ -265,7 +265,9 @@ public class UiMain implements ActionListener, EventListener
 		UiUtils.removeNamedComponents(root, Set.of(UI_RESULT, UiUtils.UI_FILLER));
 		Utils.logTimestamp("removed ui filler");
 		
-		final JComponent result = Utils.hasChinese(received) ? new UiChineseLookup().render(db.lookupChinese(received)) : new UiList().render(db.lookupEnglish(received));
+		final JComponent result = Utils.hasChinese(received) ? 
+				new UiChineseLookup().render(db.lookupChinese(Utils.autoSwapChinese(received))) : 
+				new UiList().render(db.lookupEnglish(received));
 		result.setName(UI_RESULT);
 		result.setBorder(UiConstants.TRACER());
 

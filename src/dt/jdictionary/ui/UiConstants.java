@@ -13,6 +13,7 @@ public class UiConstants
 
 	public static String FLAG_TRACER = "SHOW_TRACER";
 	public static String FLAG_RANK = "SHOW_RANK";
+	public static String FLAG_AUTOSWAP = "AUTO_SWAP";
 	public static final Map<String, Boolean> flagMap = new HashMap<String, Boolean>();
 
 
@@ -31,5 +32,6 @@ public class UiConstants
 	{
 		flagMap.put(FLAG_TRACER, false);
 		flagMap.put(FLAG_RANK, false);
+		flagMap.put(FLAG_AUTOSWAP, true);
 	}
 }

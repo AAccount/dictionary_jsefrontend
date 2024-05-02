@@ -6,7 +6,9 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+import dt.jdictionary.ui.UiConstants;
 
 public class Utils 
 {
@@ -104,5 +106,31 @@ public class Utils
 	public static double average(Collection<Double> numbers)
 	{
 		return numbers.stream().mapToDouble(i -> i).average().orElse(0);
+	}
+	
+	public static String autoSwapChinese(String zh)
+	{
+		if(!UiConstants.flagMap.get(UiConstants.FLAG_AUTOSWAP))
+		{
+			return zh;
+		}
+		
+		final Map<String, String> autoSwaps = Map.of(
+				"着", "著",
+				"爲", "為",
+				"僞", "偽"
+				);
+		
+		String result = zh;
+		for(final String source : autoSwaps.keySet())
+		{
+			result = result.replace(source, autoSwaps.get(source));
+		}
+		
+		if(!result.equals(zh))
+		{
+			Utils.logTimestamp("Swapped " + zh + " for " + result);
+		}
+		return result;
 	}
 }
