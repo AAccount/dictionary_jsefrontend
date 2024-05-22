@@ -118,7 +118,8 @@ public class Utils
 		final Map<String, String> autoSwaps = Map.of(
 				"着", "著",
 				"爲", "為",
-				"僞", "偽"
+				"僞", "偽",
+				"泄", "洩"
 				);
 		
 		String result = zh;
