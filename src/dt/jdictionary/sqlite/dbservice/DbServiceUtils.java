@@ -10,7 +10,6 @@ import dt.jdictionary.sqlite.raw.RawDictionaryRow;
 
 public class DbServiceUtils 
 {
-	public static final int MIN_SUBSTRING_LENGTH = 2;
 
 	public static List<SimpleLookup> convertRawToSimple(List<RawDictionaryRow> rawResults)
 	{
@@ -41,13 +40,14 @@ public class DbServiceUtils
 
 	private static List<String> generateSubstringsReal(String saying)
 	{
-		if(saying.length() < DbServiceUtils.MIN_SUBSTRING_LENGTH)
+		final int MINIMUM_USEABLE_STRING = 1;
+		if(saying.length() < MINIMUM_USEABLE_STRING)
 		{
 			return List.of();
 		}
 
 		final List<String> result = new ArrayList<>();
-		for(int i = DbServiceUtils.MIN_SUBSTRING_LENGTH; i <= saying.length(); i++)
+		for(int i = 1; i <= saying.length(); i++)
 		{
 			result.add(saying.substring(0, i));
 		}

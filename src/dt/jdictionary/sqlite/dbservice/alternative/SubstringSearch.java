@@ -20,11 +20,6 @@ public class SubstringSearch implements AlternateSearch
 	@Override
 	public List<SimpleLookup> trySearch()
 	{
-		if(this.zh.length() <= DbServiceUtils.MIN_SUBSTRING_LENGTH)
-		{
-			return List.of();
-		}
-
 		final List<String> allSubstrings = DbServiceUtils.generateSubstrings(this.zh);
 		return DbServiceUtils.convertRawToSimple(this.db.lookupChinese(allSubstrings));
 	}

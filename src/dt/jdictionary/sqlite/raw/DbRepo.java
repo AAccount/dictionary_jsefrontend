@@ -568,7 +568,7 @@ public class DbRepo
 
 	public void fillSubstrings(List<RawSubstringRow> allRows)
 	{
-		final String sql = String.format("INSERT INTO %s (%s, %s) VALUES (?,?)", TABLE_SUBSTRING, COL_SUBSTRING, COL_FULL_STRING);
+		final String sql = String.format("INSERT INTO %s (%s, %s) VALUES (?,?) ON CONFLICT(%s, %s) DO NOTHING;", TABLE_SUBSTRING, COL_SUBSTRING, COL_FULL_STRING, COL_SUBSTRING, COL_FULL_STRING);
 		try 
 		{
 			final PreparedStatement pst = db.prepareStatement(sql);

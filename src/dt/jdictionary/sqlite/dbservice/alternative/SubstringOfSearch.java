@@ -20,11 +20,6 @@ public class SubstringOfSearch implements AlternateSearch
 	@Override
  	public List<SimpleLookup> trySearch()
 	{
-		if(this.zh.length() < DbServiceUtils.MIN_SUBSTRING_LENGTH)
-		{
-			return List.of();
-		}
-
 		final List<String> possibleMatches = this.db.trySubstring(this.zh);
 		if(possibleMatches.size() == 0)
 		{
