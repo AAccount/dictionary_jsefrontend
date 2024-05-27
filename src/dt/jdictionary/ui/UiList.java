@@ -10,9 +10,10 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
 import dt.jdictionary.SimpleLookup;
-import dt.jdictionary.Utils;
 import dt.jdictionary.events.EventUtils;
 import dt.jdictionary.ui.UiUtils.Neighbor;
+import dt.jdictionary.util.Debug;
+import dt.jdictionary.util.ListUtils;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -54,13 +55,13 @@ class UiList implements ActionListener
 
 	public JComponent render(List<SimpleLookup> dbResults)
 	{
-		Utils.logTimestamp("start ui list");
+		Debug.logTimestamp("start ui list");
 		Collections.sort(dbResults, Collections.reverseOrder());
-		pages.addAllEntries(Utils.subdivideList(dbResults, PAGE_SIZE));
+		pages.addAllEntries(ListUtils.subdivideList(dbResults, PAGE_SIZE));
 
 		renderPageNavigation();
 		renderPageOfResults(pages.setIndex(0));
-		Utils.logTimestamp("stop ui list");
+		Debug.logTimestamp("stop ui list");
 		return root;
 	}
 

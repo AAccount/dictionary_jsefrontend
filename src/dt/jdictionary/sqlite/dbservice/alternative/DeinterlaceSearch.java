@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import dt.jdictionary.SimpleLookup;
-import dt.jdictionary.Utils;
 import dt.jdictionary.sqlite.dbservice.DbServiceUtils;
 import dt.jdictionary.sqlite.raw.DbRepo;
+import dt.jdictionary.util.ChineseText;
 
 public class DeinterlaceSearch implements AlternateSearch
 {	
@@ -32,7 +32,7 @@ public class DeinterlaceSearch implements AlternateSearch
 			return List.of();
 		}
 
-		final List<String> trueChars = Utils.trueChars(this.zh);
+		final List<String> trueChars = ChineseText.trueChars(this.zh);
 		final List<String> candidates = new ArrayList<String>();
 		candidates.add(trueChars.get(0) + trueChars.get(2));
 		if(trueChars.size() == MAX_DEINTERLACE)

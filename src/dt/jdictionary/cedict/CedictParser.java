@@ -16,11 +16,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import dt.jdictionary.Utils;
 import dt.jdictionary.events.Event;
 import dt.jdictionary.events.EventDispatcher;
 import dt.jdictionary.events.EventType;
 import dt.jdictionary.events.EventUtils;
+import dt.jdictionary.util.ChineseText;
 
 public class CedictParser 
 {
@@ -176,8 +176,8 @@ return selfSimplifiedChars;
 		final String originalCleaned = makeStringChineseOnly(original);
 		final String simplifiedCleaned = makeStringChineseOnly(simplified);
 
-		final List<String> ogchars = Utils.trueChars(originalCleaned);
-		final List<String> simplifiedchars = Utils.trueChars(simplifiedCleaned);
+		final List<String> ogchars = ChineseText.trueChars(originalCleaned);
+		final List<String> simplifiedchars = ChineseText.trueChars(simplifiedCleaned);
 		final boolean sameLength = ogchars.size() == simplifiedchars.size();
 
 		if(!sameLength)

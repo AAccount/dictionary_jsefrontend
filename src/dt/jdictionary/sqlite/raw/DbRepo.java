@@ -15,9 +15,9 @@ import java.util.Optional;
 import org.sqlite.SQLiteConfig;
 
 import dt.jdictionary.SimpleLookup;
-import dt.jdictionary.Utils;
 import dt.jdictionary.events.EventUtils;
 import dt.jdictionary.sqlite.DbEvent;
+import dt.jdictionary.util.Debug;
 
 public class DbRepo 
 {
@@ -77,7 +77,7 @@ public class DbRepo
 			Class.forName("org.sqlite.JDBC");
 			this.db = DriverManager.getConnection("jdbc:sqlite:"+sqlitePath, config.toProperties());
 			db.setAutoCommit(false);
-			Utils.logTimestamp("new db repo for " + userToString());
+			Debug.logTimestamp("new db repo for " + userToString());
 		} 
 		catch (SQLException e) 
 		{
@@ -96,7 +96,7 @@ public class DbRepo
 			if(db != null)
 			{
 				db.close();
-				Utils.logTimestamp("closed db repo for " + userToString());
+				Debug.logTimestamp("closed db repo for " + userToString());
 			}
 		} 
 		catch (SQLException e) 
@@ -239,6 +239,11 @@ public class DbRepo
 	
 	public List<RawDictionaryRow> lookupChineseByColumn(String column, List<String> zhStrings)
 	{
+		if(zhStrings.isEmpty())
+		{
+			return List.of();
+		}
+		
 		final String zhsStringsKeyString = String.join(" ", zhStrings);		
 		final String repeaterRawString = "?, ".repeat(zhStrings.size());
 		final String repeaterString = repeaterRawString.substring(0, repeaterRawString.length() - 2);

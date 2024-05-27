@@ -5,13 +5,13 @@ import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JTextPane;
 
+import dt.jdictionary.util.ChineseText;
+
 import java.awt.Font;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
 import java.util.Set;
-
-import dt.jdictionary.Utils;
 
 class UiUtils 
 {
@@ -63,7 +63,7 @@ class UiUtils
 		textPane.setBackground(null);
 		textPane.setEditable(false);
 
-		if(Utils.allChinese(text.replaceAll("\\s+|,|，", ""))) // don't let spaces and commas NOT flag the text as all Chinese
+		if(ChineseText.allChinese(text.replaceAll("\\s+|,|，", ""))) // don't let spaces and commas NOT flag the text as all Chinese
 		{
 			textPane.setFont(makeFont(textPane, UiConstants.FONT_MEDIUM));
 		}

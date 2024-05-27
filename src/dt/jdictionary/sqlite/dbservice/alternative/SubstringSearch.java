@@ -5,6 +5,7 @@ import java.util.List;
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.sqlite.dbservice.DbServiceUtils;
 import dt.jdictionary.sqlite.raw.DbRepo;
+import dt.jdictionary.util.GenerateSubstrings;
 
 public class SubstringSearch implements AlternateSearch
 {
@@ -20,7 +21,7 @@ public class SubstringSearch implements AlternateSearch
 	@Override
 	public List<SimpleLookup> trySearch()
 	{
-		final List<String> allSubstrings = DbServiceUtils.generateSubstrings(this.zh);
+		final List<String> allSubstrings = GenerateSubstrings.generateSubstrings(this.zh);
 		return DbServiceUtils.convertRawToSimple(this.db.lookupChinese(allSubstrings));
 	}
 

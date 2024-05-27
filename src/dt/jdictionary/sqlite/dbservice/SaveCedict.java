@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Set;
 
 import dt.jdictionary.SimpleLookup;
-import dt.jdictionary.Utils;
 import dt.jdictionary.cedict.CedictDump;
 import dt.jdictionary.cedict.MeasureWords;
 import dt.jdictionary.cedict.UnrankedLookup;
@@ -16,6 +15,8 @@ import dt.jdictionary.events.EventUtils;
 import dt.jdictionary.sqlite.DbEvent;
 import dt.jdictionary.sqlite.raw.DbRepo;
 import dt.jdictionary.sqlite.raw.RawSubstringRow;
+import dt.jdictionary.util.GenerateSubstrings;
+import dt.jdictionary.util.ChineseText;
 import dt.jdictionary.sqlite.raw.RawMeasureWordRow;
 import dt.jdictionary.sqlite.raw.RawSimplifiedRow;
 
@@ -53,12 +54,12 @@ public class SaveCedict
 	private void fillSubstrings(CedictDump dump, DbRepo db)
 	{
 		final List<UnrankedLookup> substringEntries = dump.getDictionary().stream()
-			.filter(unrankedlookup -> unrankedlookup.getZh().length() > 1 && Utils.allChinese(unrankedlookup.getZh())).toList();
+			.filter(unrankedlookup -> unrankedlookup.getZh().length() > 1 && ChineseText.allChinese(unrankedlookup.getZh())).toList();
 
 		final Set<RawSubstringRow> result = new HashSet<>();
 		for(final UnrankedLookup simpleLookup : substringEntries)
 		{
-			final List<String> substrings = DbServiceUtils.generateSubstrings(simpleLookup.getZh());
+			final List<String> substrings = GenerateSubstrings.generateSubstrings(simpleLookup.getZh());
 			for(final String substring : substrings)
 			{
 				result.add(new RawSubstringRow(substring, simpleLookup.getZh()));

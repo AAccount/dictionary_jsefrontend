@@ -5,16 +5,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import dt.jdictionary.Utils;
 import dt.jdictionary.cedict.UnrankedLookup;
+import dt.jdictionary.util.Stats;
 
 public class RankingUtilities
 {
 	public static Map<Character, Double> rankSingleChars(List<UnrankedLookup> dictionary)
 	{
 		final Map<Character, Double> rawFreq = countFreq(dictionary);
-		final double average = Utils.average(rawFreq.values());
-		final double stdev = Utils.stdev(rawFreq.values());
+		final double average = Stats.average(rawFreq.values());
+		final double stdev = Stats.stdev(rawFreq.values());
 		final double maxRank = average + stdev*3;
 		
 		// Don't let extreme, high use characters "overpower" any compound word ranking they show up in. 

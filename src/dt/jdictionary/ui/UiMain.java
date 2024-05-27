@@ -21,7 +21,6 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 
-import dt.jdictionary.Utils;
 import dt.jdictionary.cedict.CedictDump;
 import dt.jdictionary.cedict.CedictParser;
 import dt.jdictionary.events.Event;
@@ -31,6 +30,8 @@ import dt.jdictionary.events.EventUtils;
 import dt.jdictionary.sqlite.DbEvent;
 import dt.jdictionary.sqlite.dbservice.DbService;
 import dt.jdictionary.ui.UiUtils.Neighbor;
+import dt.jdictionary.util.Debug;
+import dt.jdictionary.util.ChineseText;
 
 public class UiMain implements ActionListener, EventListener
 {
@@ -260,13 +261,13 @@ public class UiMain implements ActionListener, EventListener
 	{
 		final JPanel root = (JPanel)entry.getParent();
 		final String received = entry.getText().trim().toLowerCase();
-		Utils.logTimestamp("Input trimmed, to lower case: " + received);
+		Debug.logTimestamp("Input trimmed, to lower case: " + received);
 
 		UiUtils.removeNamedComponents(root, Set.of(UI_RESULT, UiUtils.UI_FILLER));
-		Utils.logTimestamp("removed ui filler");
+		Debug.logTimestamp("removed ui filler");
 		
-		final JComponent result = Utils.hasChinese(received) ? 
-				new UiChineseLookup().render(db.lookupChinese(Utils.autoSwapChinese(received))) : 
+		final JComponent result = ChineseText.hasChinese(received) ? 
+				new UiChineseLookup().render(db.lookupChinese(ChineseText.autoSwapChinese(received))) : 
 				new UiList().render(db.lookupEnglish(received));
 		result.setName(UI_RESULT);
 		result.setBorder(UiConstants.TRACER());

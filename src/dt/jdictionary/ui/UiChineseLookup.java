@@ -16,9 +16,9 @@ import javax.swing.JTextPane;
 
 import dt.jdictionary.ExhaustiveChineseLookup;
 import dt.jdictionary.SimpleLookup;
-import dt.jdictionary.Utils;
 import dt.jdictionary.sqlite.dbservice.ChineseDefinitionLookup;
 import dt.jdictionary.ui.UiUtils.Neighbor;
+import dt.jdictionary.util.Debug;
 
 
 class UiChineseLookup
@@ -61,7 +61,7 @@ class UiChineseLookup
 
 	private JPanel renderZhDefinition(ChineseDefinitionLookup dictionaryResult)
 	{
-		Utils.logTimestamp("start single char");
+		Debug.logTimestamp("start single char");
 
 		final JPanel result = new JPanel(new GridBagLayout());
 		result.setBorder(UiConstants.TRACER());
@@ -70,7 +70,7 @@ class UiChineseLookup
 		renderZhCharBig(dictionaryResult.getZh(), result);
 		UiUtils.renderFiller(result, rowsRendered+1);
 
-		Utils.logTimestamp("end single char");
+		Debug.logTimestamp("end single char");
 		return result;
 	}
 

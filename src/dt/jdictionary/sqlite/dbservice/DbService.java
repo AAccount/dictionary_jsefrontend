@@ -9,7 +9,6 @@ import java.util.concurrent.CompletableFuture;
 
 import dt.jdictionary.ExhaustiveChineseLookup;
 import dt.jdictionary.SimpleLookup;
-import dt.jdictionary.Utils;
 import dt.jdictionary.cedict.CedictDump;
 import dt.jdictionary.events.EventUtils;
 import dt.jdictionary.sqlite.dbservice.alternative.AlternateSearch;
@@ -21,6 +20,7 @@ import dt.jdictionary.sqlite.dbservice.alternative.SubstringSearch;
 import dt.jdictionary.sqlite.dbservice.alternative.TypoSearch;
 import dt.jdictionary.sqlite.raw.DbRepo;
 import dt.jdictionary.sqlite.raw.RawDictionaryRow;
+import dt.jdictionary.util.Debug;
 
 public class DbService 
 {
@@ -28,7 +28,7 @@ public class DbService
 
 	public ExhaustiveChineseLookup lookupChinese(String chinese)
 	{
-		Utils.logTimestamp("definition start");
+		Debug.logTimestamp("definition start");
 		final CompletableFuture<ChineseDefinitionLookup> directResults = CompletableFuture.supplyAsync(() -> {return this.lookupChineseDefinition(chinese);});
 		
 		final List<AlternateSearch> alts = List.of(
@@ -40,13 +40,13 @@ public class DbService
 			new TypoSearch(chinese, db)
 		);
 		
-		Utils.logTimestamp("start exhaustive Chinese search");
+		Debug.logTimestamp("start exhaustive Chinese search");
 		final Map<String, CompletableFuture<List<SimpleLookup>>> supplementaryFutures = new LinkedHashMap<>(); 
 		alts.forEach(alt -> supplementaryFutures.put(alt.LOOKUP_NAME(), CompletableFuture.supplyAsync(() -> {return alt.trySearch();})));
 		
 		final Map<String, List<SimpleLookup>> supplementaries = new LinkedHashMap<>(); // linked hash map for predictable iteration order
 		supplementaryFutures.keySet().forEach(altName -> supplementaries.put(altName, supplementaryFutures.get(altName).join()));
-		Utils.logTimestamp("finish exhaustive Chinese search");
+		Debug.logTimestamp("finish exhaustive Chinese search");
 		
 		return new ExhaustiveChineseLookup(directResults.join(), supplementaries);
 	}

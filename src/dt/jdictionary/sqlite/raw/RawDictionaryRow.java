@@ -2,7 +2,7 @@ package dt.jdictionary.sqlite.raw;
 
 import java.util.List;
 
-import dt.jdictionary.Utils;
+import dt.jdictionary.util.ChineseText;
 
 public class RawDictionaryRow 
 {
@@ -18,10 +18,10 @@ public class RawDictionaryRow
 	{
 		this.zh = zh;
 		this.pinyin = pinyin;
-		this.pinyinNormalized = Utils.normalizePinyin(pinyin);
+		this.pinyinNormalized = ChineseText.normalizePinyin(pinyin);
 		this.singleDefinition = null;
 		this.rank = rank;
-		final List<String> trueChars = Utils.trueChars(zh);
+		final List<String> trueChars = ChineseText.trueChars(zh);
 		this.firstChar = trueChars.size() > 1 ? trueChars.get(0) : null;
 		this.lastChar = trueChars.size() > 1 ? trueChars.get(trueChars.size()-1) : null;
 	}

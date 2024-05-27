@@ -8,9 +8,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import dt.jdictionary.SimpleLookup;
-import dt.jdictionary.Utils;
 import dt.jdictionary.sqlite.dbservice.DbServiceUtils;
 import dt.jdictionary.sqlite.raw.DbRepo;
+import dt.jdictionary.util.ChineseText;
 
 public class TypoSearch implements AlternateSearch
 {
@@ -26,7 +26,7 @@ public class TypoSearch implements AlternateSearch
 	@Override
 	public List<SimpleLookup> trySearch()
 	{
-		final List<String> trueChars = Utils.trueChars(this.zh);
+		final List<String> trueChars = ChineseText.trueChars(this.zh);
 		final List<List<String>> normalizedPinyins = findPinyinForZh(trueChars);
 		if(this.zh.length() != normalizedPinyins.size())
 		{
@@ -45,7 +45,7 @@ public class TypoSearch implements AlternateSearch
 	private int pinyinLookupSimilarity(SimpleLookup candidate, List<String> targetChars)
 	{
 		int similarity = 0;
-		final List<String> candidateTrueChars = Utils.trueChars(candidate.getZh());
+		final List<String> candidateTrueChars = ChineseText.trueChars(candidate.getZh());
 		final Set<String> candidateSet = new HashSet<>();
 		candidateTrueChars.stream().forEach(candidateChar -> candidateSet.add(candidateChar));
 		for(final String targetChar : targetChars)
@@ -68,7 +68,7 @@ public class TypoSearch implements AlternateSearch
 			{
 				pinyinMap.put(entry.getZh(), new HashSet<>());
 			}
-			pinyinMap.get(entry.getZh()).add(Utils.normalizePinyin(entry.getPinyin()));
+			pinyinMap.get(entry.getZh()).add(ChineseText.normalizePinyin(entry.getPinyin()));
 		}
 		
 		final List<List<String>> result = new ArrayList<>();

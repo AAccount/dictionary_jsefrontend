@@ -1,16 +1,14 @@
-package dt.jdictionary;
+package dt.jdictionary.util;
 
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+
 import dt.jdictionary.ui.UiConstants;
 
-public class Utils 
+public class ChineseText 
 {
 	// Blind copy and paste.
 	public static boolean hasChinese(String string)
@@ -28,19 +26,6 @@ public class Utils
 		return Normalizer.normalize(pinyin.toLowerCase().strip(), Form.NFD).replaceAll("\\p{M}", "");
 	}
 
-	public static <T> List<List<T>> subdivideList(List<T> original, int subSize)
-	{
-		final List<List<T>> result = new ArrayList<>();
-		int position = 0;
-		while(position < original.size())
-		{
-			final int end = (position + subSize) > original.size() ? original.size() : position + subSize;
-			result.add(original.subList(position, end));
-			position = end;
-		}
-		return result;
-	}
-	
 	/**
 	 * Java doesn't handle 4 byte encoded Chinese characters very well.
 	 * Char at returns bogus, string length "inflates" among other problems.
@@ -81,33 +66,6 @@ public class Utils
 		return result;
 	}
 
-	public static String printBytes(byte[] bytes)
-	{
-		String result = "[";
-		for(byte b : bytes)
-		{
-			result = result + String.format("%02X", b) + " ";
-		}
-		return result.substring(0, result.length()-1) + "]";
-	}
-
-	public static void logTimestamp(String message)
-	{
-		System.out.println(Instant.now() + " " + message);
-	}
-	
-	public static double stdev(Collection<Double> numbers)
-	{
-		final double mean = average(numbers);
-		final double sd = numbers.stream().collect(Collectors.summingDouble(val -> Math.pow(val - mean, 2)));
-		return Math.sqrt(sd / numbers.size());
-	}
-	
-	public static double average(Collection<Double> numbers)
-	{
-		return numbers.stream().mapToDouble(i -> i).average().orElse(0);
-	}
-	
 	public static String autoSwapChinese(String zh)
 	{
 		if(!UiConstants.flagMap.get(UiConstants.FLAG_AUTOSWAP))
@@ -130,7 +88,7 @@ public class Utils
 		
 		if(!result.equals(zh))
 		{
-			Utils.logTimestamp("Swapped " + zh + " for " + result);
+			Debug.logTimestamp("Swapped " + zh + " for " + result);
 		}
 		return result;
 	}
