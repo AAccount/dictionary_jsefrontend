@@ -1,5 +1,6 @@
 bin/*
 *.jar
 
-samples
 *.txt
+/.classpath
+/.project
