@@ -3,44 +3,22 @@ import java.util.List;
 
 import dt.jdictionary.cedict.UnrankedLookup;
 
-public class SimpleLookup implements Comparable<SimpleLookup>
+public class SimpleLookup extends UnrankedLookup implements Comparable<SimpleLookup>
 {
-	private final String zh;
-	private final String pinyin;
 	private final double rank;
-	private final List<String> definitions;
 
 	public SimpleLookup(String zh, String pinyin, List<String> definitions, double rank) 
 	{
-		this.zh = zh;
-		this.pinyin = pinyin;
-		this.definitions = definitions;
+		super(zh, pinyin, definitions);
 		this.rank = rank;
 	}
 	
 	public SimpleLookup(UnrankedLookup unrankedLookup, double rank)
 	{
-		this.zh = unrankedLookup.getZh();
-		this.pinyin = unrankedLookup.getPinyin();
-		this.definitions = unrankedLookup.getDefinitions();
+		super(unrankedLookup.getZh(), unrankedLookup.getPinyin(), unrankedLookup.getDefinitions());
 		this.rank = rank;
 	}
-
-	public String getZh() 
-	{
-		return zh;
-	}
-
-	public String getPinyin() 
-	{
-		return pinyin;
-	}
-
-	public List<String> getDefinitions() 
-	{
-		return definitions;
-	}
-
+	
 	public double getRank()
 	{
 		return rank;
@@ -49,7 +27,7 @@ public class SimpleLookup implements Comparable<SimpleLookup>
 	@Override
 	public String toString()
 	{
-		return "SimpleLookup [zh=" + zh + ", pinyin=" + pinyin + ", rank=" + rank + ", definitions=" + definitions + "]";
+		return "SimpleLookup [zh=" + super.getZh() + ", pinyin=" + super.getPinyin() + ", rank=" + rank + ", definitions=" + super.getDefinitions() + "]";
 	}
 
 	// Definitions are based on the zh and pinyin. No need to compare those.
@@ -58,8 +36,8 @@ public class SimpleLookup implements Comparable<SimpleLookup>
 	{
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((zh == null) ? 0 : zh.hashCode());
-		result = prime * result + ((pinyin == null) ? 0 : pinyin.hashCode());
+		result = prime * result + ((super.getZh() == null) ? 0 : super.getZh().hashCode());
+		result = prime * result + ((super.getPinyin() == null) ? 0 : super.getPinyin().hashCode());
 		return result;
 	}
 
@@ -73,8 +51,8 @@ public class SimpleLookup implements Comparable<SimpleLookup>
 
 		final SimpleLookup casted = (SimpleLookup)obj;
 		return
-			casted.zh.equals(this.zh) &&
-			casted.pinyin.equals(this.pinyin);
+			casted.getZh().equals(this.getZh()) &&
+			casted.getPinyin().equals(this.getPinyin());
 	}
 
 
