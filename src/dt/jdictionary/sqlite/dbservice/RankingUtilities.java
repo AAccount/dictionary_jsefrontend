@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import dt.jdictionary.cedict.UnrankedLookup;
+import dt.jdictionary.UnrankedLookup;
 import dt.jdictionary.util.Stats;
 
 public class RankingUtilities

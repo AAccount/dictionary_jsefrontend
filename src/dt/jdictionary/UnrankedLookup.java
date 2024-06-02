@@ -1,4 +1,4 @@
-package dt.jdictionary.cedict;
+package dt.jdictionary;
 
 import java.util.List;
 

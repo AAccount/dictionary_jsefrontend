@@ -1,8 +1,6 @@
 package dt.jdictionary;
 import java.util.List;
 
-import dt.jdictionary.cedict.UnrankedLookup;
-
 public class SimpleLookup extends UnrankedLookup implements Comparable<SimpleLookup>
 {
 	private final double rank;

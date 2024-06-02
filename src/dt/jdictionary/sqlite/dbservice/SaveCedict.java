@@ -7,9 +7,9 @@ import java.util.Map;
 import java.util.Set;
 
 import dt.jdictionary.SimpleLookup;
+import dt.jdictionary.UnrankedLookup;
 import dt.jdictionary.cedict.CedictDump;
 import dt.jdictionary.cedict.MeasureWords;
-import dt.jdictionary.cedict.UnrankedLookup;
 import dt.jdictionary.cedict.ZhPinyin;
 import dt.jdictionary.events.EventUtils;
 import dt.jdictionary.sqlite.DbEvent;
