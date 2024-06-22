@@ -5,6 +5,8 @@ import java.util.List;
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.sqlite.dbservice.DbServiceUtils;
 import dt.jdictionary.sqlite.raw.DbRepo;
+import dt.jdictionary.ui.UiConstants;
+import dt.jdictionary.util.ChineseText;
 
 public class SubstringOfSearch implements AlternateSearch
 {
@@ -25,7 +27,11 @@ public class SubstringOfSearch implements AlternateSearch
 		{
 			return List.of();
 		}
-		return DbServiceUtils.convertRawToSimple(this.db.lookupChinese(possibleMatches));
+		
+		final int minimumLength = UiConstants.flagMap.get(UiConstants.FLAG_SUBSTRING_OF_2CHAR) ? 1 : 3;
+		return DbServiceUtils.convertRawToSimple(this.db.lookupChinese(possibleMatches)).stream()
+				.filter(result -> ChineseText.trueChars(result.getZh()).size() >= minimumLength)
+				.toList();
 	}
 
 	@Override

@@ -11,10 +11,12 @@ public class UiConstants
 	public static final int FONT_MEDIUM = 20;
 	public static final int FONT_LARGE = 45;
 
-	public static String FLAG_TRACER = "SHOW_TRACER";
-	public static String FLAG_RANK = "SHOW_RANK";
-	public static String FLAG_AUTOSWAP = "AUTO_SWAP";
-	public static String FLAG_ALWAYS_SINGLE_SUBSTRING = "ALWAYS_SINGLE_SUBSTRING";
+	public static final String FLAG_TRACER = "SHOW_TRACER";
+	public static final String FLAG_RANK = "SHOW_RANK";
+	public static final String FLAG_AUTOSWAP = "AUTO_SWAP";
+	public static final String FLAG_ALWAYS_SINGLE_SUBSTRING = "ALWAYS_SINGLE_SUBSTRING";
+	// These would normally show up in same front/same back. Don't need to duplicate the result in substring of.
+	public static final String FLAG_SUBSTRING_OF_2CHAR = "ALWAYS_SUBSTRING_OF_2CHAR_ENTRIES";
 	public static final Map<String, Boolean> flagMap = new HashMap<String, Boolean>();
 
 
@@ -35,5 +37,6 @@ public class UiConstants
 		flagMap.put(FLAG_RANK, false);
 		flagMap.put(FLAG_AUTOSWAP, true);
 		flagMap.put(FLAG_ALWAYS_SINGLE_SUBSTRING, false);
+		flagMap.put(FLAG_SUBSTRING_OF_2CHAR, false);
 	}
 }
