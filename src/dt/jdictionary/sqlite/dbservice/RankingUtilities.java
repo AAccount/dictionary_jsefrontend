@@ -54,6 +54,7 @@ public class RankingUtilities
 				"erhua variant of",
 				"species of China", "species of china",
 				"County in","county in",
+				"district of", "District of",
 				"Township in", "township in",
 				"City in", "city in",
 				"Autonomous City", "autonomous city", "Autonomous city", "autonomous City",
