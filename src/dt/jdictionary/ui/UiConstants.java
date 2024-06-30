@@ -15,8 +15,6 @@ public class UiConstants
 	public static final String FLAG_RANK = "SHOW_RANK";
 	public static final String FLAG_AUTOSWAP = "AUTO_SWAP";
 	public static final String FLAG_ALWAYS_SINGLE_SUBSTRING = "ALWAYS_SINGLE_SUBSTRING";
-	// These would normally show up in same front/same back. Don't need to duplicate the result in substring of.
-	public static final String FLAG_SUBSTRING_OF_ALL = "SUBSTRING_OF_ALL_ENTRIES";
 	public static final Map<String, Boolean> flagMap = new HashMap<String, Boolean>();
 
 
@@ -37,6 +35,5 @@ public class UiConstants
 		flagMap.put(FLAG_RANK, false);
 		flagMap.put(FLAG_AUTOSWAP, true);
 		flagMap.put(FLAG_ALWAYS_SINGLE_SUBSTRING, false);
-		flagMap.put(FLAG_SUBSTRING_OF_ALL, false);
 	}
 }
