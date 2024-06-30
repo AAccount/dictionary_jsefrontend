@@ -78,7 +78,8 @@ public class ChineseText
 				"爲", "為",
 				"僞", "偽",
 				"泄", "洩",
-				"枰然", "怦然"
+				"枰然", "怦然",
+				"衆","眾"
 				);
 		
 		String result = zh;
