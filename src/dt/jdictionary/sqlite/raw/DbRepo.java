@@ -61,13 +61,11 @@ public class DbRepo
 		, COL_ZH, COL_PINYIN, COL_PINYIN_NORM, COL_DEF, COL_FIRST_CHAR, COL_LAST_CHAR, COL_RANK,
 		TABLE_ZHBASE, TABLE_ENGLISH, TABLE_ZHBASE, COL_ID, TABLE_ENGLISH, COL_ZHBASEID);
 
-	private final Object user;
 	private boolean readonly;
 
-	public DbRepo(Object caller, boolean readonly)
+	public DbRepo(boolean readonly)
 	{
 		this.readonly = readonly;
-		this.user = caller;
 		try 
 		{
 			final SQLiteConfig config = new SQLiteConfig();
@@ -77,7 +75,6 @@ public class DbRepo
 			Class.forName("org.sqlite.JDBC");
 			this.db = DriverManager.getConnection("jdbc:sqlite:"+sqlitePath, config.toProperties());
 			db.setAutoCommit(false);
-			Debug.logTimestamp("new db repo for " + userToString());
 		} 
 		catch (SQLException e) 
 		{
@@ -96,7 +93,6 @@ public class DbRepo
 			if(db != null)
 			{
 				db.close();
-				Debug.logTimestamp("closed db repo for " + userToString());
 			}
 		} 
 		catch (SQLException e) 
@@ -108,12 +104,6 @@ public class DbRepo
 	public boolean isReadonly() 
 	{
 		return readonly;
-	}
-
-	private String userToString()
-	{
-		final String[] classPath = user.getClass().getName().split("\\.");
-		return classPath[classPath.length-1] + " " + (user.hashCode() % 1000);
 	}
 
 	public void init()

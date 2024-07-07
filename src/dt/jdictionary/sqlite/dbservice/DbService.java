@@ -24,7 +24,7 @@ import dt.jdictionary.util.Debug;
 
 public class DbService 
 {
-	private DbRepo db = new DbRepo(this, true);
+	private DbRepo db = new DbRepo(true);
 
 	public ExhaustiveChineseLookup lookupChinese(String chinese)
 	{
@@ -81,12 +81,12 @@ public class DbService
 
 	public void saveCedictDump(CedictDump dump)
 	{
-		db = new DbRepo(this, false);
+		db = new DbRepo(false);
 
 		new SaveCedict().save(dump, db);
 
 		db.close();
-		db = new DbRepo(this, true);
+		db = new DbRepo(true);
 	}
 
 	private void checkDbRo()
