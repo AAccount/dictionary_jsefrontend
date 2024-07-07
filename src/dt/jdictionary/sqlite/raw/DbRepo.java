@@ -400,12 +400,12 @@ public class DbRepo
 	public List<RawDictionaryRow> lookupEnglish(String en)
 	{
 		final String sql = String.format("""
-			select %s, %s, %s, English.%s, %s, %s 
+			select %s, %s, %s, English.%s, %s, %s, %s.%s 
 			from %s 
 				join %s on %s.%s = %s.%s 
 				join %s on %s.%s = %s.%s
 			where %s.%s match ?""",
-			COL_ZH, COL_PINYIN, COL_PINYIN_NORM, TABLE_ENGLISH, COL_DEF, COL_FIRST_CHAR, COL_LAST_CHAR,
+			COL_ZH, COL_PINYIN, COL_PINYIN_NORM, COL_DEF, COL_FIRST_CHAR, COL_LAST_CHAR, TABLE_ZHBASE, COL_RANK,
 			TABLE_ZHBASE,
 			TABLE_ENGLISH_FTS5, TABLE_ZHBASE, COL_ID, TABLE_ENGLISH_FTS5, COL_ZHBASEID,
 			TABLE_ENGLISH, TABLE_ZHBASE, COL_ID, TABLE_ENGLISH, COL_ZHBASEID,
