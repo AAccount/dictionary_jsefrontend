@@ -10,7 +10,6 @@ import java.util.concurrent.CompletableFuture;
 import dt.jdictionary.ExhaustiveChineseLookup;
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.cedict.CedictDump;
-import dt.jdictionary.events.EventUtils;
 import dt.jdictionary.sqlite.dbservice.alternative.AlternateSearch;
 import dt.jdictionary.sqlite.dbservice.alternative.DeinterlaceSearch;
 import dt.jdictionary.sqlite.dbservice.alternative.SubstringOfSearch;
@@ -20,11 +19,13 @@ import dt.jdictionary.sqlite.dbservice.alternative.SubstringSearch;
 import dt.jdictionary.sqlite.dbservice.alternative.TypoSearch;
 import dt.jdictionary.sqlite.raw.DbRepo;
 import dt.jdictionary.sqlite.raw.RawDictionaryRow;
+import dt.jdictionary.ui.UiConstants;
+import dt.jdictionary.util.ChineseText;
 import dt.jdictionary.util.Debug;
 
 public class DbService 
 {
-	private DbRepo db = new DbRepo(true);
+	private final DbRepo db = new DbRepo();
 
 	public ExhaustiveChineseLookup lookupChinese(String chinese)
 	{
@@ -48,12 +49,13 @@ public class DbService
 		supplementaryFutures.keySet().forEach(altName -> supplementaries.put(altName, supplementaryFutures.get(altName).join()));
 		Debug.logTimestamp("finish exhaustive Chinese search");
 		
-		return new ExhaustiveChineseLookup(directResults.join(), supplementaries);
+		final ExhaustiveChineseLookup result =  new ExhaustiveChineseLookup(directResults.join(), supplementaries);
+		saveChineseSeachHits(result);
+		return result;
 	}
 	
 	private ChineseDefinitionLookup lookupChineseDefinition(String zh)
 	{
-		checkDbRo();
 		final List<RawDictionaryRow> rawResults = db.lookupChinese(List.of(zh));
 		final Map<String, List<String>> resultsByPinyin = new HashMap<>();
 		for(final RawDictionaryRow rawResult : rawResults)
@@ -72,9 +74,28 @@ public class DbService
 		return result;
 	}
 	
+	private void saveChineseSeachHits(ExhaustiveChineseLookup result)
+	{
+		if(!UiConstants.flagMap.get(UiConstants.FLAG_SAVE_HITS))
+		{
+			return;
+		}
+		
+		if(!result.getDefinition().getResults().isEmpty())
+		{
+			db.saveHit(result.getDefinition().getZh());
+		}
+		
+		if(result.getSupplementaries().containsKey(SubstringSearch.LOOKUP_NAME))
+		{
+			result.getSupplementaries().get(SubstringSearch.LOOKUP_NAME).stream()
+			.filter(substringEntry -> ChineseText.trueChars(substringEntry.getZh()).size() > 1)
+			.forEach(substringEntry -> db.saveHit(substringEntry.getZh()));
+		}
+	}
+	
 	public Map<String, List<SimpleLookup>> lookupEnglish(String en)
 	{
-		checkDbRo();
 		Debug.logTimestamp("english start");
 
 		final Map<String, CompletableFuture<List<SimpleLookup>>> wordFutures= new HashMap<>();
@@ -97,25 +118,11 @@ public class DbService
 	
 	private List<SimpleLookup> lookupSingleEnglishWord(String singleWord)
 	{
-		checkDbRo();
 		return DbServiceUtils.convertRawToSimple(db.lookupEnglish(singleWord));
 	}
 
 	public void saveCedictDump(CedictDump dump)
 	{
-		db = new DbRepo(false);
-
 		new SaveCedict().save(dump, db);
-
-		db.close();
-		db = new DbRepo(true);
-	}
-
-	private void checkDbRo()
-	{
-		if(!db.isReadonly())
-		{
-			EventUtils.sendError(new Exception("DB is in rw mode."));
-		}
 	}
 }

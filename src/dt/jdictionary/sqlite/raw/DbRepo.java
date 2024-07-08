@@ -4,15 +4,16 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import org.sqlite.SQLiteConfig;
 
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.events.EventUtils;
@@ -46,6 +47,7 @@ public class DbRepo
 	private static final String COL_SUBSTRING = "substring";
 	private static final String COL_FULL_STRING = "fullString";
 	private static final String COL_RANK = "rank";
+	private static final String COL_TIMESTAMP = "timestamp";
 
 	private static final String TABLE_ZHBASE = "ZhBase";
 	private static final String TABLE_ENGLISH = "English";
@@ -53,6 +55,10 @@ public class DbRepo
 	private static final String TABLE_MEASUREWORD = "MeasureWord";
 	private static final String TABLE_SIMPLIFIED = "Simplified";
 	private static final String TABLE_SUBSTRING = "Substring";
+	private static final String TABLE_PASTHITS = "PastHits";
+	
+	private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss.SSSS";
+	private static DateFormat dateFormatter = new SimpleDateFormat(DATE_FORMAT);
 
 	private final String DictionaryBaseSql = String.format("""
 		select %s, %s, %s, %s, %s, %s, %s 
@@ -60,19 +66,13 @@ public class DbRepo
 		, COL_ZH, COL_PINYIN, COL_PINYIN_NORM, COL_DEF, COL_FIRST_CHAR, COL_LAST_CHAR, COL_RANK,
 		TABLE_ZHBASE, TABLE_ENGLISH, TABLE_ZHBASE, COL_ID, TABLE_ENGLISH, COL_ZHBASEID);
 
-	private boolean readonly;
-
-	public DbRepo(boolean readonly)
+	public DbRepo()
 	{
-		this.readonly = readonly;
 		try 
 		{
-			final SQLiteConfig config = new SQLiteConfig();
-			config.setReadOnly(this.readonly);
-
 			final String sqlitePath = System.getProperty("user.home") + "/Programs/mdbg2_1.sqlite";
 			Class.forName("org.sqlite.JDBC");
-			this.db = DriverManager.getConnection("jdbc:sqlite:"+sqlitePath, config.toProperties());
+			this.db = DriverManager.getConnection("jdbc:sqlite:"+sqlitePath);
 			db.setAutoCommit(false);
 		} 
 		catch (SQLException e) 
@@ -98,11 +98,6 @@ public class DbRepo
 		{
 			EventUtils.sendError(e);
 		}
-	}
-
-	public boolean isReadonly() 
-	{
-		return readonly;
 	}
 
 	public void init()
@@ -160,12 +155,22 @@ public class DbRepo
 			)""", TABLE_SUBSTRING, COL_SUBSTRING, COL_FULL_STRING, COL_SUBSTRING, COL_FULL_STRING);
 		indexes.add(List.of(TABLE_SUBSTRING, COL_SUBSTRING));
 
+		final String createPastHits = String.format("""
+				CREATE TABLE IF NOT EXISTS %s (
+					%s	INTEGER NOT NULL,
+					"timestamp"	TEXT NOT NULL
+				);
+				""", TABLE_PASTHITS, COL_ZH, COL_TIMESTAMP);
+		indexes.add(List.of(TABLE_PASTHITS, COL_ZH));
+		indexes.add(List.of(TABLE_PASTHITS, COL_TIMESTAMP));
+		
 		final String[] tables = {
 			createZhBase,
 			createEnglish, createEnglishFTS5,
 			createMeasureWords,
 			createSimplified,
-			createSubstrings
+			createSubstrings,
+			createPastHits
 		};
 
 		try
@@ -181,7 +186,7 @@ public class DbRepo
 				final Statement stmt = db.createStatement();
 				final String table = index.get(0);
 				final String column = index.get(1);
-				stmt.execute(String.format("CREATE INDEX %sSort%s ON %s (%s)", table, column, table, column));
+				stmt.execute(String.format("CREATE INDEX IF NOT EXISTS %sSort%s ON %s (%s)", table, column, table, column));
 			}
 		} 
 		catch (SQLException e) 
@@ -195,7 +200,7 @@ public class DbRepo
 		try 
 		{
 			final Statement findTables = db.createStatement();
-			final ResultSet foundTables = findTables.executeQuery("SELECT name FROM sqlite_master WHERE type='table' and name not like 'sqlite_%'");
+			final ResultSet foundTables = findTables.executeQuery("SELECT name FROM sqlite_master WHERE type='table' and name not like 'sqlite_%' and name <> '" + TABLE_PASTHITS + "'");
 			final List<String> tables = new ArrayList<>();
 			while(foundTables.next())
 			{
@@ -214,6 +219,25 @@ public class DbRepo
 			vaccuum.execute("vacuum;");
 			db.setAutoCommit(false);
 			DbRepoCache.getInstance().wipe();
+		} 
+		catch (SQLException e) 
+		{
+			EventUtils.sendError(e);
+		}
+	}
+	
+	public void saveHit(String zh)
+	{
+		final String sql = String.format("INSERT INTO %s (%s, %s) VALUES (?,?)", TABLE_PASTHITS, COL_ZH, COL_TIMESTAMP);
+		try 
+		{
+			final PreparedStatement pst = db.prepareStatement(sql);
+			pst.setString(1, zh);
+			pst.setString(2, dateFormatter.format(new Date()));
+			pst.addBatch();
+			
+			pst.executeBatch();
+			db.commit();
 		} 
 		catch (SQLException e) 
 		{

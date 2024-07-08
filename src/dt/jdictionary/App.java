@@ -10,11 +10,21 @@ import dt.jdictionary.util.Debug;
 
 public class App
 {
+	private static String ARG_TEST = "--test";
+	
 	public static void main(String[] args)
 	{
 		System.setProperty("apple.laf.useScreenMenuBar", "true");
 		Debug.logTimestamp("Starting V1.2");
 		UiConstants.initFlags();
+		for(final String arg : args)
+		{
+			if(arg.equals(ARG_TEST))
+			{
+				UiConstants.flagMap.put(UiConstants.FLAG_SAVE_HITS, false);
+				break;
+			}
+		}
 		new UiMain().render();
 	}
 }

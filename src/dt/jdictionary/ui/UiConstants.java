@@ -15,6 +15,7 @@ public class UiConstants
 	public static final String FLAG_RANK = "SHOW_RANK";
 	public static final String FLAG_AUTOSWAP = "AUTO_SWAP";
 	public static final String FLAG_ALWAYS_SINGLE_SUBSTRING = "ALWAYS_SINGLE_SUBSTRING";
+	public static final String FLAG_SAVE_HITS = "SAVE_HITS";
 	public static final Map<String, Boolean> flagMap = new HashMap<String, Boolean>();
 
 
@@ -35,5 +36,6 @@ public class UiConstants
 		flagMap.put(FLAG_RANK, false);
 		flagMap.put(FLAG_AUTOSWAP, true);
 		flagMap.put(FLAG_ALWAYS_SINGLE_SUBSTRING, false);
+		flagMap.put(FLAG_SAVE_HITS, true);
 	}
 }

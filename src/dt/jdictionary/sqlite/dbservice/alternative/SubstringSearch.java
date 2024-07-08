@@ -16,6 +16,7 @@ public class SubstringSearch implements AlternateSearch
 	private final String zh;
 	private final DbRepo db;
 	private final Map<String, Double> frontToBackRanking;
+	public static final String LOOKUP_NAME = "Substring";
 	
 	public SubstringSearch(String zh, DbRepo db)
 	{
@@ -45,7 +46,7 @@ public class SubstringSearch implements AlternateSearch
 	@Override
 	public String LOOKUP_NAME()
 	{
-		return "Substring";
+		return LOOKUP_NAME;
 	}
 	
 	private Map<String, Double> generateFrontToBackRanking(String input)
