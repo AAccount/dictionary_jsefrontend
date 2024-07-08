@@ -22,6 +22,7 @@ import dt.jdictionary.sqlite.raw.RawDictionaryRow;
 import dt.jdictionary.ui.UiConstants;
 import dt.jdictionary.util.ChineseText;
 import dt.jdictionary.util.Debug;
+import dt.jdictionary.util.GenerateCombinations;
 
 public class DbService 
 {
@@ -116,6 +117,37 @@ public class DbService
 		}
 		Debug.logTimestamp("english end");
 
+		return findUseableCombinations(result);
+	}
+	
+	private Map<String, List<SimpleLookup>> findUseableCombinations(Map<String, List<SimpleLookup>> individualDefinitions)
+	{
+		final List<List<String>> combinations = GenerateCombinations.generateCombinations(List.copyOf(individualDefinitions.keySet()));
+		final Map<String, List<SimpleLookup>> result = new HashMap<String, List<SimpleLookup>>();
+		for(final List<String> combination : combinations)
+		{
+			final List<SimpleLookup> combinedLookup = getQualifyingEntries(individualDefinitions, combination);
+			if(!combinedLookup.isEmpty())
+			{
+				result.put(combination.toString(), combinedLookup);
+			}
+		}
+		return result;
+	}
+	
+	private List<SimpleLookup> getQualifyingEntries(Map<String, List<SimpleLookup>> individualDefinitions, List<String> combination)
+	{
+		if(combination.size() == 1)
+		{
+			return individualDefinitions.get(combination.get(0));
+		}
+		
+		final List<SimpleLookup> result = new ArrayList<>(individualDefinitions.get(combination.get(0)));
+		for(final String word : combination.subList(1, combination.size()))
+		{
+			final List<SimpleLookup> wordEntries = individualDefinitions.get(word);
+			result.retainAll(wordEntries);
+		}
 		return result;
 	}
 	
