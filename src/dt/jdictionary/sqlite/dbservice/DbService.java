@@ -74,7 +74,7 @@ public class DbService
 		return result;
 	}
 	
-	private void saveChineseSeachHits(ExhaustiveChineseLookup result)
+	private void saveChineseSeachHits(ExhaustiveChineseLookup exhaustiveLookup)
 	{
 		if(!UiConstants.flagMap.get(UiConstants.FLAG_SAVE_HITS))
 		{
@@ -82,14 +82,14 @@ public class DbService
 		}
 		
 		final List<String> hits = new ArrayList<>();
-		if(!result.getDefinition().getResults().isEmpty())
+		if(!exhaustiveLookup.getDefinition().getResults().isEmpty())
 		{
-			hits.add(result.getDefinition().getZh());
+			hits.add(exhaustiveLookup.getDefinition().getZh());
 		}
 		
-		if(result.getSupplementaries().containsKey(SubstringSearch.LOOKUP_NAME))
+		if(exhaustiveLookup.getSupplementaries().containsKey(SubstringSearch.LOOKUP_NAME))
 		{
-			final List<String> substringHits = result.getSupplementaries().get(SubstringSearch.LOOKUP_NAME).stream()
+			final List<String> substringHits = exhaustiveLookup.getSupplementaries().get(SubstringSearch.LOOKUP_NAME).stream()
 				.filter(substringEntry -> ChineseText.trueChars(substringEntry.getZh()).size() > 1)
 				.map(SimpleLookup::getZh).toList();
 			hits.addAll(substringHits);
