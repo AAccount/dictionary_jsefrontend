@@ -226,16 +226,18 @@ public class DbRepo
 		}
 	}
 	
-	public void saveHit(String zh)
+	public void saveHits(List<String> hits)
 	{
 		final String sql = String.format("INSERT INTO %s (%s, %s) VALUES (?,?)", TABLE_PASTHITS, COL_ZH, COL_TIMESTAMP);
 		try 
 		{
 			final PreparedStatement pst = db.prepareStatement(sql);
-			pst.setString(1, zh);
-			pst.setString(2, dateFormatter.format(new Date()));
-			pst.addBatch();
-			
+			for(final String hit : hits)
+			{
+				pst.setString(1, hit);
+				pst.setString(2, dateFormatter.format(new Date()));
+				pst.addBatch();
+			}
 			pst.executeBatch();
 			db.commit();
 		} 

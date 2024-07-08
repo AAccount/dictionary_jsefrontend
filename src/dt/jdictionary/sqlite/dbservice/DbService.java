@@ -81,17 +81,20 @@ public class DbService
 			return;
 		}
 		
+		final List<String> hits = new ArrayList<>();
 		if(!result.getDefinition().getResults().isEmpty())
 		{
-			db.saveHit(result.getDefinition().getZh());
+			hits.add(result.getDefinition().getZh());
 		}
 		
 		if(result.getSupplementaries().containsKey(SubstringSearch.LOOKUP_NAME))
 		{
-			result.getSupplementaries().get(SubstringSearch.LOOKUP_NAME).stream()
-			.filter(substringEntry -> ChineseText.trueChars(substringEntry.getZh()).size() > 1)
-			.forEach(substringEntry -> db.saveHit(substringEntry.getZh()));
+			final List<String> substringHits = result.getSupplementaries().get(SubstringSearch.LOOKUP_NAME).stream()
+				.filter(substringEntry -> ChineseText.trueChars(substringEntry.getZh()).size() > 1)
+				.map(SimpleLookup::getZh).toList();
+			hits.addAll(substringHits);
 		}
+		db.saveHits(hits);
 	}
 	
 	public Map<String, List<SimpleLookup>> lookupEnglish(String en)
