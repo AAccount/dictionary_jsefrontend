@@ -17,7 +17,6 @@ import org.sqlite.SQLiteConfig;
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.events.EventUtils;
 import dt.jdictionary.sqlite.DbEvent;
-import dt.jdictionary.util.Debug;
 
 public class DbRepo 
 {

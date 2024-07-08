@@ -72,11 +72,33 @@ public class DbService
 		return result;
 	}
 	
-	public List<SimpleLookup> lookupEnglish(String en)
+	public Map<String, List<SimpleLookup>> lookupEnglish(String en)
 	{
 		checkDbRo();
-		final List<RawDictionaryRow> rawResults = db.lookupEnglish(en);
-		return DbServiceUtils.convertRawToSimple(rawResults);
+		Debug.logTimestamp("english start");
+
+		final Map<String, CompletableFuture<List<SimpleLookup>>> wordFutures= new HashMap<>();
+		final String[] individualWords = en.split(" ");
+		for(final String individualWord : individualWords)
+		{
+			wordFutures.put(individualWord, CompletableFuture.supplyAsync(() -> {return this.lookupSingleEnglishWord(individualWord);}));
+		}
+		
+		final Map<String, List<SimpleLookup>> result= new HashMap<>();
+		for(final String word : wordFutures.keySet())
+		{
+			final List<SimpleLookup> singleResult = wordFutures.get(word).join();
+			result.put(word, singleResult);
+		}
+		Debug.logTimestamp("english end");
+
+		return result;
+	}
+	
+	private List<SimpleLookup> lookupSingleEnglishWord(String singleWord)
+	{
+		checkDbRo();
+		return DbServiceUtils.convertRawToSimple(db.lookupEnglish(singleWord));
 	}
 
 	public void saveCedictDump(CedictDump dump)

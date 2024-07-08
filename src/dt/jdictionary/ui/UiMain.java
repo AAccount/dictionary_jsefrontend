@@ -268,7 +268,7 @@ public class UiMain implements ActionListener, EventListener
 		
 		final JComponent result = ChineseText.hasChinese(received) ? 
 				new UiChineseLookup().render(db.lookupChinese(ChineseText.autoSwapChinese(received))) : 
-				new UiList().render(db.lookupEnglish(received));
+				new UiEnglishLookup().render(db.lookupEnglish(received));
 		result.setName(UI_RESULT);
 		result.setBorder(UiConstants.TRACER());
 
