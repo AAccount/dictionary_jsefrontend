@@ -47,7 +47,7 @@ public class DbService
 		alts.forEach(alt -> supplementaryFutures.put(alt.LOOKUP_NAME(), CompletableFuture.supplyAsync(() -> {return alt.trySearch();})));
 		
 		final Map<String, List<SimpleLookup>> supplementaries = new LinkedHashMap<>(); // linked hash map for predictable iteration order
-		supplementaryFutures.keySet().forEach(altName -> supplementaries.put(altName, supplementaryFutures.get(altName).join()));
+		supplementaryFutures.keySet().forEach(altName -> supplementaries.put(altName, rerankAlternates(altName, supplementaryFutures.get(altName).join())));
 		Debug.logTimestamp("finish exhaustive Chinese search");
 		
 		final ExhaustiveChineseLookup result =  new ExhaustiveChineseLookup(directResults.join(), supplementaries);
@@ -56,6 +56,18 @@ public class DbService
 			saveChineseSeachHits(result);
 		}
 		return result;
+	}
+	
+	private List<SimpleLookup> rerankAlternates(String alternate, List<SimpleLookup> results)
+	{
+		if(alternate.equals(SubstringSearch.LOOKUP_NAME))
+		{
+			return results;
+		}
+		
+		final List<String> candidates = results.stream().map(SimpleLookup::getZh).toList();
+		final Map<String, Integer> pastHits = PastHitUtils.countHits(db.lookupPastHits(candidates));
+		return DbServiceUtils.rerank(results, pastHits);
 	}
 	
 	private ChineseDefinitionLookup lookupChineseDefinition(String zh)
@@ -156,7 +168,10 @@ public class DbService
 	
 	private List<SimpleLookup> lookupSingleEnglishWord(String singleWord)
 	{
-		return DbServiceUtils.convertRawToSimple(db.lookupEnglish(singleWord));
+		final List<SimpleLookup> rawResults =  DbServiceUtils.convertRawToSimple(db.lookupEnglish(singleWord));
+		final List<String> candidates = rawResults.stream().map(SimpleLookup::getZh).toList();
+		final Map<String, Integer> pastHits = PastHitUtils.countHits(db.lookupPastHits(candidates));
+		return DbServiceUtils.rerank(rawResults, pastHits);
 	}
 
 	public void saveCedictDump(CedictDump dump)

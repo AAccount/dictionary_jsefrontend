@@ -5,6 +5,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -245,6 +246,45 @@ public class DbRepo
 		{
 			EventUtils.sendError(e);
 		}
+	}
+	
+	public List<PastHit> lookupPastHits(List<String> candidates)
+	{
+		if(candidates.isEmpty())
+		{
+			return List.of();
+		}
+		
+		final String repeaterRawString = "?, ".repeat(candidates.size());
+		final String repeaterString = repeaterRawString.substring(0, repeaterRawString.length() - 2);
+		final String sql = String.format("select * from %s where %s in (%s) order by %s desc", TABLE_PASTHITS, COL_ZH, repeaterString, COL_TIMESTAMP);
+
+		try 
+		{
+			final PreparedStatement pst = db.prepareStatement(sql);
+			for(int i=0; i<candidates.size(); i++)
+			{
+				pst.setString(i+1, candidates.get(i));
+			}
+			
+			final ResultSet results = pst.executeQuery();
+			return processRawPastHits(results);
+		}
+		catch (SQLException | ParseException e) 
+		{
+			EventUtils.sendError(e);
+		}
+		return List.of();
+	}
+	
+	private List<PastHit> processRawPastHits(ResultSet results) throws SQLException, ParseException
+	{
+		final List<PastHit> pastHits = new ArrayList<>();
+		while(results.next())
+		{
+			pastHits.add(new PastHit(results.getString(COL_ZH), dateFormatter.parse(results.getString(COL_TIMESTAMP)))); 
+		}
+		return pastHits;
 	}
 
 	public List<RawDictionaryRow> lookupChinese(List<String> zhStrings)

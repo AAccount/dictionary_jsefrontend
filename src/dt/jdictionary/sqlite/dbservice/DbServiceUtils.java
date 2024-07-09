@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.sqlite.raw.RawDictionaryRow;
@@ -29,5 +30,20 @@ public class DbServiceUtils
 		}
 
 		return result;
+	}
+	
+	public static List<SimpleLookup> rerank(List<SimpleLookup> results, Map<String, Integer> pastHits)
+	{
+		return results.stream().map(lookup -> rerankSingle(lookup, pastHits)).collect(Collectors.toCollection(ArrayList::new));
+	}
+	
+	private static SimpleLookup rerankSingle(SimpleLookup lookup, Map<String, Integer> pastHits)
+	{
+		final int HISTORY_RELEVANCE_MULTIPLIER = 10000;
+		if(pastHits.containsKey(lookup.getZh()))
+		{
+			return new SimpleLookup(lookup, pastHits.get(lookup.getZh()) * HISTORY_RELEVANCE_MULTIPLIER);
+		}
+		return lookup;
 	}
 }
