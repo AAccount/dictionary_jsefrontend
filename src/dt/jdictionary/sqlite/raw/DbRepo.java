@@ -279,12 +279,12 @@ public class DbRepo
 			}
 			final ResultSet results = pst.executeQuery();
 			rawDbRows.addAll(processRawDbRows(results));
+			DbRepoCache.getInstance().setTableCache(sql, zhsStringsKeyString, rawDbRows);
 		}
 		catch (SQLException e) 
 		{
 			EventUtils.sendError(e);
 		}
-		DbRepoCache.getInstance().setTableCache(sql, zhsStringsKeyString, rawDbRows);
 		return rawDbRows;
 	}
 
@@ -303,12 +303,12 @@ public class DbRepo
 			pst.setString(1, target);
 			final ResultSet results = pst.executeQuery();
 			rawDbRows.addAll(processRawDbRows(results));
+			DbRepoCache.getInstance().setTableCache(sql, target, rawDbRows);
 		}
 		catch (SQLException e) 
 		{
 			EventUtils.sendError(e);
 		}
-		DbRepoCache.getInstance().setTableCache(sql, target, rawDbRows);
 		return rawDbRows;
 	}
 	
@@ -367,12 +367,12 @@ public class DbRepo
 				final String resultchar = charMapper.keySet().contains(charAsString) ? charMapper.get(charAsString) : charAsString;
 				zhSimplified = zhSimplified + resultchar;
 			}
+			DbRepoCache.getInstance().setSimplfiedCache(zh, zhSimplified);
 		}
 		catch (SQLException e) 
 		{
 			EventUtils.sendError(e);
 		}
-		DbRepoCache.getInstance().setSimplfiedCache(zh, zhSimplified);
 		return zhSimplified;
 	}
 
@@ -396,12 +396,12 @@ public class DbRepo
 			{
 				measureWords.add(results.getString(COL_MEASURE_WORD));
 			}
+			DbRepoCache.getInstance().setMeasureWordCache(zh, measureWords);
 		}
 		catch (SQLException e) 
 		{
 			EventUtils.sendError(e);
 		}
-		DbRepoCache.getInstance().setMeasureWordCache(zh, measureWords);
 		return measureWords;
 	}
 
@@ -476,12 +476,12 @@ public class DbRepo
 			{
 				result.add(results.getString(column));
 			}
+			DbRepoCache.getInstance().setListOfStringsCache(sql, search, column, result);
 		}
 		catch (SQLException e) 
 		{
 			EventUtils.sendError(e);
 		}
-		DbRepoCache.getInstance().setListOfStringsCache(sql, search, column, result);
 		return result;	
 	}
 
