@@ -28,7 +28,7 @@ public class DbService
 {
 	private final DbRepo db = new DbRepo();
 
-	public ExhaustiveChineseLookup lookupChinese(String chinese)
+	public ExhaustiveChineseLookup lookupChinese(String chinese, boolean newSearch)
 	{
 		Debug.logTimestamp("definition start");
 		final CompletableFuture<ChineseDefinitionLookup> directResults = CompletableFuture.supplyAsync(() -> {return this.lookupChineseDefinition(chinese);});
@@ -51,7 +51,10 @@ public class DbService
 		Debug.logTimestamp("finish exhaustive Chinese search");
 		
 		final ExhaustiveChineseLookup result =  new ExhaustiveChineseLookup(directResults.join(), supplementaries);
-		saveChineseSeachHits(result);
+		if(newSearch)
+		{
+			saveChineseSeachHits(result);
+		}
 		return result;
 	}
 	

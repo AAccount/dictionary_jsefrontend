@@ -267,7 +267,7 @@ public class UiMain implements ActionListener, EventListener
 		Debug.logTimestamp("removed ui filler");
 		
 		final JComponent result = ChineseText.hasChinese(received) ? 
-				new UiChineseLookup().render(db.lookupChinese(ChineseText.autoSwapChinese(received))) : 
+				new UiChineseLookup().render(db.lookupChinese(ChineseText.autoSwapChinese(received), newSearch)) : 
 				new UiEnglishLookup().render(db.lookupEnglish(received));
 		result.setName(UI_RESULT);
 		result.setBorder(UiConstants.TRACER());
