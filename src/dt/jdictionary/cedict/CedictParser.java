@@ -3,7 +3,6 @@ package dt.jdictionary.cedict;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -21,13 +20,11 @@ import dt.jdictionary.events.Event;
 import dt.jdictionary.events.EventDispatcher;
 import dt.jdictionary.events.EventType;
 import dt.jdictionary.events.EventUtils;
+import dt.jdictionary.events.FileParseEventKey;
 import dt.jdictionary.util.ChineseText;
 
 public class CedictParser 
 {
-	public static final String EVENT_TOTAL_BYTES = "total bytes";
-	public static final String EVENT_PROCESSED_BYTES = "processed bytes";
-
 	private final String MEASURE_WORD_INDICATOR = "CL:";
 	private final String OG_SIMPLIFIED_SPLIT = "|";
 
@@ -70,24 +67,20 @@ public class CedictParser
 			cedictReader.close();
 			sendProgressEvent(cedictFile.length(), cedictFile.length());
 		} 
-		catch (FileNotFoundException e) 
-		{
-			EventUtils.sendError(e);
-		} 
 		catch (IOException e) 
 		{
 			EventUtils.sendError(e);
-		}
+		} 
 		return result;
 	}
 
 	private void sendProgressEvent(long bytesProcessed, long bytesTotal)
 	{
 		final Map<String, Object> data = Map.of(
-			EVENT_PROCESSED_BYTES, bytesProcessed,
-			EVENT_TOTAL_BYTES, bytesTotal
+			FileParseEventKey.EVENT_PROCESSED_BYTES, bytesProcessed,
+			FileParseEventKey.EVENT_TOTAL_BYTES, bytesTotal
 		);
-		final Event progress = new Event(EventType.CEDICT_PARSE, data);
+		final Event progress = new Event(EventType.FILE_PARSE, data);
 		EventDispatcher.get().push(progress);
 	}
 

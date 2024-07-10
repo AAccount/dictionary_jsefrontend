@@ -2,10 +2,13 @@ package dt.jdictionary.sqlite.dbservice;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import dt.jdictionary.ExhaustiveChineseLookup;
 import dt.jdictionary.SimpleLookup;
@@ -177,5 +180,18 @@ public class DbService
 	public void saveCedictDump(CedictDump dump)
 	{
 		new SaveCedict().save(dump, db);
+	}
+	
+	public void savePastHits(List<String> words, boolean verifyInDictionary)
+	{
+		final List<String> useable = verifyInDictionary ? checkChineseInDictionary(words) : words;
+		db.saveHits(useable);
+	}
+	
+	private List<String> checkChineseInDictionary(List<String> words)
+	{
+		final List<RawDictionaryRow> rawDictionaryRows = db.lookupChinese(words);
+		final Set<String> inDictionary = rawDictionaryRows.stream().map(RawDictionaryRow::getZh).collect(Collectors.toCollection(HashSet::new));
+		return words.stream().filter(word -> inDictionary.contains(word)).toList();
 	}
 }

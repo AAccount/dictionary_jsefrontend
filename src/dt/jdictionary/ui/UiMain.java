@@ -27,37 +27,41 @@ import dt.jdictionary.events.Event;
 import dt.jdictionary.events.EventDispatcher;
 import dt.jdictionary.events.EventListener;
 import dt.jdictionary.events.EventUtils;
+import dt.jdictionary.events.FileParseEventKey;
 import dt.jdictionary.sqlite.DbEvent;
 import dt.jdictionary.sqlite.dbservice.DbService;
+import dt.jdictionary.sqlite.load.WordList;
 import dt.jdictionary.ui.UiUtils.Neighbor;
 import dt.jdictionary.util.Debug;
 import dt.jdictionary.util.ChineseText;
 
 public class UiMain implements ActionListener, EventListener
 {
-	private final String UI_ROOT = "root";
-	private final String UI_ENTRY = "entry";
-	private final String UI_RESULT = "result";
-	private final String UI_PROGRESS = "progress bar";
-	private final String MENU_INIT_SQLITE = "initalize sqlite";
+	private static final String UI_ROOT = "root";
+	private static final String UI_ENTRY = "entry";
+	private static final String UI_RESULT = "result";
+	private static final String UI_PROGRESS = "progress bar";
+	private static final String MENU_SQLITE_INIT = "initalize sqlite";
+	private static final String MENU_SQLITE_LOAD_LIST = "load known word list";
+	private static final String MENU_SQLITE_LOAD_BLOB = "find words in blob";	
 
-	private final int UI_ROW_ENTRY = 0;
-	private final int UI_ROW_PROGRESS = 1;
-	private final int UI_ROW_RESULT = 2;
-	private final int UI_MAIN_COLUMN = 0;
-	private final int TOTAL_COLUMNS = 3;
-	private final int HISTORY_MANAGER_MAX = 10;
-	private final String HISTORY_MENU_UI_PREFIX = "kmFU2bYk"; // random string to easily identify history menu items's names
-	private final String JMENU_ITEM_UI_DELIM = ";";
-	private final String FLAG_MENU_UI_PREFIX = "sjkhfca"; // random string to easily identify flag menu items's names
+	private static final int UI_ROW_ENTRY = 0;
+	private static final int UI_ROW_PROGRESS = 1;
+	private static final int UI_ROW_RESULT = 2;
+	private static final int UI_MAIN_COLUMN = 0;
+	private static final int TOTAL_COLUMNS = 3;
+	private static final int HISTORY_MANAGER_MAX = 10;
+	private static final String HISTORY_MENU_UI_PREFIX = "kmFU2bYk"; // random string to easily identify history menu items's names
+	private static final String JMENU_ITEM_UI_DELIM = ";";
+	private static final String FLAG_MENU_UI_PREFIX = "sjkhfca"; // random string to easily identify flag menu items's names
 
 	private final DbService db;
 	private final JTextField uiEntry;
 	private final JProgressBar progressBar;
 	private final JButton previous;
-	private final String UI_PREV = "previous button";
+	private static final String UI_PREV = "previous button";
 	private final JButton forward;
-	private final String UI_FWD = "forward button";
+	private static final String UI_FWD = "forward button";
 	private final JMenu historyMenu;
 	private final JMenu flagMenu;
 
@@ -105,9 +109,21 @@ public class UiMain implements ActionListener, EventListener
 
 		final JMenuItem sqliteInit = new JMenuItem("Initalize with CEDICT");
 		sqliteInit.setMnemonic(KeyEvent.VK_I);
-		sqliteInit.setName(MENU_INIT_SQLITE);
+		sqliteInit.setName(MENU_SQLITE_INIT);
 		sqliteInit.addActionListener(this);
 		sqliteMenu.add(sqliteInit);
+		
+		final JMenuItem loadList = new JMenuItem("Load a list of known words to past hits");
+		loadList.setMnemonic(KeyEvent.VK_L);
+		loadList.setName(MENU_SQLITE_LOAD_LIST);
+		loadList.addActionListener(this);
+		sqliteMenu.add(loadList);
+		
+		final JMenuItem loadlBlob = new JMenuItem("Parse a blob of text for compound words to past hits");
+		loadlBlob.setMnemonic(KeyEvent.VK_I);
+		loadlBlob.setName(MENU_SQLITE_LOAD_BLOB);
+		loadlBlob.addActionListener(this);
+		sqliteMenu.add(loadlBlob);
 		
 		historyMenu.setMnemonic(KeyEvent.VK_H);
 		historyMenu.getAccessibleContext().setAccessibleDescription("Browse through the last "+HISTORY_MANAGER_MAX+" lookups.");
@@ -185,8 +201,11 @@ public class UiMain implements ActionListener, EventListener
 				case UI_ENTRY:
 					handleTextEntry((JTextField)source, true);
 					return;
-				case MENU_INIT_SQLITE:
+				case MENU_SQLITE_INIT:
 					handleMenuSqliteInit();
+					return;
+				case MENU_SQLITE_LOAD_LIST:
+					handleMenuSqliteLoadList();
 					return;
 				case UI_PREV:
 					handleHistory(historyManager.goBack());
@@ -242,19 +261,48 @@ public class UiMain implements ActionListener, EventListener
 		}
 
 		final File file = fc.getSelectedFile();
-		uiEntry.setEditable(false);
-		uiEntry.setText("Importing " + file.getName());
-		progressBar.setVisible(true);
+		disableEntry("Importing " + file.getName());
 
 		final Thread importer = new Thread(() -> { 
 			final CedictDump dump = new CedictParser().parse(file);
 			db.saveCedictDump(dump);
-
-			progressBar.setVisible(false);
-			uiEntry.setText("");
-			uiEntry.setEditable(true);
+			enableEntry();
 		});
-		importer.start();		
+		importer.start();	
+	}
+	
+	private void handleMenuSqliteLoadList()
+	{
+		final JFileChooser fc = new JFileChooser();
+		final int returnVal = fc.showOpenDialog(null);
+		if (returnVal != JFileChooser.APPROVE_OPTION) 
+		{
+			return;
+		}
+
+		final File file = fc.getSelectedFile();
+		disableEntry("Loading past hit list " + file.getName());
+		final Thread loader = new Thread(() -> { 
+			final List<String> wordList = new WordList().parse(file);
+			final boolean verifyInDictionary = true;
+			db.savePastHits(wordList, verifyInDictionary);
+			enableEntry();
+		});
+		loader.start();	
+	}
+	
+	private void disableEntry(String message)
+	{
+		uiEntry.setEditable(false);
+		uiEntry.setText(message);
+		progressBar.setVisible(true);
+	}
+	
+	private void enableEntry()
+	{
+		progressBar.setVisible(false);
+		uiEntry.setText("");
+		uiEntry.setEditable(true);
 	}
 
 	private void handleTextEntry(JTextField entry, boolean newSearch)
@@ -309,8 +357,8 @@ public class UiMain implements ActionListener, EventListener
 	{
 		switch(event.getType())
 		{
-			case CEDICT_PARSE:
-				handleCedictEvent(event.getData());
+			case FILE_PARSE:
+				handleFileParseEvent(event.getData());
 				break;
 			case DB_SAVE:
 				handleDbSaveEvent(event.getData());
@@ -346,11 +394,11 @@ public class UiMain implements ActionListener, EventListener
 		JOptionPane.showMessageDialog(null, popupMessage, title, JOptionPane.ERROR_MESSAGE);
 	}
 
-	private void handleCedictEvent(Map<String, Object> data)
+	private void handleFileParseEvent(Map<String, Object> data)
 	{
-		final long processedBytes = (long)data.get(CedictParser.EVENT_PROCESSED_BYTES);
-		final long totalBytes = (long)data.get(CedictParser.EVENT_TOTAL_BYTES);
-		updateImportProgress((int)processedBytes, (int)totalBytes, "Parse CEDICT: ");
+		final long processedBytes = (long)data.get(FileParseEventKey.EVENT_PROCESSED_BYTES);
+		final long totalBytes = (long)data.get(FileParseEventKey.EVENT_TOTAL_BYTES);
+		updateImportProgress((int)processedBytes, (int)totalBytes, "Parsed: ");
 	}
 
 	private void handleDbSaveEvent(Map<String, Object> data)
