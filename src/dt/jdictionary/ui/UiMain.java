@@ -21,6 +21,7 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 
+import dt.jdictionary.App;
 import dt.jdictionary.cedict.CedictDump;
 import dt.jdictionary.cedict.CedictParser;
 import dt.jdictionary.events.Event;
@@ -85,7 +86,7 @@ public class UiMain implements ActionListener, EventListener
 
 	public void render()
 	{
-		final JFrame window = new JFrame("Dictionary");
+		final JFrame window = new JFrame("Dictionary " + App.VERSION);
 		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		final JPanel root = new JPanel(new GridBagLayout());
 		root.setName(UI_ROOT);

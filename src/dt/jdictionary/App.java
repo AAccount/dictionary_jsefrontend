@@ -12,12 +12,13 @@ import dt.jdictionary.util.Debug;
 
 public class App
 {
-	private static String ARG_TEST = "--test";
+	public static final String VERSION = "V1.4";
+	private static final String ARG_TEST = "--test";
 	
 	public static void main(String[] args)
 	{
 		System.setProperty("apple.laf.useScreenMenuBar", "true");
-		Debug.logTimestamp("Starting V1.4");
+		Debug.logTimestamp("Starting " + VERSION);
 		UiConstants.initFlags();
 		for(final String arg : args)
 		{
