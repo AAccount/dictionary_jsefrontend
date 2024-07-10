@@ -8,11 +8,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import dt.jdictionary.ExhaustiveChineseLookup;
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.cedict.CedictDump;
+import dt.jdictionary.events.EventUtils;
 import dt.jdictionary.sqlite.dbservice.alternative.AlternateSearch;
 import dt.jdictionary.sqlite.dbservice.alternative.DeinterlaceSearch;
 import dt.jdictionary.sqlite.dbservice.alternative.SubstringOfSearch;
@@ -193,5 +198,31 @@ public class DbService
 		final List<RawDictionaryRow> rawDictionaryRows = db.lookupChinese(words);
 		final Set<String> inDictionary = rawDictionaryRows.stream().map(RawDictionaryRow::getZh).collect(Collectors.toCollection(HashSet::new));
 		return words.stream().filter(word -> inDictionary.contains(word)).toList();
+	}
+	
+	public List<String> extractCompoundWords(List<String> manySentences)
+	{
+		final int cpus = Runtime.getRuntime().availableProcessors();
+		final ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(cpus);
+
+		final ConcurrentHashMap.KeySetView<String, Boolean> compoundWordSet = ConcurrentHashMap.newKeySet();
+		for(final String sentence : manySentences)
+		{
+			executor.submit(() -> {
+				final List<SimpleLookup> compounds = new SubstringSearch(sentence, db).trySearch();
+				compounds.forEach(simpleLookup -> compoundWordSet.add(simpleLookup.getZh()));
+			});
+
+		}
+		executor.shutdown();
+		try
+		{
+			executor.awaitTermination(1, TimeUnit.DAYS);
+		}
+		catch(InterruptedException e)
+		{
+			EventUtils.sendError(e);
+		}
+		return new ArrayList<String>(compoundWordSet);
 	}
 }

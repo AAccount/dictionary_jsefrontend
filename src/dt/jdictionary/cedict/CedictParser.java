@@ -16,11 +16,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import dt.jdictionary.UnrankedLookup;
-import dt.jdictionary.events.Event;
-import dt.jdictionary.events.EventDispatcher;
-import dt.jdictionary.events.EventType;
 import dt.jdictionary.events.EventUtils;
-import dt.jdictionary.events.FileParseEventKey;
 import dt.jdictionary.util.ChineseText;
 
 public class CedictParser 
@@ -31,7 +27,7 @@ public class CedictParser
 	public CedictDump parse(File cedictFile)
 	{
 		long processedBytes = 0;
-		sendProgressEvent(processedBytes, cedictFile.length());
+		EventUtils.sendBytesProcessed(processedBytes, cedictFile.length());
 
 		final CedictDump result = new CedictDump();
 		try 
@@ -46,7 +42,7 @@ public class CedictParser
 				{
 					line = cedictReader.readLine();
 					processedBytes = processedBytes + line.getBytes().length;
-					sendProgressEvent(processedBytes, cedictFile.length());
+					EventUtils.sendBytesProcessed(processedBytes, cedictFile.length());
 					continue;
 				}
 
@@ -61,27 +57,17 @@ public class CedictParser
 				}
 
 				processedBytes = processedBytes + line.getBytes().length;
-				sendProgressEvent(processedBytes, cedictFile.length());
+				EventUtils.sendBytesProcessed(processedBytes, cedictFile.length());
 				line = cedictReader.readLine();
 			}
 			cedictReader.close();
-			sendProgressEvent(cedictFile.length(), cedictFile.length());
+			EventUtils.sendBytesProcessed(cedictFile.length(), cedictFile.length());
 		} 
 		catch (IOException e) 
 		{
 			EventUtils.sendError(e);
 		} 
 		return result;
-	}
-
-	private void sendProgressEvent(long bytesProcessed, long bytesTotal)
-	{
-		final Map<String, Object> data = Map.of(
-			FileParseEventKey.EVENT_PROCESSED_BYTES, bytesProcessed,
-			FileParseEventKey.EVENT_TOTAL_BYTES, bytesTotal
-		);
-		final Event progress = new Event(EventType.FILE_PARSE, data);
-		EventDispatcher.get().push(progress);
 	}
 
 	private List<String> parseDefinitions(RawCedictLine line)

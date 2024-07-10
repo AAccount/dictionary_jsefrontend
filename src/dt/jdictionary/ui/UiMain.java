@@ -27,9 +27,9 @@ import dt.jdictionary.events.Event;
 import dt.jdictionary.events.EventDispatcher;
 import dt.jdictionary.events.EventListener;
 import dt.jdictionary.events.EventUtils;
-import dt.jdictionary.events.FileParseEventKey;
 import dt.jdictionary.sqlite.DbEvent;
 import dt.jdictionary.sqlite.dbservice.DbService;
+import dt.jdictionary.sqlite.load.WordBlob;
 import dt.jdictionary.sqlite.load.WordList;
 import dt.jdictionary.ui.UiUtils.Neighbor;
 import dt.jdictionary.util.Debug;
@@ -207,6 +207,9 @@ public class UiMain implements ActionListener, EventListener
 				case MENU_SQLITE_LOAD_LIST:
 					handleMenuSqliteLoadList();
 					return;
+				case MENU_SQLITE_LOAD_BLOB:
+					handleMenuSqliteLoadBlob();
+					return;
 				case UI_PREV:
 					handleHistory(historyManager.goBack());
 					return;
@@ -281,10 +284,31 @@ public class UiMain implements ActionListener, EventListener
 		}
 
 		final File file = fc.getSelectedFile();
-		disableEntry("Loading past hit list " + file.getName());
+		disableEntry("Loading past known words from: " + file.getName());
 		final Thread loader = new Thread(() -> { 
 			final List<String> wordList = new WordList().parse(file);
 			final boolean verifyInDictionary = true;
+			db.savePastHits(wordList, verifyInDictionary);
+			enableEntry();
+		});
+		loader.start();	
+	}
+	
+	private void handleMenuSqliteLoadBlob()
+	{
+		final JFileChooser fc = new JFileChooser();
+		final int returnVal = fc.showOpenDialog(null);
+		if (returnVal != JFileChooser.APPROVE_OPTION) 
+		{
+			return;
+		}
+
+		final File file = fc.getSelectedFile();
+		disableEntry("Loading known words from blob: " + file.getName());
+		final Thread loader = new Thread(() -> { 
+			final List<String> sentences = new WordBlob().parse(file);
+			final List<String> wordList = db.extractCompoundWords(sentences);
+			final boolean verifyInDictionary = false;
 			db.savePastHits(wordList, verifyInDictionary);
 			enableEntry();
 		});
@@ -396,8 +420,8 @@ public class UiMain implements ActionListener, EventListener
 
 	private void handleFileParseEvent(Map<String, Object> data)
 	{
-		final long processedBytes = (long)data.get(FileParseEventKey.EVENT_PROCESSED_BYTES);
-		final long totalBytes = (long)data.get(FileParseEventKey.EVENT_TOTAL_BYTES);
+		final long processedBytes = (long)data.get(EventUtils.EVENT_PROCESSED_BYTES);
+		final long totalBytes = (long)data.get(EventUtils.EVENT_TOTAL_BYTES);
 		updateImportProgress((int)processedBytes, (int)totalBytes, "Parsed: ");
 	}
 

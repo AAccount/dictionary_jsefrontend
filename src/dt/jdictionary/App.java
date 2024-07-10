@@ -4,6 +4,7 @@ import dt.jdictionary.ui.UiConstants;
 import dt.jdictionary.ui.UiMain;
 import dt.jdictionary.util.Debug;
 
+// V1.4: 2024-07-09: import known compound words in hopes of getting better English to Chinese results.
 // V1.3: 2024-07-08: make List<SimpleLookup> rank based on past searches if available 
 // V1.2: 2024-01-13: add history drop down menu and cache results
 // V1.1: 2023-12-26: remove sketchy filtering of species names etc which is not useful
@@ -16,7 +17,7 @@ public class App
 	public static void main(String[] args)
 	{
 		System.setProperty("apple.laf.useScreenMenuBar", "true");
-		Debug.logTimestamp("Starting V1.3");
+		Debug.logTimestamp("Starting V1.4");
 		UiConstants.initFlags();
 		for(final String arg : args)
 		{

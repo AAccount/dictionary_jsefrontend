@@ -11,6 +11,9 @@ public class EventUtils
 	public static final String EVENT_ERR_MSG = "exception get localized message";
 	public static final String EVENT_STACK_TRACE = "exception relevant stack trace";
 	public static final String EVENT_WARN_MSG = "warning message";
+	
+	public static final String EVENT_TOTAL_BYTES = "total bytes";
+	public static final String EVENT_PROCESSED_BYTES = "processed bytes";
 
 	public static void sendError(Exception e)
 	{
@@ -42,5 +45,15 @@ public class EventUtils
 			.filter(element -> element.getClassName().contains("dt.jdictionary"))
 			.map(element -> element.toString())
 			.collect(Collectors.joining("\n"));
+	}
+	
+	public static void sendBytesProcessed(long bytesProcessed, long bytesTotal)
+	{
+		final Map<String, Object> data = Map.of(
+			EventUtils.EVENT_PROCESSED_BYTES, bytesProcessed,
+			EventUtils.EVENT_TOTAL_BYTES, bytesTotal
+		);
+		final Event progress = new Event(EventType.FILE_PARSE, data);
+		EventDispatcher.get().push(progress);
 	}
 }

@@ -20,6 +20,14 @@ public class ChineseText
 	{
 		return string.codePoints().allMatch(codepoint -> Character.UnicodeScript.of(codepoint) == Character.UnicodeScript.HAN);
 	}
+	
+	public static String stripNonChinese(String string)
+	{
+		return string.codePoints()
+				.filter(codepoint -> Character.UnicodeScript.of(codepoint) == Character.UnicodeScript.HAN)    
+				.collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)                                        
+				.toString();
+	}
 
 	public static String normalizePinyin(String pinyin)
 	{

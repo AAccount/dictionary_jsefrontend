@@ -14,11 +14,11 @@ import java.util.Set;
 import dt.jdictionary.events.EventUtils;
 import dt.jdictionary.util.ChineseText;
 
-public class WordList
-{	
+public class WordBlob
+{
 	public List<String> parse(File file)
 	{
-		final Set<String> hashSet = new HashSet<>();
+		final List<String> sentences = new ArrayList<>();
 		long bytesProcessed = 0;
 		try
 		{
@@ -27,10 +27,17 @@ public class WordList
 			while (line != null)
 			{
 				final String cleaned = line.strip();
-				if(cleaned.length() > 1 && ChineseText.allChinese(cleaned)) // Past hits is intended to help prioritize compound words.
+				if(cleaned.length() < 1)
 				{
-					hashSet.add(cleaned);
+					line = fileReader.readLine();
 				}
+				
+				final String[] lineSentences = line.split("\\.\\?\\,。？，");
+				for(final String sentence : lineSentences)
+				{
+					sentences.add(ChineseText.stripNonChinese(sentence));
+				}
+				
 				bytesProcessed = bytesProcessed + line.length();
 				EventUtils.sendBytesProcessed(bytesProcessed, file.length());
 				line = fileReader.readLine();
@@ -41,6 +48,6 @@ public class WordList
 		{
 			EventUtils.sendError(e);
 		}
-		return new ArrayList<String>(hashSet);
+		return sentences;
 	}
 }
