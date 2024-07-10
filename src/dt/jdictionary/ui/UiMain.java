@@ -121,7 +121,7 @@ public class UiMain implements ActionListener, EventListener
 		sqliteMenu.add(loadList);
 		
 		final JMenuItem loadlBlob = new JMenuItem("Parse a blob of text for compound words to past hits");
-		loadlBlob.setMnemonic(KeyEvent.VK_I);
+		loadlBlob.setMnemonic(KeyEvent.VK_B);
 		loadlBlob.setName(MENU_SQLITE_LOAD_BLOB);
 		loadlBlob.addActionListener(this);
 		sqliteMenu.add(loadlBlob);
