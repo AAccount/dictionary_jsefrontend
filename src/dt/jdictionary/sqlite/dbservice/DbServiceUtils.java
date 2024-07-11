@@ -39,8 +39,8 @@ public class DbServiceUtils
 	
 	private static SimpleLookup rerankSingle(SimpleLookup lookup, Map<String, Integer> pastHits)
 	{
-		final int HISTORY_RELEVANCE_MULTIPLIER = 10000;
-		if(pastHits.containsKey(lookup.getZh()))
+		final int HISTORY_RELEVANCE_MULTIPLIER = 10000; // Arbitrarily a 萬.
+		if(lookup.getRank() > 0 && pastHits.containsKey(lookup.getZh())) // Blacklisted place names should stay that, way even if the place was seen in a text blob.
 		{
 			return new SimpleLookup(lookup, pastHits.get(lookup.getZh()) * HISTORY_RELEVANCE_MULTIPLIER);
 		}

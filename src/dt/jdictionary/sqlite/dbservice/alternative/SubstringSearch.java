@@ -1,8 +1,10 @@
 package dt.jdictionary.sqlite.dbservice.alternative;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.sqlite.dbservice.DbServiceUtils;
@@ -32,9 +34,9 @@ public class SubstringSearch implements AlternateSearch
 		final List<SimpleLookup> allResults = DbServiceUtils
 				.convertRawToSimple(this.db.lookupChinese(allSubstrings))
 				.stream().map(simpleLookup -> new SimpleLookup(simpleLookup, this.rankBasedOnOriginalFrontToBack(simpleLookup.getZh())))
-				.toList();
+				.collect(Collectors.toCollection(ArrayList::new));
 		
-		if(UiConstants.flagMap.get(UiConstants.FLAG_ALWAYS_SINGLE_SUBSTRING))
+		if(UiConstants.getFlag(UiConstants.FLAG_ALWAYS_SINGLE_SUBSTRING))
 		{
 			return allResults;
 		}

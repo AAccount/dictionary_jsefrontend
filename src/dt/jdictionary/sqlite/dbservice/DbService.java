@@ -100,7 +100,7 @@ public class DbService
 	
 	private void saveChineseSeachHits(ExhaustiveChineseLookup exhaustiveLookup)
 	{
-		if(!UiConstants.flagMap.get(UiConstants.FLAG_SAVE_HITS))
+		if(!UiConstants.getFlag(UiConstants.FLAG_SAVE_HITS))
 		{
 			return;
 		}

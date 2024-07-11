@@ -1,5 +1,6 @@
 package dt.jdictionary;
 
+import dt.jdictionary.tui.TextUI;
 import dt.jdictionary.ui.UiConstants;
 import dt.jdictionary.ui.UiMain;
 import dt.jdictionary.util.Debug;
@@ -14,20 +15,34 @@ public class App
 {
 	public static final String VERSION = "V1.4";
 	private static final String ARG_TEST = "--test";
+	private static final String ARG_TUI = "--tui";
 	
 	public static void main(String[] args)
 	{
 		System.setProperty("apple.laf.useScreenMenuBar", "true");
 		Debug.logTimestamp("Starting " + VERSION);
 		UiConstants.initFlags();
+		
+		boolean runTui = false;
 		for(final String arg : args)
 		{
 			if(arg.equals(ARG_TEST))
 			{
-				UiConstants.flagMap.put(UiConstants.FLAG_SAVE_HITS, false);
-				break;
+				UiConstants.toggleFlag(UiConstants.FLAG_SAVE_HITS); // by default is true
+			}
+			if(arg.equals(ARG_TUI))
+			{
+				runTui = true;
 			}
 		}
-		new UiMain().render();
+		
+		if(runTui)
+		{
+			new TextUI().print();	
+		}
+		else
+		{
+			new UiMain().render();
+		}
 	}
 }

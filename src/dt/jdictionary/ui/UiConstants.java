@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Insets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class UiConstants 
 {
@@ -16,7 +17,7 @@ public class UiConstants
 	public static final String FLAG_AUTOSWAP = "AUTO_SWAP";
 	public static final String FLAG_ALWAYS_SINGLE_SUBSTRING = "ALWAYS_SINGLE_SUBSTRING";
 	public static final String FLAG_SAVE_HITS = "SAVE_HITS";
-	public static final Map<String, Boolean> flagMap = new HashMap<String, Boolean>();
+	private static final Map<String, Boolean> flagMap = new HashMap<String, Boolean>();
 
 
 	//DO NOT USE ON BUTTONS Causes weird rendering.
@@ -37,5 +38,20 @@ public class UiConstants
 		flagMap.put(FLAG_AUTOSWAP, true);
 		flagMap.put(FLAG_ALWAYS_SINGLE_SUBSTRING, false);
 		flagMap.put(FLAG_SAVE_HITS, true);
+	}
+	
+	public static void toggleFlag(String flag)
+	{
+		flagMap.put(flag, !UiConstants.flagMap.get(flag));
+	}
+	
+	public static boolean getFlag(String flag)
+	{
+		return flagMap.get(flag);
+	}
+	
+	public static Set<String> allFlags()
+	{
+		return flagMap.keySet();
 	}
 }

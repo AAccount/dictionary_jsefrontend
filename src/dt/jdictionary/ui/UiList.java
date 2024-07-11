@@ -100,7 +100,7 @@ class UiList implements ActionListener
 		final String definition = String.join(", ", dbresult.getDefinitions()).toLowerCase();
 		UiUtils.renderLabelToGrid(parent, definition, row, COL_DEF, true);
 		
-		if(UiConstants.flagMap.get(UiConstants.FLAG_RANK))
+		if(UiConstants.getFlag(UiConstants.FLAG_RANK))
 		{
 			final int COL_RANK = 3;
 			UiUtils.renderLabelToGrid(parent, String.valueOf(dbresult.getRank()), row, COL_RANK, true);

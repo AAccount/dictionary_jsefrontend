@@ -76,7 +76,7 @@ public class ChineseText
 
 	public static String autoSwapChinese(String zh)
 	{
-		if(!UiConstants.flagMap.get(UiConstants.FLAG_AUTOSWAP))
+		if(!UiConstants.getFlag(UiConstants.FLAG_AUTOSWAP))
 		{
 			return zh;
 		}

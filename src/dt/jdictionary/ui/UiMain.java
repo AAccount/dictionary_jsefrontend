@@ -142,9 +142,9 @@ public class UiMain implements ActionListener, EventListener
 	private void renderFlagMenu()
 	{
 		flagMenu.removeAll();
-		for(final String flagName : UiConstants.flagMap.keySet())
+		for(final String flagName : UiConstants.allFlags())
 		{
-			final String label = (UiConstants.flagMap.get(flagName) ? "Disable" : "Enable") + " " + flagName;
+			final String label = (UiConstants.getFlag(flagName) ? "Disable" : "Enable") + " " + flagName;
 			final JMenuItem flagItem = new JMenuItem(label);
 			
 			flagItem.setName(FLAG_MENU_UI_PREFIX + JMENU_ITEM_UI_DELIM + flagName);
@@ -231,7 +231,7 @@ public class UiMain implements ActionListener, EventListener
 			if(sourceName.substring(0, FLAG_MENU_UI_PREFIX.length()).equals(FLAG_MENU_UI_PREFIX))
 			{
 				final String flagName = sourceName.substring(FLAG_MENU_UI_PREFIX.length()+JMENU_ITEM_UI_DELIM.length());
-				UiConstants.flagMap.put(flagName, !UiConstants.flagMap.get(flagName));
+				UiConstants.toggleFlag(flagName);
 				renderFlagMenu();
 			}
 
