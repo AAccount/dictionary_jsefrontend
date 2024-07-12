@@ -1,5 +1,6 @@
 package dt.jdictionary.sqlite.dbservice;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -11,47 +12,47 @@ import dt.jdictionary.UnrankedLookup;
 import dt.jdictionary.cedict.CedictDump;
 import dt.jdictionary.cedict.MeasureWords;
 import dt.jdictionary.cedict.ZhPinyin;
-import dt.jdictionary.events.EventUtils;
-import dt.jdictionary.sqlite.DbEvent;
+import dt.jdictionary.listener.ProgressListener;
 import dt.jdictionary.sqlite.raw.DbRepo;
 import dt.jdictionary.sqlite.raw.RawSubstringRow;
 import dt.jdictionary.util.GenerateSubstrings;
 import dt.jdictionary.util.ChineseText;
+import dt.jdictionary.util.Debug;
 import dt.jdictionary.sqlite.raw.RawMeasureWordRow;
 import dt.jdictionary.sqlite.raw.RawSimplifiedRow;
 
 public class SaveCedict 
 {
-	public void save(CedictDump dump, DbRepo db)
+	public void save(CedictDump dump, DbRepo db, ProgressListener progressListener) throws SQLException
 	{
 		if(dump.getDictionary().size() == 0)
 		{
-			EventUtils.sendWarning("Empty dump. Don't wipe!");
+			Debug.logTimestamp("Empty dump. Don't wipe!");
 			return;
 		}
 
 		final int dictionarySize = dump.getDictionary().size();
 		final int uptoDictTrxes = DbRepo.INIT_TRX_COUNT + dictionarySize + DbRepo.DICT_EN_TRX;
 		final int totalTrxes = uptoDictTrxes + DbRepo.POST_DICT_TRX;
-		DbEvent.sendProgressEvent(0, totalTrxes);
+		progressListener.onProgress(0, totalTrxes);
 		db.wipe();
-		DbEvent.sendProgressEvent(1, totalTrxes);
+		progressListener.onProgress(1, totalTrxes);
 		db.init();
-		DbEvent.sendProgressEvent(2, totalTrxes);
+		progressListener.onProgress(2, totalTrxes);
 
 		final Map<Character, Double> freqCountMap = RankingUtilities.rankSingleChars(dump.getDictionary());
 		final List<SimpleLookup> dictionaryRankedList = dump.getDictionary().stream()
 			.map(unranked -> new SimpleLookup(unranked, RankingUtilities.rank(unranked, freqCountMap))).toList();
-		db.fillDictionary(dictionaryRankedList);
+		db.fillDictionary(dictionaryRankedList, progressListener);
 		fillMeasureWords(dump, db);
-		DbEvent.sendProgressEvent(uptoDictTrxes + 1, totalTrxes);
+		progressListener.onProgress(uptoDictTrxes + 1, totalTrxes);
 		fillSimplified(dump, db);
-		DbEvent.sendProgressEvent(uptoDictTrxes + 2, totalTrxes);
+		progressListener.onProgress(uptoDictTrxes + 2, totalTrxes);
 		fillSubstrings(dump, db);
-		DbEvent.sendProgressEvent(uptoDictTrxes + 3, totalTrxes);
+		progressListener.onProgress(uptoDictTrxes + 3, totalTrxes);
 	}
 
-	private void fillSubstrings(CedictDump dump, DbRepo db)
+	private void fillSubstrings(CedictDump dump, DbRepo db) throws SQLException
 	{
 		final List<UnrankedLookup> substringEntries = dump.getDictionary().stream()
 			.filter(unrankedlookup -> unrankedlookup.getZh().length() > 1 && ChineseText.allChinese(unrankedlookup.getZh())).toList();
@@ -68,7 +69,7 @@ public class SaveCedict
 		db.fillSubstrings(new ArrayList<>(result));
 	}
 
-	private void fillMeasureWords(CedictDump dump, DbRepo db)
+	private void fillMeasureWords(CedictDump dump, DbRepo db) throws SQLException
 	{
 		final Set<RawMeasureWordRow> mwTracker = new HashSet<>();
 		for(final MeasureWords measureListing : dump.getMeasureWords())
@@ -81,7 +82,7 @@ public class SaveCedict
 		db.fillMeasureWords(new ArrayList<>(mwTracker));
 	}
 
-	private void fillSimplified(CedictDump dump, DbRepo db)
+	private void fillSimplified(CedictDump dump, DbRepo db) throws SQLException
 	{
 		final List<RawSimplifiedRow> simplifieds = new ArrayList<>();
 		for(final String original : dump.getSimplifiedChars().keySet())

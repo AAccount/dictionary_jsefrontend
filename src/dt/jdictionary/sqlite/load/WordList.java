@@ -11,17 +11,23 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import dt.jdictionary.events.EventUtils;
+import dt.jdictionary.listener.ProgressListener;
 import dt.jdictionary.util.ChineseText;
 
 public class WordList
 {	
-	public List<String> parse(File file)
+	private final ProgressListener progressListener;
+
+	public WordList(ProgressListener progressListener)
+	{
+		this.progressListener = progressListener;
+	}
+
+	public List<String> parse(File file) throws IOException
 	{
 		final Set<String> hashSet = new HashSet<>();
 		long bytesProcessed = 0;
-		try
-		{
+
 			final BufferedReader fileReader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
 			String line = fileReader.readLine();
 			while (line != null)
@@ -32,15 +38,11 @@ public class WordList
 					hashSet.add(cleaned);
 				}
 				bytesProcessed = bytesProcessed + line.length();
-				EventUtils.sendBytesProcessed(bytesProcessed, file.length());
+				this.progressListener.onProgress(bytesProcessed, file.length());
 				line = fileReader.readLine();
 			}
 			fileReader.close();
-		}
-		catch(IOException e)
-		{
-			EventUtils.sendError(e);
-		}
+
 		return new ArrayList<String>(hashSet);
 	}
 }

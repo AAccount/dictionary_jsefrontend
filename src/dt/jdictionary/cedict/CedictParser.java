@@ -16,57 +16,59 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import dt.jdictionary.UnrankedLookup;
-import dt.jdictionary.events.EventUtils;
+import dt.jdictionary.listener.ProgressListener;
 import dt.jdictionary.util.ChineseText;
+import dt.jdictionary.util.Debug;
 
 public class CedictParser 
 {
 	private final String MEASURE_WORD_INDICATOR = "CL:";
 	private final String OG_SIMPLIFIED_SPLIT = "|";
+	private final ProgressListener progressListener;
+	
+	public CedictParser(ProgressListener progressListener)
+	{
+		this.progressListener = progressListener;
+	}
 
-	public CedictDump parse(File cedictFile)
+	public CedictDump parse(File cedictFile) throws IOException
 	{
 		long processedBytes = 0;
-		EventUtils.sendBytesProcessed(processedBytes, cedictFile.length());
+		progressListener.onProgress(processedBytes, cedictFile.length());
 
 		final CedictDump result = new CedictDump();
-		try 
+
+		final BufferedReader cedictReader = new BufferedReader(
+				new InputStreamReader(new FileInputStream(cedictFile), StandardCharsets.UTF_8));
+		String line = cedictReader.readLine();
+
+		while (line != null)
 		{
-			final BufferedReader cedictReader =  new BufferedReader(new InputStreamReader(new FileInputStream(cedictFile), StandardCharsets.UTF_8));
-			String line = cedictReader.readLine();
-			
-			while (line != null)
+			final RawCedictLine parsedLine = parseLine(line);
+			if (parsedLine == null)
 			{
-				final RawCedictLine parsedLine = parseLine(line);
-				if(parsedLine == null)
-				{
-					line = cedictReader.readLine();
-					processedBytes = processedBytes + line.getBytes().length;
-					EventUtils.sendBytesProcessed(processedBytes, cedictFile.length());
-					continue;
-				}
-
-				final List<String> definitions = parseDefinitions(parsedLine);
-				result.getDictionary().add(new UnrankedLookup(parsedLine.getOriginal(), parsedLine.getPinyin(), definitions));
-				final Map<String, String> simplifiedChars = getSimplifiedChars(parsedLine);
-				result.getSimplifiedChars().putAll(simplifiedChars);
-				final List<ZhPinyin> measureWords = procDefsMeasureWords(parsedLine);
-				if(measureWords.size() > 0)
-				{
-					result.getMeasureWords().add(new MeasureWords(parsedLine.getOriginal(), measureWords));
-				}
-
-				processedBytes = processedBytes + line.getBytes().length;
-				EventUtils.sendBytesProcessed(processedBytes, cedictFile.length());
 				line = cedictReader.readLine();
+				processedBytes = processedBytes + line.getBytes().length;
+				progressListener.onProgress(processedBytes, cedictFile.length());
+				continue;
 			}
-			cedictReader.close();
-			EventUtils.sendBytesProcessed(cedictFile.length(), cedictFile.length());
-		} 
-		catch (IOException e) 
-		{
-			EventUtils.sendError(e);
-		} 
+
+			final List<String> definitions = parseDefinitions(parsedLine);
+			result.getDictionary().add(new UnrankedLookup(parsedLine.getOriginal(), parsedLine.getPinyin(), definitions));
+			final Map<String, String> simplifiedChars = getSimplifiedChars(parsedLine);
+			result.getSimplifiedChars().putAll(simplifiedChars);
+			final List<ZhPinyin> measureWords = procDefsMeasureWords(parsedLine);
+			if (measureWords.size() > 0)
+			{
+				result.getMeasureWords().add(new MeasureWords(parsedLine.getOriginal(), measureWords));
+			}
+
+			processedBytes = processedBytes + line.getBytes().length;
+			progressListener.onProgress(processedBytes, cedictFile.length());
+			line = cedictReader.readLine();
+		}
+		cedictReader.close();
+		progressListener.onProgress(cedictFile.length(), cedictFile.length());
 		return result;
 	}
 
@@ -100,7 +102,7 @@ return selfSimplifiedChars;
 
 		if(pinyinStart == NOT_FOUND || pinyinEnd == NOT_FOUND || pinyinStart >= pinyinEnd)
 		{
-			EventUtils.sendWarning("Couldn't parse line: " + line);
+			Debug.logTimestamp("Couldn't parse line: " + line);
 			return null;
 		}
 
@@ -108,7 +110,7 @@ return selfSimplifiedChars;
 		final String[] zhParts = zhPortion.split(" ");
 		if(zhParts.length != 2)
 		{
-			EventUtils.sendWarning("Couldn't parse the simplified and traditional portion of: '" + zhPortion + "' from '" + line + "'");
+			Debug.logTimestamp("Couldn't parse the simplified and traditional portion of: '" + zhPortion + "' from '" + line + "'");
 			return null;
 		}
 		final String zhTraditional = zhParts[0].strip();
@@ -162,7 +164,7 @@ return selfSimplifiedChars;
 
 		if(!sameLength)
 		{
-			EventUtils.sendWarning(originalCleaned + " and " + simplified + " are not the same perceived length. Ignoring.");
+			Debug.logTimestamp(originalCleaned + " and " + simplified + " are not the same perceived length. Ignoring.");
 			return result;
 		}
 

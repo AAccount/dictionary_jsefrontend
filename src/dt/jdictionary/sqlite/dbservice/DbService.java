@@ -1,6 +1,9 @@
 package dt.jdictionary.sqlite.dbservice;
 
+import java.sql.SQLException;
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -17,7 +20,7 @@ import java.util.stream.Collectors;
 import dt.jdictionary.ExhaustiveChineseLookup;
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.cedict.CedictDump;
-import dt.jdictionary.events.EventUtils;
+import dt.jdictionary.listener.ProgressListener;
 import dt.jdictionary.sqlite.dbservice.alternative.AlternateSearch;
 import dt.jdictionary.sqlite.dbservice.alternative.DeinterlaceSearch;
 import dt.jdictionary.sqlite.dbservice.alternative.SubstringOfSearch;
@@ -34,12 +37,27 @@ import dt.jdictionary.util.GenerateCombinations;
 
 public class DbService 
 {
-	private final DbRepo db = new DbRepo();
+	private final DbRepo db;
+	public DbService() throws ClassNotFoundException, SQLException
+	{
+		db = new DbRepo();
+	}
 
-	public ExhaustiveChineseLookup lookupChinese(String chinese, boolean newSearch)
+	public ExhaustiveChineseLookup lookupChinese(String chinese, boolean newSearch) throws ExceptionPile
 	{
 		Debug.logTimestamp("definition start");
-		final CompletableFuture<ChineseDefinitionLookup> directResults = CompletableFuture.supplyAsync(() -> {return this.lookupChineseDefinition(chinese);});
+		final List<Exception> exceptions = Collections.synchronizedList(new ArrayList<>());
+		final CompletableFuture<ChineseDefinitionLookup> directResults = CompletableFuture.supplyAsync(() -> {
+			try
+			{
+				return this.lookupChineseDefinition(chinese);
+			}
+			catch(SQLException e)
+			{
+				exceptions.add(e);
+				return new ChineseDefinitionLookup(chinese, new HashMap<>(), "", new ArrayList<>());
+			}
+		});
 		
 		final List<AlternateSearch> alts = List.of(
 			new SameFrontSearch(chinese, db), 
@@ -52,21 +70,53 @@ public class DbService
 		
 		Debug.logTimestamp("start exhaustive Chinese search");
 		final Map<String, CompletableFuture<List<SimpleLookup>>> supplementaryFutures = new LinkedHashMap<>(); 
-		alts.forEach(alt -> supplementaryFutures.put(alt.LOOKUP_NAME(), CompletableFuture.supplyAsync(() -> {return alt.trySearch();})));
+			alts.forEach(alt -> supplementaryFutures.put(alt.LOOKUP_NAME(), CompletableFuture.supplyAsync(() -> {
+				try
+				{
+					return alt.trySearch();
+				}
+				catch(SQLException e)
+				{
+					exceptions.add(e);
+					return new ArrayList<>();
+				}
+			})));
 		
 		final Map<String, List<SimpleLookup>> supplementaries = new LinkedHashMap<>(); // linked hash map for predictable iteration order
-		supplementaryFutures.keySet().forEach(altName -> supplementaries.put(altName, rerankAlternates(altName, supplementaryFutures.get(altName).join())));
+		supplementaryFutures.keySet().forEach(altName -> {
+			try
+			{
+				supplementaries.put(altName, rerankAlternates(altName, supplementaryFutures.get(altName).join()));
+			}
+			catch(ParseException | SQLException e)
+			{
+				exceptions.add(e);
+				supplementaries.put(altName, supplementaryFutures.get(altName).join());
+			}
+		});
 		Debug.logTimestamp("finish exhaustive Chinese search");
 		
-		final ExhaustiveChineseLookup result =  new ExhaustiveChineseLookup(directResults.join(), supplementaries);
 		if(newSearch)
 		{
-			saveChineseSeachHits(result);
+			try
+			{
+				saveChineseSeachHits(directResults.join(), supplementaries.get(SubstringSearch.LOOKUP_NAME));
+			}
+			catch(SQLException e)
+			{
+				exceptions.add(e);
+			}
 		}
-		return result;
+		
+		if(!exceptions.isEmpty())
+		{
+			throw new ExceptionPile("lookupChinese", exceptions);
+		}
+
+		return  new ExhaustiveChineseLookup(directResults.join(), supplementaries);
 	}
 	
-	private List<SimpleLookup> rerankAlternates(String alternate, List<SimpleLookup> results)
+	private List<SimpleLookup> rerankAlternates(String alternate, List<SimpleLookup> results) throws SQLException, ParseException
 	{
 		if(alternate.equals(SubstringSearch.LOOKUP_NAME))
 		{
@@ -78,7 +128,7 @@ public class DbService
 		return DbServiceUtils.rerank(results, pastHits);
 	}
 	
-	private ChineseDefinitionLookup lookupChineseDefinition(String zh)
+	private ChineseDefinitionLookup lookupChineseDefinition(String zh) throws SQLException
 	{
 		final List<RawDictionaryRow> rawResults = db.lookupChinese(List.of(zh));
 		final Map<String, List<String>> resultsByPinyin = new HashMap<>();
@@ -98,7 +148,7 @@ public class DbService
 		return result;
 	}
 	
-	private void saveChineseSeachHits(ExhaustiveChineseLookup exhaustiveLookup)
+	private void saveChineseSeachHits(ChineseDefinitionLookup definitionLookup, List<SimpleLookup> substrings) throws SQLException
 	{
 		if(!UiConstants.getFlag(UiConstants.FLAG_SAVE_HITS))
 		{
@@ -106,14 +156,14 @@ public class DbService
 		}
 		
 		final List<String> hits = new ArrayList<>();
-		if(!exhaustiveLookup.getDefinition().getResults().isEmpty())
+		if(!definitionLookup.getResults().isEmpty())
 		{
-			hits.add(exhaustiveLookup.getDefinition().getZh());
+			hits.add(definitionLookup.getZh());
 		}
 		
-		if(exhaustiveLookup.getSupplementaries().containsKey(SubstringSearch.LOOKUP_NAME))
+		if(!substrings.isEmpty())
 		{
-			final List<String> substringHits = exhaustiveLookup.getSupplementaries().get(SubstringSearch.LOOKUP_NAME).stream()
+			final List<String> substringHits = substrings.stream()
 				.filter(substringEntry -> ChineseText.trueChars(substringEntry.getZh()).size() > 1)
 				.map(SimpleLookup::getZh).toList();
 			hits.addAll(substringHits);
@@ -121,15 +171,26 @@ public class DbService
 		db.saveHits(hits);
 	}
 	
-	public Map<String, List<SimpleLookup>> lookupEnglish(String en)
+	public Map<String, List<SimpleLookup>> lookupEnglish(String en) throws ExceptionPile
 	{
 		Debug.logTimestamp("english start");
+		final List<Exception> exceptions = Collections.synchronizedList(new ArrayList<>());
 
 		final Map<String, CompletableFuture<List<SimpleLookup>>> wordFutures= new HashMap<>();
 		final String[] individualWords = en.split(" ");
 		for(final String individualWord : individualWords)
 		{
-			wordFutures.put(individualWord, CompletableFuture.supplyAsync(() -> {return this.lookupSingleEnglishWord(individualWord);}));
+			wordFutures.put(individualWord, CompletableFuture.supplyAsync(() -> {
+				try
+				{
+					return this.lookupSingleEnglishWord(individualWord);
+				}
+				catch(SQLException | ParseException e)
+				{
+					exceptions.add(e);
+					return new ArrayList<>();
+				}
+			}));
 		}
 		
 		final Map<String, List<SimpleLookup>> result= new HashMap<>();
@@ -140,6 +201,10 @@ public class DbService
 		}
 		Debug.logTimestamp("english end");
 
+		if(!exceptions.isEmpty())
+		{
+			throw new ExceptionPile("lookupEnglish", exceptions);
+		}
 		return findUseableCombinations(result);
 	}
 	
@@ -174,7 +239,7 @@ public class DbService
 		return result;
 	}
 	
-	private List<SimpleLookup> lookupSingleEnglishWord(String singleWord)
+	private List<SimpleLookup> lookupSingleEnglishWord(String singleWord) throws SQLException, ParseException
 	{
 		final List<SimpleLookup> rawResults =  DbServiceUtils.convertRawToSimple(db.lookupEnglish(singleWord));
 		final List<String> candidates = rawResults.stream().map(SimpleLookup::getZh).toList();
@@ -182,35 +247,44 @@ public class DbService
 		return DbServiceUtils.rerank(rawResults, pastHits);
 	}
 
-	public void saveCedictDump(CedictDump dump)
+	public void saveCedictDump(CedictDump dump, ProgressListener progressListener) throws SQLException
 	{
-		new SaveCedict().save(dump, db);
+		new SaveCedict().save(dump, db, progressListener);
 	}
 	
-	public void savePastHits(List<String> words, boolean verifyInDictionary)
+	public void savePastHits(List<String> words, boolean verifyInDictionary) throws SQLException
 	{
 		final List<String> useable = verifyInDictionary ? checkChineseInDictionary(words) : words;
 		db.saveHits(useable);
 	}
 	
-	private List<String> checkChineseInDictionary(List<String> words)
+	private List<String> checkChineseInDictionary(List<String> words) throws SQLException
 	{
 		final List<RawDictionaryRow> rawDictionaryRows = db.lookupChinese(words);
 		final Set<String> inDictionary = rawDictionaryRows.stream().map(RawDictionaryRow::getZh).collect(Collectors.toCollection(HashSet::new));
 		return words.stream().filter(word -> inDictionary.contains(word)).toList();
 	}
 	
-	public List<String> extractCompoundWords(List<String> manySentences)
+	public List<String> extractCompoundWords(List<String> manySentences) throws ExceptionPile
 	{
 		final int cpus = Runtime.getRuntime().availableProcessors();
 		final ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(cpus);
 
+		final List<Exception> exceptions = Collections.synchronizedList(new ArrayList<>());
 		final ConcurrentHashMap.KeySetView<String, Boolean> compoundWordSet = ConcurrentHashMap.newKeySet();
 		for(final String sentence : manySentences)
 		{
 			executor.submit(() -> {
-				final List<SimpleLookup> compounds = new SubstringSearch(sentence, db).trySearch();
-				compounds.forEach(simpleLookup -> compoundWordSet.add(simpleLookup.getZh()));
+				List<SimpleLookup> compounds;
+				try
+				{
+					compounds = new SubstringSearch(sentence, db).trySearch();
+					compounds.forEach(simpleLookup -> compoundWordSet.add(simpleLookup.getZh()));
+				}
+				catch(SQLException e)
+				{
+					exceptions.add(e);
+				}
 			});
 
 		}
@@ -221,7 +295,12 @@ public class DbService
 		}
 		catch(InterruptedException e)
 		{
-			EventUtils.sendError(e);
+			exceptions.add(e);
+		}
+		
+		if(!exceptions.isEmpty())
+		{
+			throw new ExceptionPile("extractCompoundWords", exceptions);
 		}
 		return new ArrayList<String>(compoundWordSet);
 	}

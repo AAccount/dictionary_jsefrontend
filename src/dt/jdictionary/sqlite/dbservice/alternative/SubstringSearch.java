@@ -1,5 +1,6 @@
 package dt.jdictionary.sqlite.dbservice.alternative;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,7 +29,7 @@ public class SubstringSearch implements AlternateSearch
 	}
 
 	@Override
-	public List<SimpleLookup> trySearch()
+	public List<SimpleLookup> trySearch() throws SQLException
 	{
 		final List<String> allSubstrings = GenerateSubstrings.generateSubstrings(this.zh);
 		final List<SimpleLookup> allResults = DbServiceUtils

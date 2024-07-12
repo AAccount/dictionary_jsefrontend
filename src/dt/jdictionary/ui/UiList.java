@@ -10,7 +10,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
 import dt.jdictionary.SimpleLookup;
-import dt.jdictionary.events.EventUtils;
 import dt.jdictionary.ui.UiUtils.Neighbor;
 import dt.jdictionary.util.Debug;
 import dt.jdictionary.util.ListUtils;
@@ -134,7 +133,7 @@ class UiList implements ActionListener
 		final JComponent source = (JComponent)arg0.getSource();
 		if(!List.of(forwardBtn, previousBtn).contains(source))
 		{
-			EventUtils.sendWarning("actionPerformed not from forwardBtn or previousBtn " + source);
+			Debug.logTimestamp("actionPerformed not from forwardBtn or previousBtn " + source);
 			return;
 		}
 

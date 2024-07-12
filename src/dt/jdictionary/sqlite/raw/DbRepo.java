@@ -17,8 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import dt.jdictionary.SimpleLookup;
-import dt.jdictionary.events.EventUtils;
-import dt.jdictionary.sqlite.DbEvent;
+import dt.jdictionary.listener.ProgressListener;
 
 public class DbRepo 
 {
@@ -67,41 +66,23 @@ public class DbRepo
 		, COL_ZH, COL_PINYIN, COL_PINYIN_NORM, COL_DEF, COL_FIRST_CHAR, COL_LAST_CHAR, COL_RANK,
 		TABLE_ZHBASE, TABLE_ENGLISH, TABLE_ZHBASE, COL_ID, TABLE_ENGLISH, COL_ZHBASEID);
 
-	public DbRepo()
+	public DbRepo() throws SQLException, ClassNotFoundException
 	{
-		try 
+		final String sqlitePath = System.getProperty("user.home") + "/Programs/mdbg2_1.sqlite";
+		Class.forName("org.sqlite.JDBC");
+		this.db = DriverManager.getConnection("jdbc:sqlite:"+sqlitePath);
+		db.setAutoCommit(false);
+	}
+
+	public void close() throws SQLException
+	{
+		if(db != null)
 		{
-			final String sqlitePath = System.getProperty("user.home") + "/Programs/mdbg2_1.sqlite";
-			Class.forName("org.sqlite.JDBC");
-			this.db = DriverManager.getConnection("jdbc:sqlite:"+sqlitePath);
-			db.setAutoCommit(false);
-		} 
-		catch (SQLException e) 
-		{
-			EventUtils.sendError(e);
-		} 
-		catch (ClassNotFoundException e) 
-		{
-			EventUtils.sendError(e);
+			db.close();
 		}
 	}
 
-	public void close()
-	{
-		try
-		{
-			if(db != null)
-			{
-				db.close();
-			}
-		} 
-		catch (SQLException e) 
-		{
-			EventUtils.sendError(e);
-		}
-	}
-
-	public void init()
+	public void init() throws SQLException
 	{
 		final List<List<String>> indexes = new ArrayList<>();
 		final String createZhBase = String.format("""
@@ -174,81 +155,65 @@ public class DbRepo
 			createPastHits
 		};
 
-		try
-		{
-			for(final String table : tables)
-			{
-					final Statement stmt = db.createStatement();
-					stmt.execute(table);
-			}
 
-			for(final List<String> index : indexes)
-			{
-				final Statement stmt = db.createStatement();
-				final String table = index.get(0);
-				final String column = index.get(1);
-				stmt.execute(String.format("CREATE INDEX IF NOT EXISTS %sSort%s ON %s (%s)", table, column, table, column));
-			}
-		} 
-		catch (SQLException e) 
+		for(final String table : tables)
 		{
-			EventUtils.sendError(e);
+				final Statement stmt = db.createStatement();
+				stmt.execute(table);
 		}
+
+		for(final List<String> index : indexes)
+		{
+			final Statement stmt = db.createStatement();
+			final String table = index.get(0);
+			final String column = index.get(1);
+			stmt.execute(String.format("CREATE INDEX IF NOT EXISTS %sSort%s ON %s (%s)", table, column, table, column));
+		}
+
 	}
 
-	public void wipe()
+	public void wipe() throws SQLException
 	{
-		try 
-		{
-			final Statement findTables = db.createStatement();
-			final ResultSet foundTables = findTables.executeQuery("SELECT name FROM sqlite_master WHERE type='table' and name not like 'sqlite_%' and name <> '" + TABLE_PASTHITS + "'");
-			final List<String> tables = new ArrayList<>();
-			while(foundTables.next())
-			{
-				tables.add(foundTables.getString(1));
-			}
 
-			final Statement rm = db.createStatement();
-			for(final String table : tables)
-			{
-				rm.execute("drop table if exists " + table + ";");
-			}
-			db.commit();
-
-			db.setAutoCommit(true);
-			final Statement vaccuum = db.createStatement();
-			vaccuum.execute("vacuum;");
-			db.setAutoCommit(false);
-			DbRepoCache.getInstance().wipe();
-		} 
-		catch (SQLException e) 
+		final Statement findTables = db.createStatement();
+		final ResultSet foundTables = findTables.executeQuery("SELECT name FROM sqlite_master WHERE type='table' and name not like 'sqlite_%' and name <> '" + TABLE_PASTHITS + "'");
+		final List<String> tables = new ArrayList<>();
+		while (foundTables.next())
 		{
-			EventUtils.sendError(e);
+			tables.add(foundTables.getString(1));
 		}
+
+		final Statement rm = db.createStatement();
+		for (final String table : tables)
+		{
+			rm.execute("drop table if exists " + table + ";");
+		}
+		db.commit();
+
+		db.setAutoCommit(true);
+		final Statement vaccuum = db.createStatement();
+		vaccuum.execute("vacuum;");
+		db.setAutoCommit(false);
+		DbRepoCache.getInstance().wipe();
+
 	}
 	
-	public void saveHits(List<String> hits)
+	public void saveHits(List<String> hits) throws SQLException
 	{
 		final String sql = String.format("INSERT INTO %s (%s, %s) VALUES (?,?)", TABLE_PASTHITS, COL_ZH, COL_TIMESTAMP);
-		try 
+		final PreparedStatement pst = db.prepareStatement(sql);
+		for (final String hit : hits)
 		{
-			final PreparedStatement pst = db.prepareStatement(sql);
-			for(final String hit : hits)
-			{
-				pst.setString(1, hit);
-				pst.setString(2, dateFormatter.format(new Date()));
-				pst.addBatch();
-			}
-			pst.executeBatch();
-			db.commit();
-		} 
-		catch (SQLException e) 
-		{
-			EventUtils.sendError(e);
+			pst.setString(1, hit);
+			pst.setString(2, dateFormatter.format(new Date()));
+			pst.addBatch();
 		}
+		pst.executeBatch();
+		db.commit();
+
 	}
 	
-	public List<PastHit> lookupPastHits(List<String> candidates)
+	public List<PastHit> lookupPastHits(List<String> candidates) throws SQLException, ParseException
 	{
 		if(candidates.isEmpty())
 		{
@@ -259,22 +224,14 @@ public class DbRepo
 		final String repeaterString = repeaterRawString.substring(0, repeaterRawString.length() - 2);
 		final String sql = String.format("select * from %s where %s in (%s) order by %s desc", TABLE_PASTHITS, COL_ZH, repeaterString, COL_TIMESTAMP);
 
-		try 
+		final PreparedStatement pst = db.prepareStatement(sql);
+		for (int i = 0; i < candidates.size(); i++)
 		{
-			final PreparedStatement pst = db.prepareStatement(sql);
-			for(int i=0; i<candidates.size(); i++)
-			{
-				pst.setString(i+1, candidates.get(i));
-			}
-			
-			final ResultSet results = pst.executeQuery();
-			return processRawPastHits(results);
+			pst.setString(i + 1, candidates.get(i));
 		}
-		catch (SQLException | ParseException e) 
-		{
-			EventUtils.sendError(e);
-		}
-		return List.of();
+
+		final ResultSet results = pst.executeQuery();
+		return processRawPastHits(results);
 	}
 	
 	private List<PastHit> processRawPastHits(ResultSet results) throws SQLException, ParseException
@@ -287,12 +244,12 @@ public class DbRepo
 		return pastHits;
 	}
 
-	public List<RawDictionaryRow> lookupChinese(List<String> zhStrings)
+	public List<RawDictionaryRow> lookupChinese(List<String> zhStrings) throws SQLException
 	{
 		return lookupChineseByColumn(COL_ZH, zhStrings);
 	}
 	
-	public List<RawDictionaryRow> lookupChineseByColumn(String column, List<String> zhStrings)
+	public List<RawDictionaryRow> lookupChineseByColumn(String column, List<String> zhStrings) throws SQLException
 	{
 		if(zhStrings.isEmpty())
 		{
@@ -310,25 +267,19 @@ public class DbRepo
 		}
 		
 		final List<RawDictionaryRow> rawDbRows = new ArrayList<>();
-		try 
+		final PreparedStatement pst = db.prepareStatement(sql);
+		for (int i = 0; i < zhStrings.size(); i++)
 		{
-			final PreparedStatement pst = db.prepareStatement(sql);
-			for(int i=0; i<zhStrings.size(); i++)
-			{
-				pst.setString(i+1, zhStrings.get(i));
-			}
-			final ResultSet results = pst.executeQuery();
-			rawDbRows.addAll(processRawDbRows(results));
-			DbRepoCache.getInstance().setTableCache(sql, zhsStringsKeyString, rawDbRows);
+			pst.setString(i + 1, zhStrings.get(i));
 		}
-		catch (SQLException e) 
-		{
-			EventUtils.sendError(e);
-		}
+		final ResultSet results = pst.executeQuery();
+		rawDbRows.addAll(processRawDbRows(results));
+		DbRepoCache.getInstance().setTableCache(sql, zhsStringsKeyString, rawDbRows);
+
 		return rawDbRows;
 	}
 
-	private List<RawDictionaryRow> lookupDictionaryTable(String sql, String target)
+	private List<RawDictionaryRow> lookupDictionaryTable(String sql, String target) throws SQLException
 	{
 		final Optional<List<RawDictionaryRow>> cached = DbRepoCache.getInstance().getTableCache(sql, target);
 		if(cached.isPresent())
@@ -337,18 +288,12 @@ public class DbRepo
 		}
 
 		final List<RawDictionaryRow> rawDbRows = new ArrayList<>();
-		try 
-		{
-			final PreparedStatement pst = db.prepareStatement(sql);
-			pst.setString(1, target);
-			final ResultSet results = pst.executeQuery();
-			rawDbRows.addAll(processRawDbRows(results));
-			DbRepoCache.getInstance().setTableCache(sql, target, rawDbRows);
-		}
-		catch (SQLException e) 
-		{
-			EventUtils.sendError(e);
-		}
+		final PreparedStatement pst = db.prepareStatement(sql);
+		pst.setString(1, target);
+		final ResultSet results = pst.executeQuery();
+		rawDbRows.addAll(processRawDbRows(results));
+		DbRepoCache.getInstance().setTableCache(sql, target, rawDbRows);
+
 		return rawDbRows;
 	}
 	
@@ -370,7 +315,7 @@ public class DbRepo
 		return rawDbRows;
 	}
 
-	public String lookupSimplified(String zh)
+	public String lookupSimplified(String zh) throws SQLException
 	{
 		final Optional<String> cached = DbRepoCache.getInstance().getSimplifiedCache(zh);
 		if(cached.isPresent())
@@ -379,44 +324,38 @@ public class DbRepo
 		}
 
 		String zhSimplified = "";
-		try
+		final String inQuestionMarks = "?, ".repeat(zh.length());
+		final String sql = String.format(
+				"select * from %s where %s in (" + inQuestionMarks.substring(0, inQuestionMarks.length() - 2) + ")",
+				TABLE_SIMPLIFIED, COL_OG);
+		final PreparedStatement pst = db.prepareStatement(sql);
+		for (int pstIndex = 0; pstIndex < zh.length(); pstIndex++)
 		{
-			final String inQuestionMarks = "?, ".repeat(zh.length());
-			final String sql = String.format("select * from %s where %s in ("+inQuestionMarks.substring(0, inQuestionMarks.length()-2) + ")", 
-				TABLE_SIMPLIFIED, 
-				COL_OG
-			);
-			final PreparedStatement pst = db.prepareStatement(sql);
-			for(int pstIndex = 0; pstIndex<zh.length(); pstIndex++)
-			{
-				pst.setString(pstIndex+1, Character.toString(zh.charAt(pstIndex)));
-			}
-			final ResultSet results = pst.executeQuery();
-
-			final Map<String, String> charMapper = new HashMap<>();
-			while(results.next())
-			{
-				final String simplified = results.getString(COL_SIMPLIFIED);
-				final String og = results.getString(COL_OG);
-				charMapper.put(og, simplified);
-			}
-
-			for(final char stringChar : zh.toCharArray())
-			{
-				final String charAsString = Character.toString(stringChar);
-				final String resultchar = charMapper.keySet().contains(charAsString) ? charMapper.get(charAsString) : charAsString;
-				zhSimplified = zhSimplified + resultchar;
-			}
-			DbRepoCache.getInstance().setSimplfiedCache(zh, zhSimplified);
+			pst.setString(pstIndex + 1, Character.toString(zh.charAt(pstIndex)));
 		}
-		catch (SQLException e) 
+		final ResultSet results = pst.executeQuery();
+
+		final Map<String, String> charMapper = new HashMap<>();
+		while (results.next())
 		{
-			EventUtils.sendError(e);
+			final String simplified = results.getString(COL_SIMPLIFIED);
+			final String og = results.getString(COL_OG);
+			charMapper.put(og, simplified);
 		}
+
+		for (final char stringChar : zh.toCharArray())
+		{
+			final String charAsString = Character.toString(stringChar);
+			final String resultchar = charMapper.keySet().contains(charAsString) ? charMapper.get(charAsString)
+					: charAsString;
+			zhSimplified = zhSimplified + resultchar;
+		}
+		DbRepoCache.getInstance().setSimplfiedCache(zh, zhSimplified);
+
 		return zhSimplified;
 	}
 
-	public List<String> lookupMeasureWords(String zh)
+	public List<String> lookupMeasureWords(String zh) throws SQLException
 	{
 		final Optional<List<String>> cached = DbRepoCache.getInstance().getMeasureWordCache(zh);
 		if(cached.isPresent())
@@ -425,34 +364,28 @@ public class DbRepo
 		}
 
 		final List<String> measureWords = new ArrayList<>();
-		try
-		{
-			final String sql = String.format("select %s from %s where %s = ?", COL_MEASURE_WORD, TABLE_MEASUREWORD, COL_ZH);
-			final PreparedStatement pst = db.prepareStatement(sql);
-			pst.setString(1, zh);
-			final ResultSet results = pst.executeQuery();
+		final String sql = String.format("select %s from %s where %s = ?", COL_MEASURE_WORD, TABLE_MEASUREWORD, COL_ZH);
+		final PreparedStatement pst = db.prepareStatement(sql);
+		pst.setString(1, zh);
+		final ResultSet results = pst.executeQuery();
 
-			while(results.next())
-			{
-				measureWords.add(results.getString(COL_MEASURE_WORD));
-			}
-			DbRepoCache.getInstance().setMeasureWordCache(zh, measureWords);
-		}
-		catch (SQLException e) 
+		while (results.next())
 		{
-			EventUtils.sendError(e);
+			measureWords.add(results.getString(COL_MEASURE_WORD));
 		}
+		DbRepoCache.getInstance().setMeasureWordCache(zh, measureWords);
+
 		return measureWords;
 	}
 
-	public List<RawDictionaryRow> lookupRelatedWord(String zh, RelatedChar similarity)
+	public List<RawDictionaryRow> lookupRelatedWord(String zh, RelatedChar similarity) throws SQLException
 	{
 		final String column = similarity == RelatedChar.SAME_FRONT ? COL_FIRST_CHAR : COL_LAST_CHAR;
 		final String sql = DictionaryBaseSql + " " + column + " = ?";
 		return lookupDictionaryTable(sql, zh);
 	}
 
-	public List<RawDictionaryRow> lookupEnglish(String en)
+	public List<RawDictionaryRow> lookupEnglish(String en) throws SQLException
 	{
 		final String sql = String.format("""
 			select %s, %s, %s, English.%s, %s, %s, %s.%s 
@@ -468,13 +401,13 @@ public class DbRepo
 		return lookupDictionaryTable(sql, en);
 	}
 
-	public List<String> trySubstring(String compoundWord)
+	public List<String> trySubstring(String compoundWord) throws SQLException
 	{
 		final String sql = String.format("select %s from %s where %s = ?", COL_FULL_STRING, TABLE_SUBSTRING, COL_SUBSTRING);
 		return getListOfString(sql, compoundWord, COL_FULL_STRING);
 	}
 
-	public List<String> findSimplifiedNormalizedPinyins(String zh)
+	public List<String> findSimplifiedNormalizedPinyins(String zh) throws SQLException
 	{
 		final String sql = String.format("""
 			select 
@@ -492,12 +425,12 @@ public class DbRepo
 		return getListOfString(sql, zh, COL_PINYIN_NORM);
 	}
 
-	public List<RawDictionaryRow> findByNormalizedPinyin(List<String> normalizedPinyins)
+	public List<RawDictionaryRow> findByNormalizedPinyin(List<String> normalizedPinyins) throws SQLException
 	{
 		return lookupChineseByColumn(COL_PINYIN_NORM, normalizedPinyins);
 	}
 
-	private List<String> getListOfString(String sql, String search, String column)
+	private List<String> getListOfString(String sql, String search, String column) throws SQLException
 	{
 		final Optional<List<String>> cached = DbRepoCache.getInstance().getListOfStringsCache(sql, search, column);
 		if(cached.isPresent())
@@ -506,145 +439,117 @@ public class DbRepo
 		}
 
 		final List<String> result = new ArrayList<>();
-		try
-		{
-			final PreparedStatement pst = db.prepareStatement(sql);
-			pst.setString(1, search);
-			final ResultSet results = pst.executeQuery();
+		final PreparedStatement pst = db.prepareStatement(sql);
+		pst.setString(1, search);
+		final ResultSet results = pst.executeQuery();
 
-			while(results.next())
-			{
-				result.add(results.getString(column));
-			}
-			DbRepoCache.getInstance().setListOfStringsCache(sql, search, column, result);
-		}
-		catch (SQLException e) 
+		while (results.next())
 		{
-			EventUtils.sendError(e);
+			result.add(results.getString(column));
 		}
-		return result;	
+		DbRepoCache.getInstance().setListOfStringsCache(sql, search, column, result);
+
+		return result;
 	}
 
-	public void fillDictionary(List<SimpleLookup> allEntries)
+	public void fillDictionary(List<SimpleLookup> allEntries, ProgressListener listener) throws SQLException
 	{
 		final String sqlZhBase = String.format("INSERT INTO %s (%s, %s, %s, %s, %s, %s) VALUES (?,?,?,?,?, ?)", TABLE_ZHBASE, COL_ZH, COL_PINYIN, COL_PINYIN_NORM, COL_FIRST_CHAR, COL_LAST_CHAR, COL_RANK);
 		final String sqlEnglish = String.format("INSERT INTO %s (%s, %s) VALUES (?,?)", TABLE_ENGLISH, COL_ZHBASEID, COL_DEF);
-		final String sqlEnglishFTS5 =  String.format("INSERT INTO %s (%s, %s) VALUES (?,?)", TABLE_ENGLISH_FTS5, COL_ZHBASEID, COL_DEF);
-		try 
+		final String sqlEnglishFTS5 = String.format("INSERT INTO %s (%s, %s) VALUES (?,?)", TABLE_ENGLISH_FTS5,
+				COL_ZHBASEID, COL_DEF);
+
+		final PreparedStatement pstZhBase = db.prepareStatement(sqlZhBase);
+		final PreparedStatement pstEnglish = db.prepareStatement(sqlEnglish);
+		final PreparedStatement pstEnglishFts5 = db.prepareStatement(sqlEnglishFTS5);
+
+		final PreparedStatement[] englishPsts = { pstEnglish, pstEnglishFts5 };
+
+		final int uptoDictTrxes = INIT_TRX_COUNT + allEntries.size() + DICT_EN_TRX;
+		final int totalTrxes = uptoDictTrxes + POST_DICT_TRX;
+		int saved = 0;
+		for (final SimpleLookup entry : allEntries)
 		{
-			final PreparedStatement pstZhBase = db.prepareStatement(sqlZhBase);
-			final PreparedStatement pstEnglish = db.prepareStatement(sqlEnglish);
-			final PreparedStatement pstEnglishFts5 = db.prepareStatement(sqlEnglishFTS5);
+			final RawDictionaryRow zhBase = new RawDictionaryRow(entry.getZh(), entry.getPinyin(), entry.getRank());
+			pstZhBase.setString(1, zhBase.getZh());
+			pstZhBase.setString(2, zhBase.getPinyin());
+			pstZhBase.setString(3, zhBase.getPinyinNormalized());
+			pstZhBase.setString(4, zhBase.getFirstChar());
+			pstZhBase.setString(5, zhBase.getLastChar());
+			pstZhBase.setDouble(6, zhBase.getRank());
+			pstZhBase.execute();
 
-			final PreparedStatement[] englishPsts = {pstEnglish, pstEnglishFts5};
+			final PreparedStatement getId = db.prepareStatement("select last_insert_rowid() as id;");
+			final ResultSet getIdResults = getId.executeQuery();
+			getIdResults.next();
+			final int id = getIdResults.getInt("id");
 
-			final int uptoDictTrxes = INIT_TRX_COUNT + allEntries.size() + DICT_EN_TRX;
-			final int totalTrxes = uptoDictTrxes + POST_DICT_TRX;
-			int saved = 0;
-			for(final SimpleLookup entry : allEntries)
+			for (final PreparedStatement pstEn : englishPsts)
 			{
-				final RawDictionaryRow zhBase = new RawDictionaryRow(entry.getZh(), entry.getPinyin(), entry.getRank());
-				pstZhBase.setString(1, zhBase.getZh());
-				pstZhBase.setString(2, zhBase.getPinyin());
-				pstZhBase.setString(3, zhBase.getPinyinNormalized());
-				pstZhBase.setString(4, zhBase.getFirstChar());
-				pstZhBase.setString(5, zhBase.getLastChar());
-				pstZhBase.setDouble(6, zhBase.getRank());
-				pstZhBase.execute();
-
-				final PreparedStatement getId = db.prepareStatement("select last_insert_rowid() as id;");
-				final ResultSet getIdResults = getId.executeQuery();
-				getIdResults.next();
-				final int id = getIdResults.getInt("id");
-				
-				for(final PreparedStatement pstEn : englishPsts)
+				for (final String definition : entry.getDefinitions())
 				{
-					for(final String definition : entry.getDefinitions())
-					{
-						pstEn.setInt(1, id);
-						pstEn.setString(2, definition);
-						pstEn.addBatch();
-					}
+					pstEn.setInt(1, id);
+					pstEn.setString(2, definition);
+					pstEn.addBatch();
 				}
-				saved++;
-				DbEvent.sendProgressEvent(INIT_TRX_COUNT + saved, totalTrxes);
 			}
-			pstEnglish.executeBatch();
-			pstEnglishFts5.executeBatch();
-			DbEvent.sendProgressEvent(uptoDictTrxes, totalTrxes);
-			db.commit();
-			DbRepoCache.getInstance().wipe();
-		} 
-		catch (SQLException e) 
-		{
-			EventUtils.sendError(e);
+			saved++;
+			listener.onProgress(INIT_TRX_COUNT + saved, totalTrxes);
 		}
+		pstEnglish.executeBatch();
+		pstEnglishFts5.executeBatch();
+		listener.onProgress(uptoDictTrxes, totalTrxes);
+		db.commit();
+		DbRepoCache.getInstance().wipe();
+
 	}
 
-	public void fillMeasureWords(List<RawMeasureWordRow> allRows)
+	public void fillMeasureWords(List<RawMeasureWordRow> allRows) throws SQLException
 	{
 		final String sql = String.format("INSERT INTO %s (%s, %s, %s) VALUES (?,?,?)", TABLE_MEASUREWORD, COL_ZH, COL_MEASURE_WORD, COL_MEASURE_PINYIN);
-		try 
+		final PreparedStatement pst = db.prepareStatement(sql);
+
+		for (final RawMeasureWordRow row : allRows)
 		{
-			final PreparedStatement pst = db.prepareStatement(sql);
-		
-			for(final RawMeasureWordRow row : allRows)
-			{
-				pst.setString(1, row.getZh());
-				pst.setString(2, row.getMeasure());
-				pst.setString(3, row.getMeasurePinyin());
-				pst.addBatch();
-			}
-			pst.executeBatch();
-			db.commit();
-		} 
-		catch (SQLException e) 
-		{
-			EventUtils.sendError(e);
+			pst.setString(1, row.getZh());
+			pst.setString(2, row.getMeasure());
+			pst.setString(3, row.getMeasurePinyin());
+			pst.addBatch();
 		}
+		pst.executeBatch();
+		db.commit();
+
 	}
 
-	public void fillSimplified(List<RawSimplifiedRow> allRows)
+	public void fillSimplified(List<RawSimplifiedRow> allRows) throws SQLException
 	{
 		final String sql = String.format("INSERT INTO %s (%s, %s) VALUES (?,?)", TABLE_SIMPLIFIED, COL_OG, COL_SIMPLIFIED);
-		try 
+		final PreparedStatement pst = db.prepareStatement(sql);
+
+		for (final RawSimplifiedRow row : allRows)
 		{
-			final PreparedStatement pst = db.prepareStatement(sql);
-		
-			for(final RawSimplifiedRow row : allRows)
-			{
-				pst.setString(1, row.getOriginal());
-				pst.setString(2, row.getSimplified());
-				pst.addBatch();
-			}
-			pst.executeBatch();
-			db.commit();
-		} 
-		catch (SQLException e) 
-		{
-			EventUtils.sendError(e);
+			pst.setString(1, row.getOriginal());
+			pst.setString(2, row.getSimplified());
+			pst.addBatch();
 		}
+		pst.executeBatch();
+		db.commit();
+
 	}
 
-	public void fillSubstrings(List<RawSubstringRow> allRows)
+	public void fillSubstrings(List<RawSubstringRow> allRows) throws SQLException
 	{
 		final String sql = String.format("INSERT INTO %s (%s, %s) VALUES (?,?) ON CONFLICT(%s, %s) DO NOTHING;", TABLE_SUBSTRING, COL_SUBSTRING, COL_FULL_STRING, COL_SUBSTRING, COL_FULL_STRING);
-		try 
+		final PreparedStatement pst = db.prepareStatement(sql);
+
+		for (final RawSubstringRow row : allRows)
 		{
-			final PreparedStatement pst = db.prepareStatement(sql);
-		
-			for(final RawSubstringRow row : allRows)
-			{
-				pst.setString(1, row.getSubstring());
-				pst.setString(2, row.getFullString());
-				pst.addBatch();
-			}
-			pst.executeBatch();
-			db.commit();
-		} 
-		catch (SQLException e) 
-		{
-			EventUtils.sendError(e);
+			pst.setString(1, row.getSubstring());
+			pst.setString(2, row.getFullString());
+			pst.addBatch();
 		}
+		pst.executeBatch();
+		db.commit();
+
 	}
 }

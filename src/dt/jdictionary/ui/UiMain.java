@@ -5,8 +5,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import javax.swing.JButton;
@@ -24,19 +25,16 @@ import javax.swing.JTextField;
 import dt.jdictionary.App;
 import dt.jdictionary.cedict.CedictDump;
 import dt.jdictionary.cedict.CedictParser;
-import dt.jdictionary.events.Event;
-import dt.jdictionary.events.EventDispatcher;
-import dt.jdictionary.events.EventListener;
-import dt.jdictionary.events.EventUtils;
-import dt.jdictionary.sqlite.DbEvent;
+import dt.jdictionary.listener.ProgressListener;
 import dt.jdictionary.sqlite.dbservice.DbService;
+import dt.jdictionary.sqlite.dbservice.ExceptionPile;
 import dt.jdictionary.sqlite.load.WordBlob;
 import dt.jdictionary.sqlite.load.WordList;
 import dt.jdictionary.ui.UiUtils.Neighbor;
 import dt.jdictionary.util.Debug;
 import dt.jdictionary.util.ChineseText;
 
-public class UiMain implements ActionListener, EventListener
+public class UiMain implements ActionListener, ProgressListener
 {
 	private static final String UI_ROOT = "root";
 	private static final String UI_ENTRY = "entry";
@@ -68,11 +66,10 @@ public class UiMain implements ActionListener, EventListener
 
 	private final HistoryManager<String> historyManager;
 
-	public UiMain()
+	public UiMain() throws ClassNotFoundException, SQLException
 	{
 		historyManager = new HistoryManager<>(HISTORY_MANAGER_MAX);
 		db = new DbService();
-		EventDispatcher.get().register(this);
 
 		final int ENTRY_INITIAL_WIDTH = 20;
 		uiEntry = new JTextField(ENTRY_INITIAL_WIDTH);
@@ -193,8 +190,7 @@ public class UiMain implements ActionListener, EventListener
 	@Override
 	public void actionPerformed(ActionEvent arg0)
 	{
-		try
-		{
+
 			final JComponent source = (JComponent)arg0.getSource();
 			final String sourceName = source.getName();
 			switch(sourceName)
@@ -235,11 +231,7 @@ public class UiMain implements ActionListener, EventListener
 				renderFlagMenu();
 			}
 
-		}
-		catch(Exception e)
-		{
-			EventUtils.sendError(e);
-		}
+
 	}
 
 	private void handleHistory(String historicalSearch) 
@@ -268,8 +260,17 @@ public class UiMain implements ActionListener, EventListener
 		disableEntry("Importing " + file.getName());
 
 		final Thread importer = new Thread(() -> { 
-			final CedictDump dump = new CedictParser().parse(file);
-			db.saveCedictDump(dump);
+			
+			CedictDump dump;
+			try
+			{
+				dump = new CedictParser(this).parse(file);
+				db.saveCedictDump(dump, this);
+			}
+			catch(IOException | SQLException e)
+			{
+				printException(e);
+			}
 			enableEntry();
 		});
 		importer.start();	
@@ -286,10 +287,17 @@ public class UiMain implements ActionListener, EventListener
 
 		final File file = fc.getSelectedFile();
 		disableEntry("Loading past known words from: " + file.getName());
-		final Thread loader = new Thread(() -> { 
-			final List<String> wordList = new WordList().parse(file);
+		final Thread loader = new Thread(() -> {
+			try
+			{
+			final List<String> wordList = new WordList(this).parse(file);
 			final boolean verifyInDictionary = true;
 			db.savePastHits(wordList, verifyInDictionary);
+			}
+			catch(SQLException | IOException e)
+			{
+				printException(e);
+			}
 			enableEntry();
 		});
 		loader.start();	
@@ -306,11 +314,22 @@ public class UiMain implements ActionListener, EventListener
 
 		final File file = fc.getSelectedFile();
 		disableEntry("Loading known words from blob: " + file.getName());
-		final Thread loader = new Thread(() -> { 
-			final List<String> sentences = new WordBlob().parse(file);
-			final List<String> wordList = db.extractCompoundWords(sentences);
-			final boolean verifyInDictionary = false;
-			db.savePastHits(wordList, verifyInDictionary);
+		final Thread loader = new Thread(() -> {
+			try
+			{
+				final List<String> sentences = new WordBlob(this).parse(file);
+				final List<String> wordList = db.extractCompoundWords(sentences);
+				final boolean verifyInDictionary = false;
+				db.savePastHits(wordList, verifyInDictionary);
+			}
+			catch(IOException | SQLException e)
+			{
+				printException(e);
+			}
+			catch(ExceptionPile p)
+			{
+				printFirstExceptionOfPile(p);
+			}
 			enableEntry();
 		});
 		loader.start();	
@@ -339,16 +358,27 @@ public class UiMain implements ActionListener, EventListener
 		UiUtils.removeNamedComponents(root, Set.of(UI_RESULT, UiUtils.UI_FILLER));
 		Debug.logTimestamp("removed ui filler");
 		
-		final JComponent result = ChineseText.hasChinese(received) ? 
-				new UiChineseLookup().render(db.lookupChinese(ChineseText.autoSwapChinese(received), newSearch)) : 
-				new UiEnglishLookup().render(db.lookupEnglish(received));
-		result.setName(UI_RESULT);
-		result.setBorder(UiConstants.TRACER());
-
-		final GridBagConstraints resultConstraints = UiUtils.makeGridConstraint(UI_ROW_RESULT, UI_MAIN_COLUMN, true, true, UiUtils.makeInsets(Set.of(Neighbor.TOP)));
-		resultConstraints.gridwidth = TOTAL_COLUMNS;
-		root.add(result, resultConstraints);
-
+		try
+		{
+			final JComponent result = ChineseText.hasChinese(received) ? 
+					new UiChineseLookup().render(db.lookupChinese(ChineseText.autoSwapChinese(received), newSearch)) : 
+					new UiEnglishLookup().render(db.lookupEnglish(received));
+			result.setName(UI_RESULT);
+			result.setBorder(UiConstants.TRACER());
+	
+			final GridBagConstraints resultConstraints = UiUtils.makeGridConstraint(UI_ROW_RESULT, UI_MAIN_COLUMN, true, true, UiUtils.makeInsets(Set.of(Neighbor.TOP)));
+			resultConstraints.gridwidth = TOTAL_COLUMNS;
+			root.add(result, resultConstraints);
+		}
+		catch(ExceptionPile e)
+		{
+			printFirstExceptionOfPile(e);
+		}
+		catch(Exception e)
+		{
+			printException(e);
+			e.printStackTrace();
+		}
 		if(newSearch)
 		{
 			historyManager.addSingleEntry(received);
@@ -377,70 +407,43 @@ public class UiMain implements ActionListener, EventListener
 		}
 	}
 
-	@Override
-	public void onEvent(Event event) 
+	private void printException(Exception e)
 	{
-		switch(event.getType())
-		{
-			case FILE_PARSE:
-				handleFileParseEvent(event.getData());
-				break;
-			case DB_SAVE:
-				handleDbSaveEvent(event.getData());
-				break;
-			case JAVA_EXCEPTION:
-				printException(event.getData());
-				break;
-			case SELF_WARNING:
-				printWarning(event.getData());
-				break;
-			default:
-				JOptionPane.showMessageDialog(null, event.toString(), "Unknown Event", JOptionPane.WARNING_MESSAGE);
-				break;
-		}
-	}
-
-	private void printWarning(Map<String, Object> data)
-	{
-		final String warning = (String)data.get(EventUtils.EVENT_WARN_MSG);
-		final String stackTrace = (String)data.get(EventUtils.EVENT_STACK_TRACE);
-		final String popupMessage = warning + "\n" + stackTrace;
-
-		JOptionPane.showMessageDialog(null, popupMessage, "Warning", JOptionPane.WARNING_MESSAGE);
-	}
-
-	private void printException(Map<String, Object> data)
-	{
-		final String title = (String)data.get(EventUtils.EVENT_ERR_CLASS);
-		final String errorMessage = (String)data.get(EventUtils.EVENT_ERR_MSG);
-		final String stackTrace = (String)data.get(EventUtils.EVENT_STACK_TRACE);
+		final String title = e.getClass().getName();
+		final String errorMessage = e.getMessage();
+		final String stackTrace = Debug.printStackTrace(e.getCause().getStackTrace());
 		final String popupMessage = errorMessage + "\n" + stackTrace;
 
 		JOptionPane.showMessageDialog(null, popupMessage, title, JOptionPane.ERROR_MESSAGE);
 	}
 
-	private void handleFileParseEvent(Map<String, Object> data)
+	private void printFirstExceptionOfPile(ExceptionPile e)
 	{
-		final long processedBytes = (long)data.get(EventUtils.EVENT_PROCESSED_BYTES);
-		final long totalBytes = (long)data.get(EventUtils.EVENT_TOTAL_BYTES);
-		updateImportProgress((int)processedBytes, (int)totalBytes, "Parsed: ");
+		final String title = String.format("First of %s exceptions", e.getExceptions().size());
+		final String errorMessage = e.getMessage();
+		final String stackTrace = Debug.printStackTrace(e.getExceptions().get(0).getCause().getStackTrace());
+		final String popupMessage = errorMessage + "\n" + stackTrace;
+
+		JOptionPane.showMessageDialog(null, popupMessage, title, JOptionPane.ERROR_MESSAGE);
+		e.getExceptions().forEach(ex -> System.err.println(Debug.printStackTrace(ex.getCause().getStackTrace())));
 	}
 
-	private void handleDbSaveEvent(Map<String, Object> data)
-	{
-		final int trxSofar = (int)data.get(DbEvent.EVENT_TRX_SOFAR);
-		final int trxTotal = (int)data.get(DbEvent.EVENT_TRX_TOTAL);
-		updateImportProgress(trxSofar, trxTotal, "Db Transactions: ");
-	}
-
-	private void updateImportProgress(int current, int max, String reason)
+	private void updateImportProgress(long current, long max)
 	{
 		if(current == 0)
 		{
 			progressBar.setValue(0);
-			progressBar.setMaximum(max);
+			progressBar.setMaximum(100);
 		}
-		progressBar.setValue(current);
-		progressBar.setString(reason +  (int)(progressBar.getPercentComplete()*100) + "%");
+		
+		final int percentage = (int)(current*100/max);
+		progressBar.setValue(percentage);
+		progressBar.setString(percentage + "%");
+	}
+
+	@Override
+	public void onProgress(long processed, long total)
+	{
+		updateImportProgress(processed, total);		
 	}
 }

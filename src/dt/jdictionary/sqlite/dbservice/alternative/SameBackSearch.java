@@ -1,5 +1,6 @@
 package dt.jdictionary.sqlite.dbservice.alternative;
 
+import java.sql.SQLException;
 import java.util.List;
 
 import dt.jdictionary.SimpleLookup;
@@ -20,7 +21,7 @@ public class SameBackSearch implements AlternateSearch
 	}
 
 	@Override
-	public List<SimpleLookup> trySearch()
+	public List<SimpleLookup> trySearch() throws SQLException
 	{
 		final String lastChar = Character.toString(this.zh.charAt(this.zh.length()-1));
 		final List<RawDictionaryRow> rawResults = this.db.lookupRelatedWord(lastChar, RelatedChar.SAME_BACK);

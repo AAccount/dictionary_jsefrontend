@@ -1,5 +1,6 @@
 package dt.jdictionary.sqlite.dbservice.alternative;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,7 +25,7 @@ public class TypoSearch implements AlternateSearch
 	}
 
 	@Override
-	public List<SimpleLookup> trySearch()
+	public List<SimpleLookup> trySearch() throws SQLException
 	{
 		final List<String> trueChars = ChineseText.trueChars(this.zh);
 		final List<List<String>> normalizedPinyins = findPinyinForZh(trueChars);
@@ -58,7 +59,7 @@ public class TypoSearch implements AlternateSearch
 		return similarity;
 	}
 
-	private List<List<String>> findPinyinForZh(List<String> chars)
+	private List<List<String>> findPinyinForZh(List<String> chars) throws SQLException
 	{
 		final HashMap<String, Set<String>> pinyinMap = new HashMap<>();
 		final List<SimpleLookup> dictionaryEntries = DbServiceUtils.convertRawToSimple(this.db.lookupChinese(chars));

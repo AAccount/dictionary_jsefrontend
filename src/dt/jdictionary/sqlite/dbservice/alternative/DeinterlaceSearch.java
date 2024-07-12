@@ -1,5 +1,6 @@
 package dt.jdictionary.sqlite.dbservice.alternative;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,9 +22,10 @@ public class DeinterlaceSearch implements AlternateSearch
 
 	/**
 	 * Attempt to "deinterlace" an entry: chars 123 --> lookup 13; chars 1234 --> lookup 13 and 24
+	 * @throws SQLException 
 	 */
 	@Override
-	public List<SimpleLookup> trySearch()
+	public List<SimpleLookup> trySearch() throws SQLException
 	{
 		final int MIN_DEINTERLACE = 3;
 		final int MAX_DEINTERLACE = 4;

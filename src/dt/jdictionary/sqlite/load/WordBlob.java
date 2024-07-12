@@ -9,43 +9,45 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import dt.jdictionary.events.EventUtils;
+import dt.jdictionary.listener.ProgressListener;
 import dt.jdictionary.util.ChineseText;
 
 public class WordBlob
 {
-	public List<String> parse(File file)
+	private final ProgressListener progressListener;
+
+	public WordBlob(ProgressListener progressListener)
+	{
+		this.progressListener = progressListener;
+	}
+
+	public List<String> parse(File file) throws IOException
 	{
 		final List<String> sentences = new ArrayList<>();
 		long bytesProcessed = 0;
-		try
+
+		final BufferedReader fileReader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
+		String line = fileReader.readLine();
+		while (line != null)
 		{
-			final BufferedReader fileReader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
-			String line = fileReader.readLine();
-			while (line != null)
+			final String cleaned = line.strip();
+			if (cleaned.length() < 1)
 			{
-				final String cleaned = line.strip();
-				if(cleaned.length() < 1)
-				{
-					line = fileReader.readLine();
-				}
-				
-				final String[] lineSentences = line.split("\\.\\?\\,。？，");
-				for(final String sentence : lineSentences)
-				{
-					sentences.add(ChineseText.stripNonChinese(sentence));
-				}
-				
-				bytesProcessed = bytesProcessed + line.length();
-				EventUtils.sendBytesProcessed(bytesProcessed, file.length());
 				line = fileReader.readLine();
 			}
-			fileReader.close();
+
+			final String[] lineSentences = line.split("\\.\\?\\,。？，");
+			for (final String sentence : lineSentences)
+			{
+				sentences.add(ChineseText.stripNonChinese(sentence));
+			}
+
+			bytesProcessed = bytesProcessed + line.length();
+			this.progressListener.onProgress(bytesProcessed, file.length());
+			line = fileReader.readLine();
 		}
-		catch(IOException e)
-		{
-			EventUtils.sendError(e);
-		}
+		fileReader.close();
+
 		return sentences;
 	}
 }

@@ -1,5 +1,7 @@
 package dt.jdictionary;
 
+import java.sql.SQLException;
+
 import dt.jdictionary.tui.TextUI;
 import dt.jdictionary.ui.UiConstants;
 import dt.jdictionary.ui.UiMain;
@@ -17,7 +19,7 @@ public class App
 	private static final String ARG_TEST = "--test";
 	private static final String ARG_TUI = "--tui";
 	
-	public static void main(String[] args)
+	public static void main(String[] args) throws ClassNotFoundException, SQLException
 	{
 		System.setProperty("apple.laf.useScreenMenuBar", "true");
 		Debug.logTimestamp("Starting " + VERSION);

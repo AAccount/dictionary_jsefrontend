@@ -1,5 +1,6 @@
 package dt.jdictionary.tui;
 
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -11,8 +12,10 @@ import dt.jdictionary.ExhaustiveChineseLookup;
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.sqlite.dbservice.ChineseDefinitionLookup;
 import dt.jdictionary.sqlite.dbservice.DbService;
+import dt.jdictionary.sqlite.dbservice.ExceptionPile;
 import dt.jdictionary.ui.UiConstants;
 import dt.jdictionary.util.ChineseText;
+import dt.jdictionary.util.Debug;
 
 public class TextUI
 {
@@ -27,7 +30,12 @@ public class TextUI
 	private static final String FLAG_SHORTHAND_SAVE_HITS = "save";
 
 	private int nresults = 20;
-	private final DbService db = new DbService();
+	private final DbService db;
+	
+	public TextUI() throws ClassNotFoundException, SQLException
+	{
+		db = new DbService();
+	}
 	
 	public void print()
 	{
@@ -74,12 +82,19 @@ public class TextUI
 	
 	private void printChineseLookup(String entry)
 	{
-		final ExhaustiveChineseLookup result = db.lookupChinese(entry, true);
-		System.out.println("");
-		printDefinition(result.getDefinition());
-		for(final String alt : result.getSupplementaries().keySet())
+		try
 		{
-			printSimpleLookupList(alt, result.getSupplementaries().get(alt));
+			final ExhaustiveChineseLookup result = db.lookupChinese(entry, true);
+			System.out.println("");
+			printDefinition(result.getDefinition());
+			for(final String alt : result.getSupplementaries().keySet())
+			{
+				printSimpleLookupList(alt, result.getSupplementaries().get(alt));
+			}
+		}
+		catch(ExceptionPile e)
+		{
+			e.getExceptions().forEach(ex -> System.err.println(Debug.printStackTrace(ex.getCause().getStackTrace())));
 		}
 	}
 	
@@ -110,10 +125,17 @@ public class TextUI
 	
 	private void printEnglishLookup(String entry)
 	{
-		final Map<String, List<SimpleLookup>> results = db.lookupEnglish(entry);
-		for(final String combo : results.keySet())
+		try
 		{
-			printSimpleLookupList(combo, results.get(combo));
+			final Map<String, List<SimpleLookup>> results = db.lookupEnglish(entry);
+			for(final String combo : results.keySet())
+			{
+				printSimpleLookupList(combo, results.get(combo));
+			}
+		}
+		catch(ExceptionPile e)
+		{
+			e.getExceptions().forEach(ex -> System.err.println(Debug.printStackTrace(ex.getCause().getStackTrace())));
 		}
 	}
 	
