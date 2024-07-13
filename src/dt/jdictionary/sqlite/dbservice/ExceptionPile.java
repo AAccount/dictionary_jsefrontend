@@ -10,13 +10,13 @@ public class ExceptionPile extends Exception
 	
 	public ExceptionPile(String message, List<Exception> exceptions)
 	{
-		super(message);
+		super(message, exceptions.get(0));
 		this.exceptions = exceptions;
 	}
 	
 	public ExceptionPile(String message, Exception exception)
 	{
-		super(message);
+		super(message, exception);
 		this.exceptions = new ArrayList<>();
 		this.exceptions.add(exception);
 	}
