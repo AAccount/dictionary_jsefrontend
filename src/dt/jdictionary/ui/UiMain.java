@@ -415,17 +415,18 @@ public class UiMain implements ActionListener, ProgressListener
 		final String popupMessage = errorMessage + "\n" + stackTrace;
 
 		JOptionPane.showMessageDialog(null, popupMessage, title, JOptionPane.ERROR_MESSAGE);
+		System.err.println(Debug.printStackTrace(e.getCause().getStackTrace()));
 	}
 
-	private void printFirstExceptionOfPile(ExceptionPile e)
+	private void printFirstExceptionOfPile(ExceptionPile pile)
 	{
-		final String title = String.format("First of %s exceptions", e.getExceptions().size());
-		final String errorMessage = e.getMessage();
-		final String stackTrace = Debug.printStackTrace(e.getExceptions().get(0).getCause().getStackTrace());
+		final String title = String.format("First of %s exceptions", pile.getExceptions().size());
+		final String errorMessage = pile.getMessage();
+		final String stackTrace = Debug.printStackTrace(pile.getExceptions().get(0).getCause().getStackTrace());
 		final String popupMessage = errorMessage + "\n" + stackTrace;
 
 		JOptionPane.showMessageDialog(null, popupMessage, title, JOptionPane.ERROR_MESSAGE);
-		e.getExceptions().forEach(ex -> System.err.println(Debug.printStackTrace(ex.getCause().getStackTrace())));
+		pile.getExceptions().forEach(e -> System.err.println(Debug.printStackTrace(e.getCause().getStackTrace())));
 	}
 
 	private void updateImportProgress(long current, long max)
