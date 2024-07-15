@@ -1,7 +1,9 @@
 package dt.jdictionary.sqlite.dbservice.alternative;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.sqlite.dbservice.DbServiceUtils;
@@ -27,7 +29,7 @@ public class SubstringOfSearch implements AlternateSearch
 			return List.of();
 		}
 		
-		return DbServiceUtils.convertRawToSimple(this.db.lookupChinese(possibleMatches)).stream().toList();
+		return DbServiceUtils.convertRawToSimple(this.db.lookupChinese(possibleMatches)).stream().collect(Collectors.toCollection(ArrayList::new));
 	}
 
 	@Override

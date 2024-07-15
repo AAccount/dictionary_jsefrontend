@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.UnrankedLookup;
@@ -42,7 +43,7 @@ public class SaveCedict
 
 		final Map<Character, Double> freqCountMap = RankingUtilities.rankSingleChars(dump.getDictionary());
 		final List<SimpleLookup> dictionaryRankedList = dump.getDictionary().stream()
-			.map(unranked -> new SimpleLookup(unranked, RankingUtilities.rank(unranked, freqCountMap))).toList();
+			.map(unranked -> new SimpleLookup(unranked, RankingUtilities.rank(unranked, freqCountMap))).collect(Collectors.toCollection(ArrayList::new));
 		db.fillDictionary(dictionaryRankedList, progressListener);
 		fillMeasureWords(dump, db);
 		progressListener.onProgress(uptoDictTrxes + 1, totalTrxes);
@@ -55,7 +56,7 @@ public class SaveCedict
 	private void fillSubstrings(CedictDump dump, DbRepo db) throws SQLException
 	{
 		final List<UnrankedLookup> substringEntries = dump.getDictionary().stream()
-			.filter(unrankedlookup -> unrankedlookup.getZh().length() > 1 && ChineseText.allChinese(unrankedlookup.getZh())).toList();
+			.filter(unrankedlookup -> unrankedlookup.getZh().length() > 1 && ChineseText.allChinese(unrankedlookup.getZh())).collect(Collectors.toCollection(ArrayList::new));
 
 		final Set<RawSubstringRow> result = new HashSet<>();
 		for(final UnrankedLookup simpleLookup : substringEntries)

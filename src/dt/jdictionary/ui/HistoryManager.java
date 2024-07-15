@@ -2,6 +2,7 @@ package dt.jdictionary.ui;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class HistoryManager<T>
 {
@@ -109,6 +110,6 @@ public class HistoryManager<T>
 
 	public List<T> getCompleteHistoryReadonly()
 	{
-		return entries.stream().toList();
+		return entries.stream().collect(Collectors.toCollection(ArrayList::new));
 	}
 }

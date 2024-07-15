@@ -74,7 +74,7 @@ public class CedictParser
 
 	private List<String> parseDefinitions(RawCedictLine line)
 	{
-		final List<String> rawDefinitions = line.getRawDefinitions().stream().map(rawDef -> new String(rawDef)).toList();
+		final List<String> rawDefinitions = line.getRawDefinitions().stream().map(rawDef -> new String(rawDef)).collect(Collectors.toCollection(ArrayList::new));
 		final List<String> pinyin = procDefsEmbeddedPinyin(rawDefinitions);
 		final List<String> pinyinNoSimplified = procDefsRmSimplified(pinyin);
 		final List<String> pinyinNoSimplifiedNoMW = procDefsRmMeasureWords(pinyinNoSimplified);
@@ -126,7 +126,7 @@ return selfSimplifiedChars;
 	{
 		final String sanitized = sanitizeRawDefinitions(definitionPortion);
 		final List<String> definitions = Arrays.asList(sanitized.split("/"));
-		return definitions.stream().filter(def -> def.length() > 0).toList();
+		return definitions.stream().filter(def -> def.length() > 0).collect(Collectors.toCollection(ArrayList::new));
 	}
 
 	private final String sanitizeRawDefinitions(String rawDefinitions)
@@ -190,7 +190,7 @@ return selfSimplifiedChars;
 		}
 		
 		List<Character> remainingChinese =  stringAsCharObjs
-			.stream().filter(jchar -> chineseEncoded.contains(Character.UnicodeScript.of(jchar))).toList();
+			.stream().filter(jchar -> chineseEncoded.contains(Character.UnicodeScript.of(jchar))).collect(Collectors.toCollection(ArrayList::new));
 		
 		return remainingChinese.size() == 0 ? "" : remainingChinese.stream()
 			.map(jchar -> jchar.toString())
@@ -202,7 +202,7 @@ return selfSimplifiedChars;
 	{
 		return rawDefinitions.stream()
 			.map(raw -> raw.contains(MEASURE_WORD_INDICATOR) ? raw : PinyinParser.parse(raw))
-			.toList();
+			.collect(Collectors.toCollection(ArrayList::new));
 	}
 
 	private Map<String, String> procDefsEmbeddedSimplified(List<String> rawDefinitions)
@@ -300,7 +300,7 @@ return selfSimplifiedChars;
 	
 	private List<String> procDefsRmMeasureWords(List<String> rawDefinitions)
 	{
-		return rawDefinitions.stream().filter(rawDef -> !rawDef.contains(MEASURE_WORD_INDICATOR)).toList();
+		return rawDefinitions.stream().filter(rawDef -> !rawDef.contains(MEASURE_WORD_INDICATOR)).collect(Collectors.toCollection(ArrayList::new));
 	}
 
 	private List<ZhPinyin> procDefsMeasureWords(RawCedictLine line)

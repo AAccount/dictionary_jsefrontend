@@ -22,12 +22,11 @@ public class Debug
 		System.out.println(Instant.now() + " " + message);
 	}
 
-	
 	public static String printStackTrace(StackTraceElement[] stack)
 	{
 		return Arrays.asList(stack).stream()
 			.filter(element -> element.getClassName().contains("dt.jdictionary"))
 			.map(element -> element.toString())
-			.collect(Collectors.joining("\t\n"));
+			.collect(Collectors.joining("\n\t"));
 	}
 }

@@ -42,7 +42,7 @@ public class SubstringSearch implements AlternateSearch
 			return allResults;
 		}
 		
-		final List<SimpleLookup> nonSingle = allResults.stream().filter(result -> ChineseText.trueChars(result.getZh()).size() > 1).toList();
+		final List<SimpleLookup> nonSingle = allResults.stream().filter(result -> ChineseText.trueChars(result.getZh()).size() > 1).collect(Collectors.toCollection(ArrayList::new));
 		return nonSingle.isEmpty() ? allResults : nonSingle;
 	}
 

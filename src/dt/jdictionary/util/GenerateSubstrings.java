@@ -2,6 +2,7 @@ package dt.jdictionary.util;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class GenerateSubstrings
 {
@@ -10,7 +11,7 @@ public class GenerateSubstrings
 	{
 		// To generate all possible substrings, you will get the original string itself. Don't return that entry.
 		final List<String> results = GenerateSubstrings.generateSubstringsReal(saying);
-		return results.stream().filter(substring -> !substring.equals(saying)).toList();
+		return results.stream().filter(substring -> !substring.equals(saying)).collect(Collectors.toCollection(ArrayList::new));
 	}
 
 	private static List<String> generateSubstringsReal(String saying)
