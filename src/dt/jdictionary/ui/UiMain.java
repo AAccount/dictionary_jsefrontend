@@ -6,9 +6,11 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
-import java.sql.SQLException;
+import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -25,14 +27,14 @@ import javax.swing.JTextField;
 import dt.cedict.CedictDump;
 import dt.cedict.CedictParser;
 import dt.jdictionary.App;
+import dt.jdictionary.ChineseSummaryLookup;
+import dt.jdictionary.ExceptionPile;
 import dt.jdictionary.ProgressListener;
-import dt.jdictionary.dumpdb.DumpDBRepo;
-import dt.jdictionary.sqlite.DbRepo;
-import dt.jdictionary.sqlite.dbservice.DbService;
-import dt.jdictionary.sqlite.dbservice.ExceptionPile;
-import dt.jdictionary.sqlite.load.WordBlob;
-import dt.jdictionary.sqlite.load.WordList;
+import dt.jdictionary.dbservice.DbService;
+import dt.jdictionary.extload.WordBlob;
+import dt.jdictionary.extload.WordList;
 import dt.jdictionary.ui.UiUtils.Neighbor;
+import dt.jdictionary.uiutil.Convert;
 import dt.util.ChineseText;
 import dt.util.Debug;
 
@@ -68,10 +70,10 @@ public class UiMain implements ActionListener, ProgressListener
 
 	private final HistoryManager<String> historyManager;
 
-	public UiMain() throws Exception
+	public UiMain() throws IOException, ParseException
 	{
 		historyManager = new HistoryManager<>(HISTORY_MANAGER_MAX);
-		db = new DbService(new DumpDBRepo());
+		db = new DbService();
 
 		final int ENTRY_INITIAL_WIDTH = 20;
 		uiEntry = new JTextField(ENTRY_INITIAL_WIDTH);
@@ -263,11 +265,13 @@ public class UiMain implements ActionListener, ProgressListener
 
 		final Thread importer = new Thread(() -> { 
 			
-			CedictDump dump;
 			try
 			{
-				dump = new CedictParser(this).parse(file);
-				db.saveCedictDump(dump.getDictionary(), dump.getMeasureWords(), dump.getSimplifiedChars());
+				final CedictDump dump = new CedictParser(this).parse(file);
+				final List<ChineseSummaryLookup> dictionary = dump.getDictionary().stream()
+						.map(simpleLookup -> Convert.simpleLookupToChineseSummary(simpleLookup))
+						.collect(Collectors.toCollection(ArrayList::new));
+				db.saveCedictDump(dictionary, Convert.flattenCedictMeasures(dump.getMeasureWords()), dump.getSimplifiedChars());
 			}
 			catch(Exception e)
 			{

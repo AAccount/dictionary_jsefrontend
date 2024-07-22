@@ -15,10 +15,10 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextPane;
 
+import dt.jdictionary.ChineseDefinitionLookup;
+import dt.jdictionary.ChineseSummaryLookup;
 import dt.jdictionary.ExhaustiveChineseLookup;
-import dt.jdictionary.SimpleLookup;
-import dt.jdictionary.sqlite.dbservice.ChineseDefinitionLookup;
-import dt.jdictionary.sqlite.dbservice.alternative.SubstringSearch;
+import dt.jdictionary.dbservice.alternative.SubstringSearch;
 import dt.jdictionary.ui.UiUtils.Neighbor;
 import dt.util.ChineseText;
 import dt.util.Debug;
@@ -44,7 +44,7 @@ class UiChineseLookup
 
 		tabFutures.put(DEFINITION_TAB, CompletableFuture.supplyAsync(() -> {return this.renderZhDefinition(dictionaryResult.getDefinition());}));
 		
-		final Map<String, List<SimpleLookup>> supplementaries = dictionaryResult.getSupplementaries();
+		final Map<String, List<ChineseSummaryLookup>> supplementaries = dictionaryResult.getSupplementaries();
 		supplementaries.keySet().stream()
 			.filter(supplementary -> !supplementaries.get(supplementary).isEmpty())
 			.forEach(supplementary -> tabFutures.put(supplementary, tabCompletable(supplementary, supplementaries.get(supplementary))));
@@ -57,16 +57,16 @@ class UiChineseLookup
 		return notebook;
 	}
 	
-	private CompletableFuture<Component> tabCompletable(String supplementaryName, List<SimpleLookup> lookups)
+	private CompletableFuture<Component> tabCompletable(String supplementaryName, List<ChineseSummaryLookup> lookups)
 	{
 		if(supplementaryName.equals(SubstringSearch.LOOKUP_NAME) && UiConstants.getFlag(UiConstants.FLAG_ALWAYS_SINGLE_SUBSTRING))
 		{
-			final List<SimpleLookup> nonSingle = lookups.stream()
-					.filter(result -> ChineseText.trueChars(result.getZh()).size() > 1)
+			final List<ChineseSummaryLookup> nonSingle = lookups.stream()
+					.filter(result -> ChineseText.trueChars(result.getChinese()).size() > 1)
 					.collect(Collectors.toCollection(ArrayList::new));
-			return CompletableFuture.supplyAsync(() -> {return new UiList().render(new ArrayList<SimpleLookup>(nonSingle.isEmpty() ? lookups : nonSingle));});
+			return CompletableFuture.supplyAsync(() -> {return new UiList().render(new ArrayList<ChineseSummaryLookup>(nonSingle.isEmpty() ? lookups : nonSingle));});
 		}
-		return CompletableFuture.supplyAsync(() -> {return new UiList().render(new ArrayList<SimpleLookup>(lookups));});
+		return CompletableFuture.supplyAsync(() -> {return new UiList().render(new ArrayList<ChineseSummaryLookup>(lookups));});
 	}
 
 	private JPanel renderZhDefinition(ChineseDefinitionLookup dictionaryResult)

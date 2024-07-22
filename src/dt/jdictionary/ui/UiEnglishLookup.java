@@ -9,12 +9,12 @@ import java.util.concurrent.CompletableFuture;
 import javax.swing.JComponent;
 import javax.swing.JTabbedPane;
 
-import dt.jdictionary.SimpleLookup;
+import dt.jdictionary.ChineseSummaryLookup;
 
 
 public class UiEnglishLookup
 {
-	public JComponent render(Map<String, List<SimpleLookup>> useableCombinations)
+	public JComponent render(Map<String, List<ChineseSummaryLookup>> useableCombinations)
 	{
 		final JTabbedPane notebook = new JTabbedPane();
 		notebook.setBorder(UiConstants.TRACER());

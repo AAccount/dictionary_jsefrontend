@@ -9,7 +9,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
-import dt.jdictionary.SimpleLookup;
+import dt.jdictionary.ChineseSummaryLookup;
 import dt.jdictionary.ui.UiUtils.Neighbor;
 import dt.util.Debug;
 import dt.util.ListUtils;
@@ -39,7 +39,7 @@ class UiList implements ActionListener
 	private final int PAGE_SIZE = 10;
 
 	private final JComponent root;
-	private final HistoryManager<List<SimpleLookup>> pages;
+	private final HistoryManager<List<ChineseSummaryLookup>> pages;
 
 	public UiList() 
 	{
@@ -52,7 +52,7 @@ class UiList implements ActionListener
 		pageCounter = new JLabel();
 	}
 
-	public JComponent render(List<SimpleLookup> dbResults)
+	public JComponent render(List<ChineseSummaryLookup> dbResults)
 	{
 		Debug.logTimestamp("start ui list");
 		Collections.sort(dbResults, Collections.reverseOrder());
@@ -64,7 +64,7 @@ class UiList implements ActionListener
 		return root;
 	}
 
-	private void renderPageOfResults(List<SimpleLookup> results)
+	private void renderPageOfResults(List<ChineseSummaryLookup> results)
 	{
 		UiUtils.removeNamedComponents(root, Set.of(SCROLLVIEW_RESULTS));
 
@@ -87,16 +87,16 @@ class UiList implements ActionListener
 		pageCounter.setText((pages.getIndex()+1)+"/"+(pages.getSize()));
 	}
 
-	private void renderSimpleLookup(SimpleLookup dbresult, JComponent parent, int row)
+	private void renderSimpleLookup(ChineseSummaryLookup dbresult, JComponent parent, int row)
 	{
 		final int COL_ZH = 0;
-		UiUtils.renderLabelToGrid(parent, dbresult.getZh(), row, COL_ZH, false);
+		UiUtils.renderLabelToGrid(parent, dbresult.getChinese(), row, COL_ZH, false);
 		
 		final int COL_PINYIN = 1;
 		UiUtils.renderLabelToGrid(parent, dbresult.getPinyin(), row, COL_PINYIN, false);
 		
 		final int COL_DEF = 2;
-		final String definition = String.join(", ", dbresult.getDefinitions()).toLowerCase();
+		final String definition = dbresult.getDefinition().toLowerCase();
 		UiUtils.renderLabelToGrid(parent, definition, row, COL_DEF, true);
 		
 		if(UiConstants.getFlag(UiConstants.FLAG_RANK))
@@ -137,7 +137,7 @@ class UiList implements ActionListener
 			return;
 		}
 
-		final List<SimpleLookup> page = source == forwardBtn ? pages.goFwd() : pages.goBack();
+		final List<ChineseSummaryLookup> page = source == forwardBtn ? pages.goFwd() : pages.goBack();
 		previousBtn.setEnabled(pages.canGoBack());
 		forwardBtn.setEnabled(pages.canGoFwd());
 

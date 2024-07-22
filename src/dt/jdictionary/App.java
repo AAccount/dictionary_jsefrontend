@@ -1,6 +1,7 @@
 package dt.jdictionary;
 
-import java.sql.SQLException;
+import java.io.IOException;
+import java.text.ParseException;
 
 import dt.jdictionary.tui.TextUI;
 import dt.jdictionary.ui.UiConstants;
@@ -19,7 +20,7 @@ public class App
 	private static final String ARG_TEST = "--test";
 	private static final String ARG_TUI = "--tui";
 	
-	public static void main(String[] args) throws Exception
+	public static void main(String[] args) throws IOException, ParseException
 	{
 		System.setProperty("apple.laf.useScreenMenuBar", "true");
 		Debug.logTimestamp("Starting " + VERSION);

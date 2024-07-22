@@ -1,6 +1,7 @@
 package dt.jdictionary.tui;
 
-import java.sql.SQLException;
+import java.io.IOException;
+import java.text.ParseException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -8,12 +9,11 @@ import java.util.Scanner;
 import java.util.Set;
 
 import dt.jdictionary.App;
+import dt.jdictionary.ChineseDefinitionLookup;
+import dt.jdictionary.ChineseSummaryLookup;
+import dt.jdictionary.ExceptionPile;
 import dt.jdictionary.ExhaustiveChineseLookup;
-import dt.jdictionary.SimpleLookup;
-import dt.jdictionary.sqlite.DbRepo;
-import dt.jdictionary.sqlite.dbservice.ChineseDefinitionLookup;
-import dt.jdictionary.sqlite.dbservice.DbService;
-import dt.jdictionary.sqlite.dbservice.ExceptionPile;
+import dt.jdictionary.dbservice.DbService;
 import dt.jdictionary.ui.UiConstants;
 import dt.util.ChineseText;
 import dt.util.Debug;
@@ -33,9 +33,9 @@ public class TextUI
 	private int nresults = 20;
 	private final DbService db;
 	
-	public TextUI() throws ClassNotFoundException, SQLException
+	public TextUI() throws IOException, ParseException
 	{
-		db = new DbService(new DbRepo());
+		db = new DbService();
 	}
 	
 	public void print()
@@ -128,7 +128,7 @@ public class TextUI
 	{
 		try
 		{
-			final Map<String, List<SimpleLookup>> results = db.lookupEnglish(entry);
+			final Map<String, List<ChineseSummaryLookup>> results = db.lookupEnglish(entry);
 			for(final String combo : results.keySet())
 			{
 				printSimpleLookupList(combo, results.get(combo));
@@ -140,7 +140,7 @@ public class TextUI
 		}
 	}
 	
-	private void printSimpleLookupList(String listName, List<SimpleLookup> list)
+	private void printSimpleLookupList(String listName, List<ChineseSummaryLookup> list)
 	{
 		if(list.isEmpty())
 		{
@@ -149,16 +149,16 @@ public class TextUI
 		
 		Collections.sort(list, Collections.reverseOrder());
 		System.out.println(listName);
-		final List<SimpleLookup> printedList = list.size() > nresults ? list.subList(0, nresults) : list;
-		for(final SimpleLookup lookup : printedList)
+		final List<ChineseSummaryLookup> printedList = list.size() > nresults ? list.subList(0, nresults) : list;
+		for(final ChineseSummaryLookup lookup : printedList)
 		{
 			if(UiConstants.getFlag(UiConstants.FLAG_RANK))
 			{
-				System.out.println(String.format("%s; %s; %s; %s", lookup.getZh(), lookup.getPinyin(), String.join("; ", lookup.getDefinitions()), lookup.getRank()));
+				System.out.println(String.format("%s; %s; %s; %s", lookup.getChinese(), lookup.getPinyin(), lookup.getDefinition(), lookup.getRank()));
 			}
 			else
 			{
-				System.out.println(String.format("%s; %s; %s", lookup.getZh(), lookup.getPinyin(), String.join("; ", lookup.getDefinitions())));
+				System.out.println(String.format("%s; %s; %s", lookup.getChinese(), lookup.getPinyin(), lookup.getDefinition()));
 			}
 		}
 		System.out.println("");
