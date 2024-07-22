@@ -5,7 +5,7 @@ import java.sql.SQLException;
 import dt.jdictionary.tui.TextUI;
 import dt.jdictionary.ui.UiConstants;
 import dt.jdictionary.ui.UiMain;
-import dt.jdictionary.util.Debug;
+import dt.util.Debug;
 
 // V1.4: 2024-07-09: import known compound words in hopes of getting better English to Chinese results.
 // V1.3: 2024-07-08: make List<SimpleLookup> rank based on past searches if available 
@@ -19,7 +19,7 @@ public class App
 	private static final String ARG_TEST = "--test";
 	private static final String ARG_TUI = "--tui";
 	
-	public static void main(String[] args) throws ClassNotFoundException, SQLException
+	public static void main(String[] args) throws Exception
 	{
 		System.setProperty("apple.laf.useScreenMenuBar", "true");
 		Debug.logTimestamp("Starting " + VERSION);

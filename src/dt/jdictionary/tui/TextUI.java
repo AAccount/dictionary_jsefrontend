@@ -10,12 +10,13 @@ import java.util.Set;
 import dt.jdictionary.App;
 import dt.jdictionary.ExhaustiveChineseLookup;
 import dt.jdictionary.SimpleLookup;
+import dt.jdictionary.sqlite.DbRepo;
 import dt.jdictionary.sqlite.dbservice.ChineseDefinitionLookup;
 import dt.jdictionary.sqlite.dbservice.DbService;
 import dt.jdictionary.sqlite.dbservice.ExceptionPile;
 import dt.jdictionary.ui.UiConstants;
-import dt.jdictionary.util.ChineseText;
-import dt.jdictionary.util.Debug;
+import dt.util.ChineseText;
+import dt.util.Debug;
 
 public class TextUI
 {
@@ -34,7 +35,7 @@ public class TextUI
 	
 	public TextUI() throws ClassNotFoundException, SQLException
 	{
-		db = new DbService();
+		db = new DbService(new DbRepo());
 	}
 	
 	public void print()

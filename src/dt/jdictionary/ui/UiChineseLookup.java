@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 import java.awt.GridBagLayout;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
@@ -17,8 +18,10 @@ import javax.swing.JTextPane;
 import dt.jdictionary.ExhaustiveChineseLookup;
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.sqlite.dbservice.ChineseDefinitionLookup;
+import dt.jdictionary.sqlite.dbservice.alternative.SubstringSearch;
 import dt.jdictionary.ui.UiUtils.Neighbor;
-import dt.jdictionary.util.Debug;
+import dt.util.ChineseText;
+import dt.util.Debug;
 
 
 class UiChineseLookup
@@ -44,7 +47,7 @@ class UiChineseLookup
 		final Map<String, List<SimpleLookup>> supplementaries = dictionaryResult.getSupplementaries();
 		supplementaries.keySet().stream()
 			.filter(supplementary -> !supplementaries.get(supplementary).isEmpty())
-			.forEach(supplementary -> tabFutures.put(supplementary, tabCompletable(supplementaries.get(supplementary))));
+			.forEach(supplementary -> tabFutures.put(supplementary, tabCompletable(supplementary, supplementaries.get(supplementary))));
 		tabFutures.values().forEach(CompletableFuture::join);
 		
 		notebook.addTab(DEFINITION_TAB, tabFutures.get(DEFINITION_TAB).join());
@@ -54,8 +57,15 @@ class UiChineseLookup
 		return notebook;
 	}
 	
-	private CompletableFuture<Component> tabCompletable(List<SimpleLookup> lookups)
+	private CompletableFuture<Component> tabCompletable(String supplementaryName, List<SimpleLookup> lookups)
 	{
+		if(supplementaryName.equals(SubstringSearch.LOOKUP_NAME) && UiConstants.getFlag(UiConstants.FLAG_ALWAYS_SINGLE_SUBSTRING))
+		{
+			final List<SimpleLookup> nonSingle = lookups.stream()
+					.filter(result -> ChineseText.trueChars(result.getZh()).size() > 1)
+					.collect(Collectors.toCollection(ArrayList::new));
+			return CompletableFuture.supplyAsync(() -> {return new UiList().render(new ArrayList<SimpleLookup>(nonSingle.isEmpty() ? lookups : nonSingle));});
+		}
 		return CompletableFuture.supplyAsync(() -> {return new UiList().render(new ArrayList<SimpleLookup>(lookups));});
 	}
 

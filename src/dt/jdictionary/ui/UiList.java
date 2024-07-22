@@ -11,8 +11,8 @@ import javax.swing.JScrollPane;
 
 import dt.jdictionary.SimpleLookup;
 import dt.jdictionary.ui.UiUtils.Neighbor;
-import dt.jdictionary.util.Debug;
-import dt.jdictionary.util.ListUtils;
+import dt.util.Debug;
+import dt.util.ListUtils;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;

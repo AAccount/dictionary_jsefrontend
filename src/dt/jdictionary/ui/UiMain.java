@@ -22,17 +22,19 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 
+import dt.cedict.CedictDump;
+import dt.cedict.CedictParser;
 import dt.jdictionary.App;
-import dt.jdictionary.cedict.CedictDump;
-import dt.jdictionary.cedict.CedictParser;
-import dt.jdictionary.listener.ProgressListener;
+import dt.jdictionary.ProgressListener;
+import dt.jdictionary.dumpdb.DumpDBRepo;
+import dt.jdictionary.sqlite.DbRepo;
 import dt.jdictionary.sqlite.dbservice.DbService;
 import dt.jdictionary.sqlite.dbservice.ExceptionPile;
 import dt.jdictionary.sqlite.load.WordBlob;
 import dt.jdictionary.sqlite.load.WordList;
 import dt.jdictionary.ui.UiUtils.Neighbor;
-import dt.jdictionary.util.Debug;
-import dt.jdictionary.util.ChineseText;
+import dt.util.ChineseText;
+import dt.util.Debug;
 
 public class UiMain implements ActionListener, ProgressListener
 {
@@ -66,10 +68,10 @@ public class UiMain implements ActionListener, ProgressListener
 
 	private final HistoryManager<String> historyManager;
 
-	public UiMain() throws ClassNotFoundException, SQLException
+	public UiMain() throws Exception
 	{
 		historyManager = new HistoryManager<>(HISTORY_MANAGER_MAX);
-		db = new DbService();
+		db = new DbService(new DumpDBRepo());
 
 		final int ENTRY_INITIAL_WIDTH = 20;
 		uiEntry = new JTextField(ENTRY_INITIAL_WIDTH);
@@ -265,9 +267,9 @@ public class UiMain implements ActionListener, ProgressListener
 			try
 			{
 				dump = new CedictParser(this).parse(file);
-				db.saveCedictDump(dump, this);
+				db.saveCedictDump(dump.getDictionary(), dump.getMeasureWords(), dump.getSimplifiedChars());
 			}
-			catch(IOException | SQLException e)
+			catch(Exception e)
 			{
 				printException(e);
 			}
@@ -290,11 +292,11 @@ public class UiMain implements ActionListener, ProgressListener
 		final Thread loader = new Thread(() -> {
 			try
 			{
-			final List<String> wordList = new WordList(this).parse(file);
-			final boolean verifyInDictionary = true;
-			db.savePastHits(wordList, verifyInDictionary);
+				final List<String> wordList = new WordList(this).parse(file);
+				final boolean verifyInDictionary = true;
+				db.savePastHits(wordList, verifyInDictionary);
 			}
-			catch(SQLException | IOException e)
+			catch(Exception e)
 			{
 				printException(e);
 			}
@@ -322,13 +324,13 @@ public class UiMain implements ActionListener, ProgressListener
 				final boolean verifyInDictionary = false;
 				db.savePastHits(wordList, verifyInDictionary);
 			}
-			catch(IOException | SQLException e)
-			{
-				printException(e);
-			}
 			catch(ExceptionPile p)
 			{
 				printFirstExceptionOfPile(p);
+			}
+			catch(Exception e)
+			{
+				printException(e);
 			}
 			enableEntry();
 		});
@@ -360,8 +362,9 @@ public class UiMain implements ActionListener, ProgressListener
 		
 		try
 		{
+			final boolean shouldSave = newSearch && UiConstants.getFlag(UiConstants.FLAG_SAVE_HITS);
 			final JComponent result = ChineseText.hasChinese(received) ? 
-					new UiChineseLookup().render(db.lookupChinese(ChineseText.autoSwapChinese(received), newSearch)) : 
+					new UiChineseLookup().render(db.lookupChinese(UiConstants.getFlag(UiConstants.FLAG_AUTOSWAP) ? ChineseText.autoSwapChinese(received) : received, shouldSave)) : 
 					new UiEnglishLookup().render(db.lookupEnglish(received));
 			result.setName(UI_RESULT);
 			result.setBorder(UiConstants.TRACER());

@@ -5,7 +5,7 @@ import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JTextPane;
 
-import dt.jdictionary.util.ChineseText;
+import dt.util.ChineseText;
 
 import java.awt.Font;
 import java.awt.Component;
@@ -61,7 +61,6 @@ class UiUtils
 		textPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
 		textPane.setBorder(UiConstants.TRACER());
 		textPane.setBackground(null);
-		textPane.setEditable(false);
 
 		if(ChineseText.allChinese(text.replaceAll("\\s+|,|，", ""))) // don't let spaces and commas NOT flag the text as all Chinese
 		{
