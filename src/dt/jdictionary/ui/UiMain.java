@@ -271,7 +271,7 @@ public class UiMain implements ActionListener, ProgressListener
 				final List<ChineseSummaryLookup> dictionary = dump.getDictionary().stream()
 						.map(simpleLookup -> Convert.simpleLookupToChineseSummary(simpleLookup))
 						.collect(Collectors.toCollection(ArrayList::new));
-				db.saveCedictDump(dictionary, Convert.flattenCedictMeasures(dump.getMeasureWords()), dump.getSimplifiedChars());
+				db.saveCedictDump(dictionary, Convert.flattenCedictMeasures(dump.getMeasureWords()), dump.getSimplifiedChars(), this);
 			}
 			catch(Exception e)
 			{
