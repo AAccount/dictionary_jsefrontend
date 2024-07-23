@@ -59,7 +59,7 @@ class UiChineseLookup
 	
 	private CompletableFuture<Component> tabCompletable(String supplementaryName, List<ChineseSummaryLookup> lookups)
 	{
-		if(supplementaryName.equals(SubstringSearch.LOOKUP_NAME) && UiConstants.getFlag(UiConstants.FLAG_ALWAYS_SINGLE_SUBSTRING))
+		if(supplementaryName.equals(SubstringSearch.LOOKUP_NAME) && !UiConstants.getFlag(UiConstants.FLAG_ALWAYS_SINGLE_SUBSTRING))
 		{
 			final List<ChineseSummaryLookup> nonSingle = lookups.stream()
 					.filter(result -> ChineseText.trueChars(result.getChinese()).size() > 1)
