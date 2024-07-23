@@ -8,6 +8,7 @@ import dt.jdictionary.ui.UiConstants;
 import dt.jdictionary.ui.UiMain;
 import dt.util.Debug;
 
+// V1.5: 2024-07-22: swap sqlite for glorified in memory key-value based db for common code with android
 // V1.4: 2024-07-09: import known compound words in hopes of getting better English to Chinese results.
 // V1.3: 2024-07-08: make List<SimpleLookup> rank based on past searches if available 
 // V1.2: 2024-01-13: add history drop down menu and cache results
@@ -16,7 +17,7 @@ import dt.util.Debug;
 
 public class App
 {
-	public static final String VERSION = "V1.4";
+	public static final String VERSION = "V1.5";
 	private static final String ARG_TEST = "--test";
 	private static final String ARG_TUI = "--tui";
 	
