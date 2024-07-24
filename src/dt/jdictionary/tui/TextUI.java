@@ -13,12 +13,14 @@ import dt.jdictionary.ChineseDefinitionLookup;
 import dt.jdictionary.ChineseSummaryLookup;
 import dt.jdictionary.ExceptionPile;
 import dt.jdictionary.ExhaustiveChineseLookup;
+import dt.jdictionary.InitListener;
 import dt.jdictionary.dbservice.DbService;
+import dt.jdictionary.dumpdb.DumpDBRepo;
 import dt.jdictionary.ui.UiConstants;
 import dt.util.ChineseText;
 import dt.util.Debug;
 
-public class TextUI
+public class TextUI implements InitListener
 {
 	private static final String CMD_HELP = ".h";
 	private static final String CMD_FLAG = ".f";
@@ -35,7 +37,7 @@ public class TextUI
 	
 	public TextUI() throws IOException, ParseException
 	{
-		db = new DbService();
+		db = new DbService(this);
 	}
 	
 	public void print()
@@ -241,5 +243,18 @@ public class TextUI
 		System.out.println(CMD_NRESULTS + " change the maximum results shown");
 		System.out.println(CMD_QUIT + " exit this program");
 		System.out.println("");
+	}
+
+	@Override
+	public void onProgress(String description, int amount)
+	{
+		if(description.equals(DumpDBRepo.LOADED_ALL_DUMPS))
+		{
+			System.out.println("");
+		}
+		else
+		{
+			System.out.print(description + " " + amount + "\r");
+		}
 	}
 }

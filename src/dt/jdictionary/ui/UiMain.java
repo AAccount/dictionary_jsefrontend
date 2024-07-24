@@ -29,8 +29,10 @@ import dt.cedict.CedictParser;
 import dt.jdictionary.App;
 import dt.jdictionary.ChineseSummaryLookup;
 import dt.jdictionary.ExceptionPile;
+import dt.jdictionary.InitListener;
 import dt.jdictionary.ProgressListener;
 import dt.jdictionary.dbservice.DbService;
+import dt.jdictionary.dumpdb.DumpDBRepo;
 import dt.jdictionary.extload.WordBlob;
 import dt.jdictionary.extload.WordList;
 import dt.jdictionary.ui.UiUtils.Neighbor;
@@ -38,7 +40,7 @@ import dt.jdictionary.uiutil.Convert;
 import dt.util.ChineseText;
 import dt.util.Debug;
 
-public class UiMain implements ActionListener, ProgressListener
+public class UiMain implements ActionListener, ProgressListener, InitListener
 {
 	private static final String UI_ROOT = "root";
 	private static final String UI_ENTRY = "entry";
@@ -58,7 +60,7 @@ public class UiMain implements ActionListener, ProgressListener
 	private static final String JMENU_ITEM_UI_DELIM = ";";
 	private static final String FLAG_MENU_UI_PREFIX = "sjkhfca"; // random string to easily identify flag menu items's names
 
-	private final DbService db;
+	private DbService db;
 	private final JTextField uiEntry;
 	private final JProgressBar progressBar;
 	private final JButton previous;
@@ -70,10 +72,10 @@ public class UiMain implements ActionListener, ProgressListener
 
 	private final HistoryManager<String> historyManager;
 
-	public UiMain() throws IOException, ParseException
+	public UiMain()
 	{
+		Debug.logTimestamp("start constructor");
 		historyManager = new HistoryManager<>(HISTORY_MANAGER_MAX);
-		db = new DbService();
 
 		final int ENTRY_INITIAL_WIDTH = 20;
 		uiEntry = new JTextField(ENTRY_INITIAL_WIDTH);
@@ -83,10 +85,12 @@ public class UiMain implements ActionListener, ProgressListener
 
 		historyMenu = new JMenu("History");
 		flagMenu = new JMenu("Flags");
+		Debug.logTimestamp("finish constructor");
 	}
 
-	public void render()
+	public void render() throws IOException, ParseException
 	{
+		Debug.logTimestamp("start render");
 		final JFrame window = new JFrame("Dictionary " + App.VERSION);
 		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		final JPanel root = new JPanel(new GridBagLayout());
@@ -100,6 +104,10 @@ public class UiMain implements ActionListener, ProgressListener
 		window.setJMenuBar(renderMenu());
 		window.pack();
 		window.setVisible(true);
+		Debug.logTimestamp("start db");
+		
+		db = new DbService(this);
+		Debug.logTimestamp("done db");
 	}
 
 	private JMenuBar renderMenu()
@@ -234,8 +242,6 @@ public class UiMain implements ActionListener, ProgressListener
 				UiConstants.toggleFlag(flagName);
 				renderFlagMenu();
 			}
-
-
 	}
 
 	private void handleHistory(String historicalSearch) 
@@ -453,5 +459,18 @@ public class UiMain implements ActionListener, ProgressListener
 	public void onProgress(String description, long processed, long total)
 	{
 		updateImportProgress(description, processed, total);		
+	}
+
+	@Override
+	public void onProgress(String description, int amount)
+	{
+		if(description.equals(DumpDBRepo.LOADED_ALL_DUMPS))
+		{
+			enableEntry();
+		}
+		else
+		{
+			uiEntry.setText(description + " " + amount);
+		}
 	}
 }
