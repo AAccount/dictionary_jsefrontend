@@ -436,7 +436,7 @@ public class UiMain implements ActionListener, ProgressListener
 		pile.getExceptions().forEach(e -> System.err.println(Debug.printStackTrace(e.getCause().getStackTrace())));
 	}
 
-	private void updateImportProgress(long current, long max)
+	private void updateImportProgress(String description, long current, long max)
 	{
 		if(current == 0)
 		{
@@ -446,12 +446,12 @@ public class UiMain implements ActionListener, ProgressListener
 		
 		final int percentage = (int)(current*100/max);
 		progressBar.setValue(percentage);
-		progressBar.setString(percentage + "%");
+		progressBar.setString(description + " " + percentage + "%");
 	}
 
 	@Override
-	public void onProgress(long processed, long total)
+	public void onProgress(String description, long processed, long total)
 	{
-		updateImportProgress(processed, total);		
+		updateImportProgress(description, processed, total);		
 	}
 }
