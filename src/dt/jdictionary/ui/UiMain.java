@@ -456,13 +456,13 @@ public class UiMain implements ActionListener, ProgressListener, InitListener
 	}
 
 	@Override
-	public void onProgress(String description, long processed, long total)
+	public void onFractionalProgress(String description, long processed, long total)
 	{
 		updateImportProgress(description, processed, total);		
 	}
 
 	@Override
-	public void onProgress(String description, int amount)
+	public void onAnyProgress(String description, int amount)
 	{
 		if(description.equals(DumpDBRepo.LOADED_ALL_DUMPS))
 		{

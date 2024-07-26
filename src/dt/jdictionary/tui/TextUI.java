@@ -246,7 +246,7 @@ public class TextUI implements InitListener
 	}
 
 	@Override
-	public void onProgress(String description, int amount)
+	public void onAnyProgress(String description, int amount)
 	{
 		if(description.equals(DumpDBRepo.LOADED_ALL_DUMPS))
 		{
