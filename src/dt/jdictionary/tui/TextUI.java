@@ -15,7 +15,7 @@ import dt.jdictionary.ExceptionPile;
 import dt.jdictionary.ExhaustiveChineseLookup;
 import dt.jdictionary.InitListener;
 import dt.jdictionary.dbservice.DbService;
-import dt.jdictionary.dumpdb.DumpDBRepo;
+import dt.jdictionary.dumpdb.DumpDbConstants;
 import dt.jdictionary.ui.UiConstants;
 import dt.util.ChineseText;
 import dt.util.Debug;
@@ -248,7 +248,7 @@ public class TextUI implements InitListener
 	@Override
 	public void onAnyProgress(String description, int amount)
 	{
-		if(description.equals(DumpDBRepo.LOADED_ALL_DUMPS))
+		if(description.equals(DumpDbConstants.LOADED_ALL_DUMPS))
 		{
 			System.out.println("");
 		}

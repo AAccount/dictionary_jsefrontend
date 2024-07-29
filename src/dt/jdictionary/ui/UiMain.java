@@ -32,7 +32,7 @@ import dt.jdictionary.ExceptionPile;
 import dt.jdictionary.InitListener;
 import dt.jdictionary.ProgressListener;
 import dt.jdictionary.dbservice.DbService;
-import dt.jdictionary.dumpdb.DumpDBRepo;
+import dt.jdictionary.dumpdb.DumpDbConstants;
 import dt.jdictionary.extload.WordBlob;
 import dt.jdictionary.extload.WordList;
 import dt.jdictionary.ui.UiUtils.Neighbor;
@@ -435,7 +435,7 @@ public class UiMain implements ActionListener, ProgressListener, InitListener
 	{
 		final String title = String.format("First of %s exceptions", pile.getExceptions().size());
 		final String errorMessage = pile.getMessage();
-		final String stackTrace = Debug.printStackTrace(pile.getExceptions().get(0).getCause().getStackTrace());
+		final String stackTrace = Debug.printStackTrace(pile.getExceptions().get(0).getStackTrace());
 		final String popupMessage = errorMessage + "\n" + stackTrace;
 
 		JOptionPane.showMessageDialog(null, popupMessage, title, JOptionPane.ERROR_MESSAGE);
@@ -464,7 +464,7 @@ public class UiMain implements ActionListener, ProgressListener, InitListener
 	@Override
 	public void onAnyProgress(String description, int amount)
 	{
-		if(description.equals(DumpDBRepo.LOADED_ALL_DUMPS))
+		if(description.equals(DumpDbConstants.LOADED_ALL_DUMPS))
 		{
 			enableEntry();
 		}
