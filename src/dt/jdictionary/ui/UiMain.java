@@ -271,9 +271,6 @@ public class UiMain implements ActionListener, ProgressListener
 			try
 			{
 				final CedictDump dump = new CedictParser(this).parse(file);
-				// final List<ChineseSummaryLookup> dictionary = dump.getDictionary().stream()
-				// 		.map(simpleLookup -> Convert.simpleLookupToChineseSummary(simpleLookup))
-				// 		.collect(Collectors.toCollection(ArrayList::new));
 				db.saveCedictDump(dump, this);
 			}
 			catch(Exception e)

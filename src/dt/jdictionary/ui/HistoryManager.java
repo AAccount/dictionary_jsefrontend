@@ -110,6 +110,6 @@ public class HistoryManager<T>
 
 	public List<T> getCompleteHistoryReadonly()
 	{
-		return entries.stream().collect(Collectors.toCollection(ArrayList::new));
+		return entries.stream().toList();
 	}
 }

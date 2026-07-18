@@ -63,7 +63,7 @@ class UiChineseLookup
 		{
 			final List<ChineseSummaryLookup> nonSingle = lookups.stream()
 					.filter(result -> ChineseText.trueChars(result.getChinese()).size() > 1)
-					.collect(Collectors.toCollection(ArrayList::new));
+					.toList();
 			return CompletableFuture.supplyAsync(() -> {return new UiList().render(new ArrayList<ChineseSummaryLookup>(nonSingle.isEmpty() ? lookups : nonSingle));});
 		}
 		return CompletableFuture.supplyAsync(() -> {return new UiList().render(new ArrayList<ChineseSummaryLookup>(lookups));});
