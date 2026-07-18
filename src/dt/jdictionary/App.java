@@ -9,6 +9,7 @@ import dt.jdictionary.ui.UiConstants;
 import dt.jdictionary.ui.UiMain;
 import dt.util.Debug;
 
+// V1.6: 2026-07-17: bring back sqlite backend. The in memory db takes forever to start andconsumes tons of ram. Also fix some cedict issues.
 // V1.5: 2024-07-22: swap sqlite for glorified in memory key-value based db for common code with android
 // V1.4: 2024-07-09: import known compound words in hopes of getting better English to Chinese results.
 // V1.3: 2024-07-08: make List<SimpleLookup> rank based on past searches if available 
@@ -18,7 +19,7 @@ import dt.util.Debug;
 
 public class App
 {
-	public static final String VERSION = "V1.5";
+	public static final String VERSION = "V1.6";
 	private static final String ARG_TEST = "--test";
 	private static final String ARG_TUI = "--tui";
 	
