@@ -1,6 +1,7 @@
 package dt.jdictionary.tui;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.Collections;
 import java.util.List;
@@ -13,14 +14,12 @@ import dt.jdictionary.ChineseDefinitionLookup;
 import dt.jdictionary.ChineseSummaryLookup;
 import dt.jdictionary.ExceptionPile;
 import dt.jdictionary.ExhaustiveChineseLookup;
-import dt.jdictionary.InitListener;
 import dt.jdictionary.dbservice.DbService;
-import dt.jdictionary.dumpdb.DumpDbConstants;
 import dt.jdictionary.ui.UiConstants;
 import dt.util.ChineseText;
 import dt.util.Debug;
 
-public class TextUI implements InitListener
+public class TextUI
 {
 	private static final String CMD_HELP = ".h";
 	private static final String CMD_FLAG = ".f";
@@ -35,9 +34,9 @@ public class TextUI implements InitListener
 	private int nresults = 20;
 	private final DbService db;
 	
-	public TextUI() throws IOException, ParseException
+	public TextUI() throws IOException, ParseException, ClassNotFoundException, SQLException
 	{
-		db = new DbService(this);
+		db = new DbService();
 	}
 	
 	public void print()
@@ -243,18 +242,5 @@ public class TextUI implements InitListener
 		System.out.println(CMD_NRESULTS + " change the maximum results shown");
 		System.out.println(CMD_QUIT + " exit this program");
 		System.out.println("");
-	}
-
-	@Override
-	public void onAnyProgress(String description, int amount)
-	{
-		if(description.equals(DumpDbConstants.LOADED_ALL_DUMPS))
-		{
-			System.out.println("");
-		}
-		else
-		{
-			System.out.print(description + " " + amount + "\r");
-		}
 	}
 }

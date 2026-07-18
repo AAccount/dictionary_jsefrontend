@@ -6,6 +6,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,20 +28,16 @@ import javax.swing.JTextField;
 import dt.cedict.CedictDump;
 import dt.cedict.CedictParser;
 import dt.jdictionary.App;
-import dt.jdictionary.ChineseSummaryLookup;
 import dt.jdictionary.ExceptionPile;
-import dt.jdictionary.InitListener;
 import dt.jdictionary.ProgressListener;
 import dt.jdictionary.dbservice.DbService;
-import dt.jdictionary.dumpdb.DumpDbConstants;
 import dt.jdictionary.extload.WordBlob;
 import dt.jdictionary.extload.WordList;
 import dt.jdictionary.ui.UiUtils.Neighbor;
-import dt.jdictionary.uiutil.Convert;
 import dt.util.ChineseText;
 import dt.util.Debug;
 
-public class UiMain implements ActionListener, ProgressListener, InitListener
+public class UiMain implements ActionListener, ProgressListener
 {
 	private static final String UI_ROOT = "root";
 	private static final String UI_ENTRY = "entry";
@@ -88,7 +85,7 @@ public class UiMain implements ActionListener, ProgressListener, InitListener
 		Debug.logTimestamp("finish constructor");
 	}
 
-	public void render() throws IOException, ParseException
+	public void render() throws ClassNotFoundException, SQLException, IOException, ParseException
 	{
 		Debug.logTimestamp("start render");
 		final JFrame window = new JFrame("Dictionary " + App.VERSION);
@@ -106,7 +103,7 @@ public class UiMain implements ActionListener, ProgressListener, InitListener
 		window.setVisible(true);
 		Debug.logTimestamp("start db");
 		
-		db = new DbService(this);
+		db = new DbService();
 		Debug.logTimestamp("done db");
 	}
 
@@ -274,10 +271,10 @@ public class UiMain implements ActionListener, ProgressListener, InitListener
 			try
 			{
 				final CedictDump dump = new CedictParser(this).parse(file);
-				final List<ChineseSummaryLookup> dictionary = dump.getDictionary().stream()
-						.map(simpleLookup -> Convert.simpleLookupToChineseSummary(simpleLookup))
-						.collect(Collectors.toCollection(ArrayList::new));
-				db.saveCedictDump(dictionary, Convert.flattenCedictMeasures(dump.getMeasureWords()), dump.getSimplifiedChars(), this);
+				// final List<ChineseSummaryLookup> dictionary = dump.getDictionary().stream()
+				// 		.map(simpleLookup -> Convert.simpleLookupToChineseSummary(simpleLookup))
+				// 		.collect(Collectors.toCollection(ArrayList::new));
+				db.saveCedictDump(dump, this);
 			}
 			catch(Exception e)
 			{
@@ -422,6 +419,7 @@ public class UiMain implements ActionListener, ProgressListener, InitListener
 
 	private void printException(Exception e)
 	{
+		System.out.print(e);
 		final String title = e.getClass().getName();
 		final String errorMessage = e.getMessage();
 		final String stackTrace = Debug.printStackTrace(e.getCause().getStackTrace());
@@ -459,18 +457,5 @@ public class UiMain implements ActionListener, ProgressListener, InitListener
 	public void onFractionalProgress(String description, long processed, long total)
 	{
 		updateImportProgress(description, processed, total);		
-	}
-
-	@Override
-	public void onAnyProgress(String description, int amount)
-	{
-		if(description.equals(DumpDbConstants.LOADED_ALL_DUMPS))
-		{
-			enableEntry();
-		}
-		else
-		{
-			uiEntry.setText(description + " " + amount);
-		}
 	}
 }
