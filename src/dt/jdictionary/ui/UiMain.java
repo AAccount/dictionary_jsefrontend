@@ -8,10 +8,8 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -419,11 +417,11 @@ public class UiMain implements ActionListener, ProgressListener
 		System.out.print(e);
 		final String title = e.getClass().getName();
 		final String errorMessage = e.getMessage();
-		final String stackTrace = Debug.printStackTrace(e.getCause().getStackTrace());
+		final String stackTrace = Debug.printStackTrace(e.getStackTrace());
 		final String popupMessage = errorMessage + "\n" + stackTrace;
 
 		JOptionPane.showMessageDialog(null, popupMessage, title, JOptionPane.ERROR_MESSAGE);
-		System.err.println(Debug.printStackTrace(e.getCause().getStackTrace()));
+		System.err.println(Debug.printStackTrace(e.getStackTrace()));
 	}
 
 	private void printFirstExceptionOfPile(ExceptionPile pile)

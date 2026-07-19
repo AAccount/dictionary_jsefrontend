@@ -62,7 +62,7 @@ class UiChineseLookup
 		if(supplementaryName.equals(SubstringSearch.LOOKUP_NAME) && !UiConstants.getFlag(UiConstants.FLAG_ALWAYS_SINGLE_SUBSTRING))
 		{
 			final List<ChineseSummaryLookup> nonSingle = lookups.stream()
-					.filter(result -> result.getChinese().codePointCount(0, result.getChinese().length()) > 1)
+					.filter(result -> ChineseText.trueLength(result.getChinese()) > 1)
 					.toList();
 			return CompletableFuture.supplyAsync(() -> {return new UiList().render(new ArrayList<ChineseSummaryLookup>(nonSingle.isEmpty() ? lookups : nonSingle));});
 		}
