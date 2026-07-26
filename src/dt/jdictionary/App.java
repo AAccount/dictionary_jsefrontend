@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.text.ParseException;
 
-import dt.jdictionary.tui.TextUI;
 import dt.jdictionary.ui.UiConstants;
 import dt.jdictionary.ui.UiMain;
 import dt.util.Debug;
@@ -29,26 +28,23 @@ public class App
 		Debug.logTimestamp("Starting " + VERSION);
 		UiConstants.initFlags();
 		
-		boolean runTui = false;
 		for(final String arg : args)
 		{
 			if(arg.equals(ARG_TEST))
 			{
 				UiConstants.toggleFlag(UiConstants.FLAG_SAVE_HITS); // by default is true
 			}
-			if(arg.equals(ARG_TUI))
-			{
-				runTui = true;
-			}
 		}
 		
-		if(runTui)
-		{
-			new TextUI().print();	
-		}
-		else
-		{
-			new UiMain().render();
-		}
+		javax.swing.SwingUtilities.invokeLater(() -> {
+			try 
+			{
+				new UiMain().render();
+			} 
+			catch (ClassNotFoundException | SQLException | IOException | ParseException e) 
+			{
+				e.printStackTrace();
+			}
+		});
 	}
 }
