@@ -368,10 +368,6 @@ public class UiMain implements ActionListener, ProgressListener
 		final JPanel root = (JPanel)uiEntry.getParent();
 		final String received = uiEntry.getText().trim().toLowerCase();
 		logger.info("Input trimmed, to lower case: " + received);
-
-		UiUtils.removeNamedComponents(root, Set.of(UI_RESULT, UiUtils.UI_FILLER));
-		logger.info("removed ui filler");
-		
 		
 		final boolean shouldSave = newSearch && UiConstants.getFlag(UiConstants.FLAG_SAVE_HITS);
 		if(ChineseText.hasChinese(received))
@@ -437,6 +433,7 @@ public class UiMain implements ActionListener, ProgressListener
 
 	private void renderSearchResult(JPanel root, JComponent result)
 	{
+		UiUtils.removeNamedComponents(root, Set.of(UI_RESULT, UiUtils.UI_FILLER));		
 		result.setName(UI_RESULT);
 		result.setBorder(UiConstants.TRACER());
 	

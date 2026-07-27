@@ -3,7 +3,6 @@ import javax.swing.BorderFactory;
 import javax.swing.border.Border;
 import java.awt.Color;
 import java.awt.Insets;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
