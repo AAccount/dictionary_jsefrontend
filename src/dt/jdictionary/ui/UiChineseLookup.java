@@ -1,12 +1,12 @@
 package dt.jdictionary.ui;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.awt.GridBagLayout;
-import java.awt.Component;
 import java.awt.GridBagConstraints;
 
 import javax.swing.JComponent;
@@ -33,36 +33,36 @@ class UiChineseLookup
 
 	public UiChineseLookup() {}
 	
-	public JComponent render(ExhaustiveChineseLookup dictionaryResult)
+	public JComponent render(ExhaustiveChineseLookup dictionaryResult, ExecutorService executor)
 	{
 		// Return the raw notebook. Don't prepackage it in a panel.
 		final JTabbedPane notebook = new JTabbedPane();
-		final Map<String, CompletableFuture<Component>> tabFutures= new HashMap<>();
-	
 		notebook.setBorder(UiConstants.TRACER());
 
+		final Map<String, CompletableFuture<JComponent>> tabFutures= new LinkedHashMap<>();
 		tabFutures.put(DEFINITION_TAB, CompletableFuture.supplyAsync(() -> {return this.renderZhDefinition(dictionaryResult.getDefinition());}));
 		
 		final Map<String, List<ChineseSummaryLookup>> supplementaries = dictionaryResult.getSupplementaries();
 		supplementaries.keySet().stream()
 			.filter(supplementary -> !supplementaries.get(supplementary).isEmpty())
 			.forEach(supplementary -> tabFutures.put(supplementary, tabCompletable(supplementary, supplementaries.get(supplementary))));
-		tabFutures.values().forEach(CompletableFuture::join);
 		
-		notebook.addTab(DEFINITION_TAB, tabFutures.get(DEFINITION_TAB).join());
-		supplementaries.keySet().stream()
-			.filter(supplementary -> !supplementaries.get(supplementary).isEmpty())
-			.forEach(supplementary -> notebook.addTab(supplementary, tabFutures.get(supplementary).join()));
+		final CompletableFuture<Void> allFinished = CompletableFuture.allOf(tabFutures.values().toArray(new CompletableFuture[0]));
+		allFinished.join();
+		
+		tabFutures.keySet().stream()
+			.forEach(tabLabel -> notebook.addTab(tabLabel, tabFutures.get(tabLabel).join()));
+
 		return notebook;
 	}
 	
-	private CompletableFuture<Component> tabCompletable(String supplementaryName, List<ChineseSummaryLookup> lookups)
+	private CompletableFuture<JComponent> tabCompletable(String supplementaryName, List<ChineseSummaryLookup> lookups)
 	{
 		if(supplementaryName.equals(SubstringSearch.LOOKUP_NAME) && !UiConstants.getFlag(UiConstants.FLAG_ALWAYS_SINGLE_SUBSTRING))
 		{
 			final List<ChineseSummaryLookup> nonSingle = lookups.stream()
-					.filter(result -> ChineseText.trueLength(result.getChinese()) > 1)
-					.toList();
+				.filter(result -> ChineseText.trueLength(result.getChinese()) > 1)
+				.toList();
 			return CompletableFuture.supplyAsync(() -> {return new UiList().render(new ArrayList<ChineseSummaryLookup>(nonSingle.isEmpty() ? lookups : nonSingle));});
 		}
 		return CompletableFuture.supplyAsync(() -> {return new UiList().render(new ArrayList<ChineseSummaryLookup>(lookups));});

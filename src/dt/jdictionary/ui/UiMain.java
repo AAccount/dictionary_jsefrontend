@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -59,6 +61,7 @@ public class UiMain implements ActionListener, ProgressListener
 	private static final String JMENU_ITEM_UI_DELIM = ";";
 	private static final String FLAG_MENU_UI_PREFIX = "sjkhfca"; // random string to easily identify flag menu items's names
 
+	private final ExecutorService renderExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 	private DbService db;
 	private final JTextField uiEntry;
 	private final JProgressBar progressBar;
@@ -385,7 +388,7 @@ public class UiMain implements ActionListener, ProgressListener
 				{
 					try 
 					{
-						renderSearchResult(root, new UiChineseLookup().render(get()));
+						renderSearchResult(root, new UiChineseLookup().render(get(), renderExecutor));
 					} 
 					catch (InterruptedException | ExecutionException e) {
 						UiUtils.printException(e);
@@ -409,7 +412,7 @@ public class UiMain implements ActionListener, ProgressListener
 				{
 					try 
 					{
-						renderSearchResult(root, new UiEnglishLookup().render(get()));
+						renderSearchResult(root, new UiEnglishLookup().render(get(), renderExecutor));
 					} 
 					catch (InterruptedException | ExecutionException e) 
 					{
