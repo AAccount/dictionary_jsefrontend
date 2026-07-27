@@ -9,7 +9,9 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -18,15 +20,17 @@ import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 
 import dt.cedict.CedictDump;
 import dt.cedict.CedictParser;
 import dt.jdictionary.App;
-import dt.jdictionary.ExceptionPile;
+import dt.jdictionary.ChineseSummaryLookup;
+import dt.jdictionary.ExhaustiveChineseLookup;
 import dt.jdictionary.ProgressListener;
 import dt.jdictionary.dbservice.DbService;
 import dt.jdictionary.extload.WordBlob;
@@ -264,20 +268,20 @@ public class UiMain implements ActionListener, ProgressListener
 		final File file = fc.getSelectedFile();
 		disableEntry("Importing " + file.getName());
 
-		final Thread importer = new Thread(() -> { 
-			
-			try
-			{
-				final CedictDump dump = new CedictParser(this).parse(file);
-				db.saveCedictDump(dump, this);
-			}
-			catch(Exception e)
-			{
-				printException(e);
-			}
-			enableEntry();
-		});
-		importer.start();	
+		try
+		{
+			final CedictDump dump = new CedictParser(this).parse(file);
+			db.saveCedictDump(dump, this)
+				.exceptionally(ex -> {
+					UiUtils.printException(ex);
+					return null;
+				})
+				.thenRunAsync(() -> {enableEntry();}, SwingUtilities::invokeLater);
+		}
+		catch(Exception e)
+		{
+			UiUtils.printException(e);
+		}
 	}
 	
 	private void handleMenuSqliteLoadList()
@@ -291,20 +295,23 @@ public class UiMain implements ActionListener, ProgressListener
 
 		final File file = fc.getSelectedFile();
 		disableEntry("Loading past known words from: " + file.getName());
-		final Thread loader = new Thread(() -> {
 			try
 			{
 				final List<String> wordList = new WordList(this).parse(file);
 				final boolean verifyInDictionary = true;
-				db.savePastHits(wordList, verifyInDictionary);
+				db.savePastHits(wordList, verifyInDictionary)
+					.exceptionally(x -> {
+						UiUtils.printException(x);
+						return null;
+					})
+					.thenRunAsync(() -> {enableEntry();}, SwingUtilities::invokeLater);
 			}
 			catch(Exception e)
 			{
-				printException(e);
+				UiUtils.printException(e);
 			}
 			enableEntry();
-		});
-		loader.start();	
+
 	}
 	
 	private void handleMenuSqliteLoadBlob()
@@ -318,25 +325,24 @@ public class UiMain implements ActionListener, ProgressListener
 
 		final File file = fc.getSelectedFile();
 		disableEntry("Loading known words from blob: " + file.getName());
-		final Thread loader = new Thread(() -> {
 			try
 			{
 				final List<String> sentences = new WordBlob(this).parse(file);
 				final List<String> wordList = db.extractCompoundWords(sentences);
 				final boolean verifyInDictionary = false;
-				db.savePastHits(wordList, verifyInDictionary);
-			}
-			catch(ExceptionPile p)
-			{
-				printFirstExceptionOfPile(p);
+				db.savePastHits(wordList, verifyInDictionary)
+					.exceptionally(x -> {
+						UiUtils.printException(x);
+						return null;
+					})
+					.thenRunAsync(() -> {enableEntry();}, SwingUtilities::invokeLater);
 			}
 			catch(Exception e)
 			{
-				printException(e);
+				UiUtils.printException(e);
 			}
 			enableEntry();
-		});
-		loader.start();	
+
 	}
 	
 	private void disableEntry(String message)
@@ -362,28 +368,58 @@ public class UiMain implements ActionListener, ProgressListener
 		UiUtils.removeNamedComponents(root, Set.of(UI_RESULT, UiUtils.UI_FILLER));
 		Debug.logTimestamp("removed ui filler");
 		
-		try
+		
+		final boolean shouldSave = newSearch && UiConstants.getFlag(UiConstants.FLAG_SAVE_HITS);
+		if(ChineseText.hasChinese(received))
 		{
-			final boolean shouldSave = newSearch && UiConstants.getFlag(UiConstants.FLAG_SAVE_HITS);
-			final JComponent result = ChineseText.hasChinese(received) ? 
-					new UiChineseLookup().render(db.lookupChinese(UiConstants.getFlag(UiConstants.FLAG_AUTOSWAP) ? ChineseText.autoSwapChinese(received) : received, shouldSave)) : 
-					new UiEnglishLookup().render(db.lookupEnglish(received));
-			result.setName(UI_RESULT);
-			result.setBorder(UiConstants.TRACER());
-	
-			final GridBagConstraints resultConstraints = UiUtils.makeGridConstraint(UI_ROW_RESULT, UI_MAIN_COLUMN, true, true, UiUtils.makeInsets(Set.of(Neighbor.TOP)));
-			resultConstraints.gridwidth = TOTAL_COLUMNS;
-			root.add(result, resultConstraints);
+			final SwingWorker<ExhaustiveChineseLookup, Void> dbworker = new SwingWorker<>() {
+
+				@Override
+				protected ExhaustiveChineseLookup doInBackground() throws Exception 
+				{
+					return db.lookupChinese(UiConstants.getFlag(UiConstants.FLAG_AUTOSWAP) ? ChineseText.autoSwapChinese(received) : received, shouldSave);
+				}
+
+				@Override
+				protected void done()
+				{
+					try 
+					{
+						renderSearchResult(root, new UiChineseLookup().render(get()));
+					} 
+					catch (InterruptedException | ExecutionException e) {
+						UiUtils.printException(e);
+					}
+				}
+			};
+			dbworker.execute();
 		}
-		catch(ExceptionPile e)
+		else
 		{
-			printFirstExceptionOfPile(e);
+			final SwingWorker<Map<String, List<ChineseSummaryLookup>>, Void> dbworker = new SwingWorker<>() {
+
+				@Override
+				protected Map<String, List<ChineseSummaryLookup>> doInBackground() throws Exception 
+				{
+					return db.lookupEnglish(received);
+				}
+
+				@Override
+				protected void done()
+				{
+					try 
+					{
+						renderSearchResult(root, new UiEnglishLookup().render(get()));
+					} 
+					catch (InterruptedException | ExecutionException e) 
+					{
+						UiUtils.printException(e);
+					}
+				}
+			};
+			dbworker.execute();;
 		}
-		catch(Exception e)
-		{
-			printException(e);
-			e.printStackTrace();
-		}
+
 		if(newSearch)
 		{
 			historyManager.addSingleEntry(received);
@@ -393,6 +429,16 @@ public class UiMain implements ActionListener, ProgressListener
 
 		root.revalidate();
 		root.repaint();
+	}
+
+	private void renderSearchResult(JPanel root, JComponent result)
+	{
+		result.setName(UI_RESULT);
+		result.setBorder(UiConstants.TRACER());
+	
+		final GridBagConstraints resultConstraints = UiUtils.makeGridConstraint(UI_ROW_RESULT, UI_MAIN_COLUMN, true, true, UiUtils.makeInsets(Set.of(Neighbor.TOP)));
+		resultConstraints.gridwidth = TOTAL_COLUMNS;
+		root.add(result, resultConstraints);
 	}
 
 	private void renderHistoryMenu()
@@ -412,28 +458,16 @@ public class UiMain implements ActionListener, ProgressListener
 		}
 	}
 
-	private void printException(Exception e)
-	{
-		System.out.print(e);
-		final String title = e.getClass().getName();
-		final String errorMessage = e.getMessage();
-		final String stackTrace = Debug.printStackTrace(e.getStackTrace());
-		final String popupMessage = errorMessage + "\n" + stackTrace;
+	// private void printFirstExceptionOfPile(ExceptionPile pile)
+	// {
+	// 	final String title = String.format("First of %s exceptions", pile.getExceptions().size());
+	// 	final String errorMessage = pile.getMessage();
+	// 	final String stackTrace = Debug.printStackTrace(pile.getExceptions().get(0).getStackTrace());
+	// 	final String popupMessage = errorMessage + "\n" + stackTrace;
 
-		JOptionPane.showMessageDialog(null, popupMessage, title, JOptionPane.ERROR_MESSAGE);
-		System.err.println(Debug.printStackTrace(e.getStackTrace()));
-	}
-
-	private void printFirstExceptionOfPile(ExceptionPile pile)
-	{
-		final String title = String.format("First of %s exceptions", pile.getExceptions().size());
-		final String errorMessage = pile.getMessage();
-		final String stackTrace = Debug.printStackTrace(pile.getExceptions().get(0).getStackTrace());
-		final String popupMessage = errorMessage + "\n" + stackTrace;
-
-		JOptionPane.showMessageDialog(null, popupMessage, title, JOptionPane.ERROR_MESSAGE);
-		pile.getExceptions().forEach(e -> System.err.println(Debug.printStackTrace(e.getCause().getStackTrace())));
-	}
+	// 	JOptionPane.showMessageDialog(null, popupMessage, title, JOptionPane.ERROR_MESSAGE);
+	// 	pile.getExceptions().forEach(e -> System.err.println(Debug.printStackTrace(e.getCause().getStackTrace())));
+	// }
 
 	private void updateImportProgress(String description, long current, long max)
 	{

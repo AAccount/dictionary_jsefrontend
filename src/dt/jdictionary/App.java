@@ -20,7 +20,6 @@ public class App
 {
 	public static final String VERSION = "V1.6";
 	private static final String ARG_TEST = "--test";
-	private static final String ARG_TUI = "--tui";
 	
 	public static void main(String[] args) throws IOException, ParseException, ClassNotFoundException, SQLException
 	{

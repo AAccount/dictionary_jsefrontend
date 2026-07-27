@@ -19,6 +19,8 @@ public class UiEnglishLookup
 		final JTabbedPane notebook = new JTabbedPane();
 		notebook.setBorder(UiConstants.TRACER());
 
+		
+
 		final Map<String, CompletableFuture<Component>> tabFutures= new HashMap<>();
 		useableCombinations.keySet().forEach(combo -> tabFutures.put(combo, CompletableFuture.supplyAsync(() -> {return new UiList().render(useableCombinations.get(combo));})));
 		tabFutures.values().forEach(CompletableFuture::join);
