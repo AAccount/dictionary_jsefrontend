@@ -17,7 +17,13 @@ public class UiConstants
 	public static final String FLAG_AUTOSWAP = "AUTO_SWAP";
 	public static final String FLAG_ALWAYS_SINGLE_SUBSTRING = "ALWAYS_SINGLE_SUBSTRING";
 	public static final String FLAG_SAVE_HITS = "SAVE_HITS";
-	private static final Map<String, Boolean> flagMap = new HashMap<String, Boolean>();
+	private static final Map<String, Boolean> flagMap = Map.ofEntries(
+		Map.entry(FLAG_TRACER, false),
+		Map.entry(FLAG_RANK, false),
+		Map.entry(FLAG_AUTOSWAP, true),
+		Map.entry(FLAG_ALWAYS_SINGLE_SUBSTRING, false),
+		Map.entry(FLAG_SAVE_HITS, true)
+	);
 
 
 	//DO NOT USE ON BUTTONS Causes weird rendering.
@@ -30,15 +36,6 @@ public class UiConstants
 	public static final int GRIDBAG_AUTOEXPAND = 1; //anything > 0 will work
 
 	public static final Insets nopadding = new Insets(0,0,0,0);
-	
-	public static void initFlags()
-	{
-		flagMap.put(FLAG_TRACER, false);
-		flagMap.put(FLAG_RANK, false);
-		flagMap.put(FLAG_AUTOSWAP, true);
-		flagMap.put(FLAG_ALWAYS_SINGLE_SUBSTRING, false);
-		flagMap.put(FLAG_SAVE_HITS, true);
-	}
 	
 	public static void toggleFlag(String flag)
 	{

@@ -2,6 +2,7 @@ package dt.jdictionary.ui;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -11,7 +12,6 @@ import javax.swing.JScrollPane;
 
 import dt.jdictionary.ChineseSummaryLookup;
 import dt.jdictionary.ui.UiUtils.Neighbor;
-import dt.util.Debug;
 import dt.util.ListUtils;
 
 import java.awt.GridBagConstraints;
@@ -21,6 +21,8 @@ import java.awt.event.ActionListener;
 
 class UiList implements ActionListener
 {
+	private static final Logger logger = Logger.getLogger(UiList.class.getName());
+
 	private final int UI_COLUMN_RESULTS= 0;
 	private final int UI_COLUMN_BACK= 0;
 	private final int UI_COLUMN_FORWARD= 1;
@@ -54,13 +56,13 @@ class UiList implements ActionListener
 
 	public JComponent render(List<ChineseSummaryLookup> dbResults)
 	{
-		Debug.logTimestamp("start ui list");
+		logger.info("start ui list");
 		Collections.sort(dbResults, Collections.reverseOrder());
 		pages.addAllEntries(ListUtils.subdivideList(dbResults, PAGE_SIZE));
 
 		renderPageNavigation();
 		renderPageOfResults(pages.setIndex(0));
-		Debug.logTimestamp("stop ui list");
+		logger.info("stop ui list");
 		return root;
 	}
 
@@ -133,7 +135,7 @@ class UiList implements ActionListener
 		final JComponent source = (JComponent)arg0.getSource();
 		if(!List.of(forwardBtn, previousBtn).contains(source))
 		{
-			Debug.logTimestamp("actionPerformed not from forwardBtn or previousBtn " + source);
+			logger.info("actionPerformed not from forwardBtn or previousBtn " + source);
 			return;
 		}
 

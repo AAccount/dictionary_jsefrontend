@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -39,10 +40,10 @@ import dt.jdictionary.extload.WordBlob;
 import dt.jdictionary.extload.WordList;
 import dt.jdictionary.ui.UiUtils.Neighbor;
 import dt.util.ChineseText;
-import dt.util.Debug;
 
 public class UiMain implements ActionListener, ProgressListener
 {
+	private static final Logger logger = Logger.getLogger(UiMain.class.getName());
 	private static final String UI_ROOT = "root";
 	private static final String UI_ENTRY = "entry";
 	private static final String UI_RESULT = "result";
@@ -57,9 +58,9 @@ public class UiMain implements ActionListener, ProgressListener
 	private static final int UI_MAIN_COLUMN = 0;
 	private static final int TOTAL_COLUMNS = 3;
 	private static final int HISTORY_MANAGER_MAX = 10;
-	private static final String HISTORY_MENU_UI_PREFIX = "kmFU2bYk"; // random string to easily identify history menu items's names
+	private static final String HISTORY_MENU_UI_PREFIX = "menu history;";
 	private static final String JMENU_ITEM_UI_DELIM = ";";
-	private static final String FLAG_MENU_UI_PREFIX = "sjkhfca"; // random string to easily identify flag menu items's names
+	private static final String FLAG_MENU_UI_PREFIX = "menu flag;";
 
 	private final ExecutorService renderExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 	private DbService db;
@@ -76,7 +77,7 @@ public class UiMain implements ActionListener, ProgressListener
 
 	public UiMain()
 	{
-		Debug.logTimestamp("start constructor");
+		logger.info("start constructor");
 		historyManager = new HistoryManager<>(HISTORY_MANAGER_MAX);
 
 		final int ENTRY_INITIAL_WIDTH = 20;
@@ -87,12 +88,12 @@ public class UiMain implements ActionListener, ProgressListener
 
 		historyMenu = new JMenu("History");
 		flagMenu = new JMenu("Flags");
-		Debug.logTimestamp("finish constructor");
+		logger.info("finish constructor");
 	}
 
 	public void render() throws ClassNotFoundException, SQLException, IOException, ParseException
 	{
-		Debug.logTimestamp("start render");
+		logger.info("start render");
 		final JFrame window = new JFrame("Dictionary " + App.VERSION);
 		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		final JPanel root = new JPanel(new GridBagLayout());
@@ -106,10 +107,10 @@ public class UiMain implements ActionListener, ProgressListener
 		window.setJMenuBar(renderMenu());
 		window.pack();
 		window.setVisible(true);
-		Debug.logTimestamp("start db");
+		logger.info("start db");
 		
 		db = new DbService();
-		Debug.logTimestamp("done db");
+		logger.info("done db");
 	}
 
 	private JMenuBar renderMenu()
@@ -210,7 +211,7 @@ public class UiMain implements ActionListener, ProgressListener
 			switch(sourceName)
 			{
 				case UI_ENTRY:
-					handleTextEntry((JTextField)source, true);
+					handleTextEntry(true);
 					return;
 				case MENU_SQLITE_INIT:
 					handleMenuSqliteInit();
@@ -229,7 +230,7 @@ public class UiMain implements ActionListener, ProgressListener
 					return;
 			}
 
-			if(sourceName.substring(0, HISTORY_MENU_UI_PREFIX.length()).equals(HISTORY_MENU_UI_PREFIX))
+			if(sourceName.startsWith(HISTORY_MENU_UI_PREFIX))
 			{
 				final String[] sourceNameParts = sourceName.split(JMENU_ITEM_UI_DELIM);
 				final String entry = sourceNameParts[1];
@@ -238,7 +239,7 @@ public class UiMain implements ActionListener, ProgressListener
 				handleHistory(entry);
 			}
 			
-			if(sourceName.substring(0, FLAG_MENU_UI_PREFIX.length()).equals(FLAG_MENU_UI_PREFIX))
+			if(sourceName.startsWith(FLAG_MENU_UI_PREFIX))
 			{
 				final String flagName = sourceName.substring(FLAG_MENU_UI_PREFIX.length()+JMENU_ITEM_UI_DELIM.length());
 				UiConstants.toggleFlag(flagName);
@@ -250,7 +251,7 @@ public class UiMain implements ActionListener, ProgressListener
 	{
 		toggleHistoryButtons();
 		uiEntry.setText(historicalSearch);
-		handleTextEntry(uiEntry, false);
+		handleTextEntry(false);
 	}
 
 	private void toggleHistoryButtons()
@@ -362,14 +363,14 @@ public class UiMain implements ActionListener, ProgressListener
 		uiEntry.setEditable(true);
 	}
 
-	private void handleTextEntry(JTextField entry, boolean newSearch)
+	private void handleTextEntry(boolean newSearch)
 	{
-		final JPanel root = (JPanel)entry.getParent();
-		final String received = entry.getText().trim().toLowerCase();
-		Debug.logTimestamp("Input trimmed, to lower case: " + received);
+		final JPanel root = (JPanel)uiEntry.getParent();
+		final String received = uiEntry.getText().trim().toLowerCase();
+		logger.info("Input trimmed, to lower case: " + received);
 
 		UiUtils.removeNamedComponents(root, Set.of(UI_RESULT, UiUtils.UI_FILLER));
-		Debug.logTimestamp("removed ui filler");
+		logger.info("removed ui filler");
 		
 		
 		final boolean shouldSave = newSearch && UiConstants.getFlag(UiConstants.FLAG_SAVE_HITS);
@@ -460,17 +461,6 @@ public class UiMain implements ActionListener, ProgressListener
 			counter++;
 		}
 	}
-
-	// private void printFirstExceptionOfPile(ExceptionPile pile)
-	// {
-	// 	final String title = String.format("First of %s exceptions", pile.getExceptions().size());
-	// 	final String errorMessage = pile.getMessage();
-	// 	final String stackTrace = Debug.printStackTrace(pile.getExceptions().get(0).getStackTrace());
-	// 	final String popupMessage = errorMessage + "\n" + stackTrace;
-
-	// 	JOptionPane.showMessageDialog(null, popupMessage, title, JOptionPane.ERROR_MESSAGE);
-	// 	pile.getExceptions().forEach(e -> System.err.println(Debug.printStackTrace(e.getCause().getStackTrace())));
-	// }
 
 	private void updateImportProgress(String description, long current, long max)
 	{

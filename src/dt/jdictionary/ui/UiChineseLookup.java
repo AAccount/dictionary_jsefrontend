@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.logging.Logger;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 
@@ -20,11 +21,12 @@ import dt.jdictionary.ExhaustiveChineseLookup;
 import dt.jdictionary.dbservice.alternative.SubstringSearch;
 import dt.jdictionary.ui.UiUtils.Neighbor;
 import dt.util.ChineseText;
-import dt.util.Debug;
 
 
 class UiChineseLookup
 {
+	private static final Logger logger = Logger.getLogger(UiChineseLookup.class.getName());
+
 	private final String DEFINITION_TAB = "Definition";
 	private final int COL_LABEL = 0;
 	private final int COL_VALUE = 1;
@@ -70,7 +72,7 @@ class UiChineseLookup
 
 	private JPanel renderZhDefinition(ChineseDefinitionLookup dictionaryResult)
 	{
-		Debug.logTimestamp("start single char");
+		logger.info("start single char");
 
 		final JPanel result = new JPanel(new GridBagLayout());
 		result.setBorder(UiConstants.TRACER());
@@ -79,7 +81,7 @@ class UiChineseLookup
 		renderZhCharBig(dictionaryResult.getZh(), result);
 		UiUtils.renderFiller(result, rowsRendered+1);
 
-		Debug.logTimestamp("end single char");
+		logger.info("end single char");
 		return result;
 	}
 
