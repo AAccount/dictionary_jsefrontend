@@ -12,6 +12,7 @@ import java.util.logging.SimpleFormatter;
 import dt.jdictionary.ui.UiMain;
 import dt.util.LogUtils;
 
+// V1.7: 2026-07-27: turn simplified input back into possible traditionals
 // V1.6: 2026-07-17: bring back sqlite backend. The in memory db takes forever to start and consumes tons of ram. Also fix some cedict issues.
 // V1.5: 2024-07-22: swap sqlite for glorified in memory key-value based db for common code with android
 // V1.4: 2024-07-09: import known compound words in hopes of getting better English to Chinese results.
@@ -22,7 +23,7 @@ import dt.util.LogUtils;
 
 public class App
 {
-	public static final String VERSION = "V1.6";
+	public static final String VERSION = "V1.7";
 	
 	public static void main(String[] args) throws IOException, ParseException, ClassNotFoundException, SQLException
 	{
