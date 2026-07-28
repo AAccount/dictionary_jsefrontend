@@ -36,7 +36,7 @@ public class App
 			{
 				new UiMain().render();
 			} 
-			catch (ClassNotFoundException | SQLException | IOException | ParseException e) 
+			catch (Exception e) 
 			{
 				logger.severe(LogUtils.printStackTrace(e));
 			}

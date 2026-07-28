@@ -276,7 +276,7 @@ public class UiMain implements ActionListener, ProgressListener
 			final CedictDump dump = new CedictParser(this).parse(file);
 			db.saveCedictDump(dump, this)
 				.exceptionally(ex -> {
-					logger.severe(LogUtils.printStackTrace(ex));
+					logger.severe("problems parsing cedict " + file.getAbsoluteFile() + "\n" + LogUtils.printStackTrace(ex.getCause()));
 					UiUtils.printException(ex);
 					return null;
 				})
@@ -306,7 +306,7 @@ public class UiMain implements ActionListener, ProgressListener
 				final boolean verifyInDictionary = true;
 				db.savePastHits(wordList, verifyInDictionary)
 					.exceptionally(x -> {
-						logger.severe(LogUtils.printStackTrace(x));
+						logger.severe("could not import past hits " + file.getAbsolutePath() + "\n" + LogUtils.printStackTrace(x.getCause()));
 						UiUtils.printException(x);
 						return null;
 					})
@@ -339,7 +339,7 @@ public class UiMain implements ActionListener, ProgressListener
 				final boolean verifyInDictionary = false;
 				db.savePastHits(wordList, verifyInDictionary)
 					.exceptionally(x -> {
-						logger.severe(LogUtils.printStackTrace(x));
+						logger.severe("could not import past hits " + file.getAbsolutePath() + "\n" + LogUtils.printStackTrace(x.getCause()));
 						UiUtils.printException(x);
 						return null;
 					})
@@ -392,7 +392,7 @@ public class UiMain implements ActionListener, ProgressListener
 					{
 						renderSearchResult(root, new UiChineseLookup().render(get(), renderExecutor));
 					} 
-					catch (InterruptedException | ExecutionException e) 
+					catch (Exception e) 
 					{
 						logger.severe("problems looking up chinese\n" + LogUtils.printStackTrace(e));
 						UiUtils.printException(e);
@@ -418,7 +418,7 @@ public class UiMain implements ActionListener, ProgressListener
 					{
 						renderSearchResult(root, new UiEnglishLookup().render(get(), renderExecutor));
 					} 
-					catch (InterruptedException | ExecutionException e) 
+					catch (Exception e) 
 					{
 						logger.severe("problems looking up english\n" + LogUtils.printStackTrace(e));
 						UiUtils.printException(e);
