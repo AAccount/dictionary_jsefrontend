@@ -7,12 +7,16 @@ import javax.swing.JOptionPane;
 import javax.swing.JTextPane;
 
 import dt.util.ChineseText;
+import dt.util.LogUtils;
 
 import java.awt.Font;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
+import java.util.Arrays;
 import java.util.Set;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 class UiUtils 
 {
@@ -113,26 +117,8 @@ class UiUtils
 	
 	public static void printException(Throwable e)
 	{
-		e.printStackTrace();
 		final String title = e.getClass().getName();
-		final String errorMessage = e.getMessage();
-		final String stackTrace = printStackTrace(errorMessage, e.getStackTrace());
-
+		final String stackTrace = LogUtils.printStackTrace(e);
 		JOptionPane.showMessageDialog(null, stackTrace, title, JOptionPane.ERROR_MESSAGE);
-		System.err.println(stackTrace);
-	}
-
-	private static String printStackTrace(String error, StackTraceElement[] stack)
-	{
-		final StringBuilder sb = new StringBuilder();
-		sb.append(error).append('\n');
-		for(StackTraceElement element : stack)
-		{
-			if(element.getClassName().startsWith("dt.asm"))
-			{
-				sb.append(element.toString()).append('\n');
-			}
-		}
-		return sb.toString();
 	}
 }

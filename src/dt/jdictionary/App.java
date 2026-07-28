@@ -10,6 +10,7 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
 import dt.jdictionary.ui.UiMain;
+import dt.util.LogUtils;
 
 // V1.6: 2026-07-17: bring back sqlite backend. The in memory db takes forever to start and consumes tons of ram. Also fix some cedict issues.
 // V1.5: 2024-07-22: swap sqlite for glorified in memory key-value based db for common code with android
@@ -27,7 +28,8 @@ public class App
 	{
 		System.setProperty("apple.laf.useScreenMenuBar", "true");
 		setupLogger();
-		Logger.getLogger(App.class.getName()).info("Starting " + VERSION);
+		final Logger logger = Logger.getLogger(App.class.getName());
+		logger.info("Starting " + VERSION);
 		
 		javax.swing.SwingUtilities.invokeLater(() -> {
 			try 
@@ -36,14 +38,14 @@ public class App
 			} 
 			catch (ClassNotFoundException | SQLException | IOException | ParseException e) 
 			{
-				e.printStackTrace();
+				logger.severe(LogUtils.printStackTrace(e));
 			}
 		});
 	}
 
 	private static void setupLogger()
 	{
-		System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tF %1$tT %5$s%6$s%n");
+		System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tF %1$tT.%1$tL [%4$-7s] %2$s - %5$s%n");
 		try 
 		{
 			final Logger rootLogger = Logger.getLogger("");

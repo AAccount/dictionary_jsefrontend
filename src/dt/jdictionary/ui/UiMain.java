@@ -40,6 +40,7 @@ import dt.jdictionary.extload.WordBlob;
 import dt.jdictionary.extload.WordList;
 import dt.jdictionary.ui.UiUtils.Neighbor;
 import dt.util.ChineseText;
+import dt.util.LogUtils;
 
 public class UiMain implements ActionListener, ProgressListener
 {
@@ -107,10 +108,9 @@ public class UiMain implements ActionListener, ProgressListener
 		window.setJMenuBar(renderMenu());
 		window.pack();
 		window.setVisible(true);
-		logger.info("start db");
 		
 		db = new DbService();
-		logger.info("done db");
+		logger.info("done render");
 	}
 
 	private JMenuBar renderMenu()
@@ -205,46 +205,46 @@ public class UiMain implements ActionListener, ProgressListener
 	@Override
 	public void actionPerformed(ActionEvent arg0)
 	{
+		final JComponent source = (JComponent)arg0.getSource();
+		final String sourceName = source.getName();
+		logger.info("action received from " + sourceName);
+		switch(sourceName)
+		{
+			case UI_ENTRY:
+				handleTextEntry(true);
+				return;
+			case MENU_SQLITE_INIT:
+				handleMenuSqliteInit();
+				return;
+			case MENU_SQLITE_LOAD_LIST:
+				handleMenuSqliteLoadList();
+				return;
+			case MENU_SQLITE_LOAD_BLOB:
+				handleMenuSqliteLoadBlob();
+				return;
+			case UI_PREV:
+				handleHistory(historyManager.goBack());
+				return;
+			case UI_FWD:
+				handleHistory(historyManager.goFwd());
+				return;
+		}
 
-			final JComponent source = (JComponent)arg0.getSource();
-			final String sourceName = source.getName();
-			switch(sourceName)
-			{
-				case UI_ENTRY:
-					handleTextEntry(true);
-					return;
-				case MENU_SQLITE_INIT:
-					handleMenuSqliteInit();
-					return;
-				case MENU_SQLITE_LOAD_LIST:
-					handleMenuSqliteLoadList();
-					return;
-				case MENU_SQLITE_LOAD_BLOB:
-					handleMenuSqliteLoadBlob();
-					return;
-				case UI_PREV:
-					handleHistory(historyManager.goBack());
-					return;
-				case UI_FWD:
-					handleHistory(historyManager.goFwd());
-					return;
-			}
-
-			if(sourceName.startsWith(HISTORY_MENU_UI_PREFIX))
-			{
-				final String[] sourceNameParts = sourceName.split(JMENU_ITEM_UI_DELIM);
-				final String entry = sourceNameParts[1];
-				final int historyIndex = Integer.parseInt(sourceNameParts[2]);
-				historyManager.setIndex(historyIndex);
-				handleHistory(entry);
-			}
-			
-			if(sourceName.startsWith(FLAG_MENU_UI_PREFIX))
-			{
-				final String flagName = sourceName.substring(FLAG_MENU_UI_PREFIX.length()+JMENU_ITEM_UI_DELIM.length());
-				UiConstants.toggleFlag(flagName);
-				renderFlagMenu();
-			}
+		if(sourceName.startsWith(HISTORY_MENU_UI_PREFIX))
+		{
+			final String[] sourceNameParts = sourceName.split(JMENU_ITEM_UI_DELIM);
+			final String entry = sourceNameParts[1];
+			final int historyIndex = Integer.parseInt(sourceNameParts[2]);
+			historyManager.setIndex(historyIndex);
+			handleHistory(entry);
+		}
+		
+		if(sourceName.startsWith(FLAG_MENU_UI_PREFIX))
+		{
+			final String flagName = sourceName.substring(FLAG_MENU_UI_PREFIX.length()+JMENU_ITEM_UI_DELIM.length());
+			UiConstants.toggleFlag(flagName);
+			renderFlagMenu();
+		}
 	}
 
 	private void handleHistory(String historicalSearch) 
@@ -271,12 +271,12 @@ public class UiMain implements ActionListener, ProgressListener
 
 		final File file = fc.getSelectedFile();
 		disableEntry("Importing " + file.getName());
-
 		try
 		{
 			final CedictDump dump = new CedictParser(this).parse(file);
 			db.saveCedictDump(dump, this)
 				.exceptionally(ex -> {
+					logger.severe(LogUtils.printStackTrace(ex));
 					UiUtils.printException(ex);
 					return null;
 				})
@@ -284,6 +284,7 @@ public class UiMain implements ActionListener, ProgressListener
 		}
 		catch(Exception e)
 		{
+			logger.severe("could not import cedict " + file.getAbsolutePath() + "\n" + LogUtils.printStackTrace(e));
 			UiUtils.printException(e);
 		}
 	}
@@ -305,6 +306,7 @@ public class UiMain implements ActionListener, ProgressListener
 				final boolean verifyInDictionary = true;
 				db.savePastHits(wordList, verifyInDictionary)
 					.exceptionally(x -> {
+						logger.severe(LogUtils.printStackTrace(x));
 						UiUtils.printException(x);
 						return null;
 					})
@@ -312,6 +314,7 @@ public class UiMain implements ActionListener, ProgressListener
 			}
 			catch(Exception e)
 			{
+				logger.severe("could not import past hits " + file.getAbsolutePath() + "\n" + LogUtils.printStackTrace(e));
 				UiUtils.printException(e);
 			}
 			enableEntry();
@@ -336,6 +339,7 @@ public class UiMain implements ActionListener, ProgressListener
 				final boolean verifyInDictionary = false;
 				db.savePastHits(wordList, verifyInDictionary)
 					.exceptionally(x -> {
+						logger.severe(LogUtils.printStackTrace(x));
 						UiUtils.printException(x);
 						return null;
 					})
@@ -343,6 +347,7 @@ public class UiMain implements ActionListener, ProgressListener
 			}
 			catch(Exception e)
 			{
+				logger.severe("could not import blob of text " + file.getAbsolutePath() + "\n" + LogUtils.printStackTrace(e));
 				UiUtils.printException(e);
 			}
 			enableEntry();
@@ -387,7 +392,9 @@ public class UiMain implements ActionListener, ProgressListener
 					{
 						renderSearchResult(root, new UiChineseLookup().render(get(), renderExecutor));
 					} 
-					catch (InterruptedException | ExecutionException e) {
+					catch (InterruptedException | ExecutionException e) 
+					{
+						logger.severe("problems looking up chinese\n" + LogUtils.printStackTrace(e));
 						UiUtils.printException(e);
 					}
 				}
@@ -413,6 +420,7 @@ public class UiMain implements ActionListener, ProgressListener
 					} 
 					catch (InterruptedException | ExecutionException e) 
 					{
+						logger.severe("problems looking up english\n" + LogUtils.printStackTrace(e));
 						UiUtils.printException(e);
 					}
 				}
