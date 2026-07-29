@@ -1,4 +1,5 @@
 package dt.jdictionary.ui;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -6,6 +7,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 
@@ -21,6 +23,7 @@ import dt.jdictionary.ExhaustiveChineseLookup;
 import dt.jdictionary.dbservice.alternative.SubstringSearch;
 import dt.jdictionary.ui.UiUtils.Neighbor;
 import dt.util.ChineseText;
+import dt.util.LogUtils;
 
 
 class UiChineseLookup
@@ -50,6 +53,10 @@ class UiChineseLookup
 			.forEach(supplementary -> tabFutures.put(supplementary, tabCompletable(supplementary, supplementaries.get(supplementary), executor)));
 		
 		CompletableFuture.allOf(tabFutures.values().toArray(new CompletableFuture[0]))
+			.exceptionally(ex -> {
+				logger.severe("problems with ui chinese lookup " + LogUtils.printStackTrace(ex.getCause()));
+				return null;
+			})	
 			.thenRun(() -> {
 				SwingUtilities.invokeLater(() -> {
 					tabFutures.forEach((label, future) -> {notebook.addTab(label, future.join());;});
@@ -65,7 +72,7 @@ class UiChineseLookup
 		{
 			final List<ChineseSummaryLookup> nonSingle = lookups.stream()
 				.filter(result -> ChineseText.trueLength(result.getChinese()) > 1)
-				.toList();
+				.collect(Collectors.toCollection(ArrayList::new));
 			return CompletableFuture.supplyAsync(() -> {return new UiList(supplementaryName).render(nonSingle.isEmpty() ? lookups : nonSingle);}, executor);
 		}
 		return CompletableFuture.supplyAsync(() -> {return new UiList(supplementaryName).render(lookups);}, executor);
