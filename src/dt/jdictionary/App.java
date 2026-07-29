@@ -30,6 +30,9 @@ public class App
 		System.setProperty("apple.laf.useScreenMenuBar", "true");
 		setupLogger();
 		final Logger logger = Logger.getLogger(App.class.getName());
+		Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+			logger.severe(thread.getName() + " " + LogUtils.printStackTrace(throwable));
+		});
 		logger.info("Starting " + VERSION);
 		
 		javax.swing.SwingUtilities.invokeLater(() -> {
