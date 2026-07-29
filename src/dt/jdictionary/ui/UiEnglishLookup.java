@@ -8,6 +8,7 @@ import java.util.concurrent.ExecutorService;
 
 import javax.swing.JComponent;
 import javax.swing.JTabbedPane;
+import javax.swing.SwingUtilities;
 
 import dt.jdictionary.ChineseSummaryLookup;
 
@@ -23,18 +24,16 @@ public class UiEnglishLookup
 		for(final String englishCombo : useableCombinations.keySet())
 		{
 			final List<ChineseSummaryLookup> summaries = useableCombinations.get(englishCombo);
-			final CompletableFuture<JComponent> future = CompletableFuture.supplyAsync(() -> {return new UiList().render(summaries);}, executor);
+			final CompletableFuture<JComponent> future = CompletableFuture.supplyAsync(() -> {return new UiList(englishCombo).render(summaries);}, executor);
 			tabFutures.put(englishCombo, future);
 		}
 
-		final CompletableFuture<Void> allFinished = CompletableFuture.allOf(tabFutures.values().toArray(new CompletableFuture[0]));
-		allFinished.join();
-
-		for(final String englishCombo : tabFutures.keySet())
-		{
-			final JComponent tab = tabFutures.get(englishCombo).join();
-			notebook.addTab(englishCombo, tab);
-		}
+		CompletableFuture.allOf(tabFutures.values().toArray(new CompletableFuture[0]))
+			.thenRun(() -> {
+				SwingUtilities.invokeLater(() -> {
+					tabFutures.forEach((combo, future) -> {notebook.addTab(combo, future.join());});
+				});
+			});
 		return notebook;
 	}
 }

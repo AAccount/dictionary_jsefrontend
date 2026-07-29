@@ -1,5 +1,4 @@
 package dt.jdictionary.ui;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +13,7 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextPane;
+import javax.swing.SwingUtilities;
 
 import dt.jdictionary.ChineseDefinitionLookup;
 import dt.jdictionary.ChineseSummaryLookup;
@@ -42,32 +42,33 @@ class UiChineseLookup
 		notebook.setBorder(UiConstants.TRACER());
 
 		final Map<String, CompletableFuture<JComponent>> tabFutures= new LinkedHashMap<>();
-		tabFutures.put(DEFINITION_TAB, CompletableFuture.supplyAsync(() -> {return this.renderZhDefinition(dictionaryResult.getDefinition());}));
+		tabFutures.put(DEFINITION_TAB, CompletableFuture.supplyAsync(() -> {return this.renderZhDefinition(dictionaryResult.getDefinition());}, executor));
 		
 		final Map<String, List<ChineseSummaryLookup>> supplementaries = dictionaryResult.getSupplementaries();
 		supplementaries.keySet().stream()
 			.filter(supplementary -> !supplementaries.get(supplementary).isEmpty())
-			.forEach(supplementary -> tabFutures.put(supplementary, tabCompletable(supplementary, supplementaries.get(supplementary))));
+			.forEach(supplementary -> tabFutures.put(supplementary, tabCompletable(supplementary, supplementaries.get(supplementary), executor)));
 		
-		final CompletableFuture<Void> allFinished = CompletableFuture.allOf(tabFutures.values().toArray(new CompletableFuture[0]));
-		allFinished.join();
+		CompletableFuture.allOf(tabFutures.values().toArray(new CompletableFuture[0]))
+			.thenRun(() -> {
+				SwingUtilities.invokeLater(() -> {
+					tabFutures.forEach((label, future) -> {notebook.addTab(label, future.join());;});
+				});
+			});
 		
-		tabFutures.keySet().stream()
-			.forEach(tabLabel -> notebook.addTab(tabLabel, tabFutures.get(tabLabel).join()));
-
 		return notebook;
 	}
 	
-	private CompletableFuture<JComponent> tabCompletable(String supplementaryName, List<ChineseSummaryLookup> lookups)
+	private CompletableFuture<JComponent> tabCompletable(String supplementaryName, List<ChineseSummaryLookup> lookups, ExecutorService executor)
 	{
 		if(supplementaryName.equals(SubstringSearch.LOOKUP_NAME) && !UiConstants.getFlag(UiConstants.FLAG_ALWAYS_SINGLE_SUBSTRING))
 		{
 			final List<ChineseSummaryLookup> nonSingle = lookups.stream()
 				.filter(result -> ChineseText.trueLength(result.getChinese()) > 1)
 				.toList();
-			return CompletableFuture.supplyAsync(() -> {return new UiList().render(new ArrayList<ChineseSummaryLookup>(nonSingle.isEmpty() ? lookups : nonSingle));});
+			return CompletableFuture.supplyAsync(() -> {return new UiList(supplementaryName).render(nonSingle.isEmpty() ? lookups : nonSingle);}, executor);
 		}
-		return CompletableFuture.supplyAsync(() -> {return new UiList().render(new ArrayList<ChineseSummaryLookup>(lookups));});
+		return CompletableFuture.supplyAsync(() -> {return new UiList(supplementaryName).render(lookups);}, executor);
 	}
 
 	private JPanel renderZhDefinition(ChineseDefinitionLookup dictionaryResult)
@@ -105,7 +106,7 @@ class UiChineseLookup
 			row++;
 		}
 
-		if(dictionaryResult.getMeasureWords().size() > 0)
+		if(!dictionaryResult.getMeasureWords().isEmpty())
 		{
 			final List<String> measureWords = dictionaryResult.getMeasureWords();
 			renderLabelValue(parent, "Measure Words", String.join(", ", measureWords), row);
@@ -128,7 +129,6 @@ class UiChineseLookup
 		zhPane.setFont(UiUtils.makeFont(zhPane, UiConstants.FONT_LARGE));
 		zhPane.setBackground(null);
 		zhPane.setEditable(false);
-		zhPane.setBorder(UiConstants.TRACER());
 
 		final int ALL_COLUMNS = 2;
 		final GridBagConstraints constraints = new GridBagConstraints();
