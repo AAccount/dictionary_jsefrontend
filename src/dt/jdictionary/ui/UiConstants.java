@@ -3,6 +3,7 @@ import javax.swing.BorderFactory;
 import javax.swing.border.Border;
 import java.awt.Color;
 import java.awt.Insets;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -16,13 +17,13 @@ public class UiConstants
 	public static final String FLAG_AUTOSWAP = "AUTO_SWAP";
 	public static final String FLAG_ALWAYS_SINGLE_SUBSTRING = "ALWAYS_SINGLE_SUBSTRING";
 	public static final String FLAG_SAVE_HITS = "SAVE_HITS";
-	private static final Map<String, Boolean> flagMap = Map.ofEntries(
+	private static final Map<String, Boolean> flagMap = new HashMap<>(Map.ofEntries(
 		Map.entry(FLAG_TRACER, false),
 		Map.entry(FLAG_RANK, false),
 		Map.entry(FLAG_AUTOSWAP, true),
 		Map.entry(FLAG_ALWAYS_SINGLE_SUBSTRING, false),
 		Map.entry(FLAG_SAVE_HITS, true)
-	);
+	));
 
 
 	//DO NOT USE ON BUTTONS Causes weird rendering.
