@@ -42,8 +42,9 @@ class UiList implements ActionListener
 
 	private final JComponent root;
 	private final HistoryManager<List<ChineseSummaryLookup>> pages;
+	private final String purpose;
 
-	public UiList() 
+	public UiList(String purpose) 
 	{
 		root = new JPanel(new GridBagLayout());
 		root.setBorder(UiConstants.TRACER());
@@ -52,17 +53,18 @@ class UiList implements ActionListener
 		previousBtn = new JButton();
 		forwardBtn= new JButton();
 		pageCounter = new JLabel();
+		this.purpose = purpose;
 	}
 
 	public JComponent render(List<ChineseSummaryLookup> dbResults)
 	{
-		logger.info("start ui list");
+		logger.info("start ui list for " + purpose);
 		Collections.sort(dbResults, Collections.reverseOrder());
 		pages.addAllEntries(ListUtils.subdivideList(dbResults, PAGE_SIZE));
 
 		renderPageNavigation();
 		renderPageOfResults(pages.setIndex(0));
-		logger.info("stop ui list");
+		logger.info("stop ui list " + purpose);
 		return root;
 	}
 
