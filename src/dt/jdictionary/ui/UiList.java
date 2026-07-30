@@ -104,7 +104,7 @@ class UiList
 		if(UiConstants.getFlag(UiConstants.FLAG_RANK))
 		{
 			final int COL_RANK = 3;
-			UiUtils.renderLabelToGrid(parent, String.valueOf(dbresult.getRank()), row, COL_RANK, true);
+			UiUtils.renderLabelToGrid(parent, String.valueOf(dbresult.getRank()), row, COL_RANK, false);
 		}
 	}
 
