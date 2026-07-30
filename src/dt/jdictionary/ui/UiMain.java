@@ -1,8 +1,6 @@
 package dt.jdictionary.ui;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
@@ -11,9 +9,6 @@ import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 import javax.swing.JButton;
@@ -42,7 +37,7 @@ import dt.jdictionary.ui.UiUtils.Neighbor;
 import dt.util.ChineseText;
 import dt.util.LogUtils;
 
-public class UiMain implements ActionListener, ProgressListener
+public class UiMain implements ProgressListener
 {
 	private static final Logger logger = Logger.getLogger(UiMain.class.getName());
 	private static final String UI_ROOT = "root";
@@ -59,9 +54,9 @@ public class UiMain implements ActionListener, ProgressListener
 	private static final int UI_MAIN_COLUMN = 0;
 	private static final int TOTAL_COLUMNS = 3;
 	private static final int HISTORY_MANAGER_MAX = 10;
-	private static final String HISTORY_MENU_UI_PREFIX = "menu history;";
+	private static final String HISTORY_MENU_UI_PREFIX = "menu history";
 	private static final String JMENU_ITEM_UI_DELIM = ";";
-	private static final String FLAG_MENU_UI_PREFIX = "menu flag;";
+	private static final String FLAG_MENU_UI_PREFIX = "menu flag";
 
 	private DbService db;
 	private final JTextField uiEntry;
@@ -122,19 +117,19 @@ public class UiMain implements ActionListener, ProgressListener
 		final JMenuItem sqliteInit = new JMenuItem("Initalize with CEDICT");
 		sqliteInit.setMnemonic(KeyEvent.VK_I);
 		sqliteInit.setName(MENU_SQLITE_INIT);
-		sqliteInit.addActionListener(this);
+		sqliteInit.addActionListener(event -> {handleMenuSqliteInit();});
 		sqliteMenu.add(sqliteInit);
 		
 		final JMenuItem loadList = new JMenuItem("Load a list of known words to past hits");
 		loadList.setMnemonic(KeyEvent.VK_L);
 		loadList.setName(MENU_SQLITE_LOAD_LIST);
-		loadList.addActionListener(this);
+		loadList.addActionListener(event -> {handleMenuSqliteLoadList();});
 		sqliteMenu.add(loadList);
 		
 		final JMenuItem loadlBlob = new JMenuItem("Parse a blob of text for compound words to past hits");
 		loadlBlob.setMnemonic(KeyEvent.VK_B);
 		loadlBlob.setName(MENU_SQLITE_LOAD_BLOB);
-		loadlBlob.addActionListener(this);
+		loadlBlob.addActionListener(event -> {handleMenuSqliteLoadBlob();});
 		sqliteMenu.add(loadlBlob);
 		
 		historyMenu.setMnemonic(KeyEvent.VK_H);
@@ -159,7 +154,13 @@ public class UiMain implements ActionListener, ProgressListener
 			final JMenuItem flagItem = new JMenuItem(label);
 			
 			flagItem.setName(FLAG_MENU_UI_PREFIX + JMENU_ITEM_UI_DELIM + flagName);
-			flagItem.addActionListener(this);
+			flagItem.addActionListener(event -> {
+				final JComponent source = (JComponent)event.getSource();
+				final String sourceName = source.getName();
+				final String flag = sourceName.substring(FLAG_MENU_UI_PREFIX.length()+JMENU_ITEM_UI_DELIM.length());
+				UiConstants.toggleFlag(flag);
+				renderFlagMenu();
+			});
 			flagMenu.add(flagItem);
 		}
 	}
@@ -183,13 +184,13 @@ public class UiMain implements ActionListener, ProgressListener
 
 		previous.setText("<");
 		previous.setName(UI_PREV);
-		previous.addActionListener(this);
+		previous.addActionListener(event -> {handleHistory(historyManager.goBack());});
 		previous.setEnabled(false);
 		root.add(previous, UiUtils.makeGridConstraint(UI_ROW_ENTRY, COL_PREV, false, false, UiUtils.makeInsets(Set.of(Neighbor.RIGHT))));
 
 		forward.setText(">");
 		forward.setName(UI_FWD);
-		forward.addActionListener(this);
+		forward.addActionListener(event -> {handleHistory(historyManager.goFwd());});
 		forward.setEnabled(false);
 		root.add(forward, UiUtils.makeGridConstraint(UI_ROW_ENTRY, COL_FWD, false, false, UiUtils.makeInsets(Set.of(Neighbor.LEFT, Neighbor.RIGHT))));
 
@@ -197,53 +198,8 @@ public class UiMain implements ActionListener, ProgressListener
 		uiEntry.setFont(UiUtils.makeFont(uiEntry, UiConstants.FONT_MEDIUM));
 		uiEntry.setBorder(UiConstants.TRACER());
 
-		uiEntry.addActionListener(this);
+		uiEntry.addActionListener(event -> {handleTextEntry(true);});
 		root.add(uiEntry, UiUtils.makeGridConstraint(UI_ROW_ENTRY, COL_ENTRY, true, false, UiUtils.makeInsets(Set.of(Neighbor.LEFT, Neighbor.BOTTOM))));
-	}
-
-	@Override
-	public void actionPerformed(ActionEvent arg0)
-	{
-		final JComponent source = (JComponent)arg0.getSource();
-		final String sourceName = source.getName();
-		logger.info("action received from " + sourceName);
-		switch(sourceName)
-		{
-			case UI_ENTRY:
-				handleTextEntry(true);
-				return;
-			case MENU_SQLITE_INIT:
-				handleMenuSqliteInit();
-				return;
-			case MENU_SQLITE_LOAD_LIST:
-				handleMenuSqliteLoadList();
-				return;
-			case MENU_SQLITE_LOAD_BLOB:
-				handleMenuSqliteLoadBlob();
-				return;
-			case UI_PREV:
-				handleHistory(historyManager.goBack());
-				return;
-			case UI_FWD:
-				handleHistory(historyManager.goFwd());
-				return;
-		}
-
-		if(sourceName.startsWith(HISTORY_MENU_UI_PREFIX))
-		{
-			final String[] sourceNameParts = sourceName.split(JMENU_ITEM_UI_DELIM);
-			final String entry = sourceNameParts[1];
-			final int historyIndex = Integer.parseInt(sourceNameParts[2]);
-			historyManager.setIndex(historyIndex);
-			handleHistory(entry);
-		}
-		
-		if(sourceName.startsWith(FLAG_MENU_UI_PREFIX))
-		{
-			final String flagName = sourceName.substring(FLAG_MENU_UI_PREFIX.length()+JMENU_ITEM_UI_DELIM.length());
-			UiConstants.toggleFlag(flagName);
-			renderFlagMenu();
-		}
 	}
 
 	private void handleHistory(String historicalSearch) 
@@ -424,7 +380,7 @@ public class UiMain implements ActionListener, ProgressListener
 					}
 				}
 			};
-			dbworker.execute();;
+			dbworker.execute();
 		}
 
 		if(newSearch)
@@ -462,7 +418,15 @@ public class UiMain implements ActionListener, ProgressListener
 			final JMenuItem historyItem = new JMenuItem(counter+": " + historicalLookup);
 			historyItem.setMnemonic(KeyEvent.VK_0 + counter);
 			historyItem.setName(HISTORY_MENU_UI_PREFIX + JMENU_ITEM_UI_DELIM + historicalLookup + JMENU_ITEM_UI_DELIM + counter);
-			historyItem.addActionListener(this);
+			historyItem.addActionListener(event -> {
+				final JComponent source = (JComponent)event.getSource();
+				final String sourceName = source.getName();
+				final String[] sourceNameParts = sourceName.split(JMENU_ITEM_UI_DELIM);
+				final String entry = sourceNameParts[1];
+				final int historyIndex = Integer.parseInt(sourceNameParts[2]);
+				historyManager.setIndex(historyIndex);
+				handleHistory(entry);
+			});
 			historyMenu.add(historyItem);
 			counter++;
 		}
