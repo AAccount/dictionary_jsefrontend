@@ -108,7 +108,7 @@ class UiChineseLookup
 		final JTextPane zhPane = new JTextPane();
 		zhPane.setText(zhchar);
 		zhPane.setBorder(UiConstants.TRACER());
-		zhPane.setFont(UiUtils.makeFont(zhPane, UiConstants.FONT_LARGE));
+		zhPane.setFont(UiConstants.FONT_LARGE);
 		zhPane.setBackground(null);
 		zhPane.setEditable(false);
 

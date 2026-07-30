@@ -60,16 +60,15 @@ class UiUtils
 	public static void renderLabelToGrid(JComponent parent, String text, int row, int col, boolean expandx)
 	{
 		final String renderedText = expandx ? wordWrapHack(text) : text;
-		final JTextPane textPane = new JTextPane();
-		textPane.setContentType("text/html");
+		final JLabel textPane = new JLabel();
 		textPane.setText(renderedText);
 		textPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
 		textPane.setBorder(UiConstants.TRACER());
 		textPane.setBackground(null);
 
-		if(ChineseText.allChinese(text.replaceAll("\\s+|,|，", ""))) // don't let spaces and commas NOT flag the text as all Chinese
+		if(ChineseText.allChinese(text, true))
 		{
-			textPane.setFont(makeFont(textPane, UiConstants.FONT_MEDIUM));
+			textPane.setFont(UiConstants.FONT_MEDIUM);
 		}
 
 		final Insets insets = makeInsets(Set.of(Neighbor.EVERYWHERE));

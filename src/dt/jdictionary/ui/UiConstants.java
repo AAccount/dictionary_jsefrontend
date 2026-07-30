@@ -2,6 +2,7 @@ package dt.jdictionary.ui;
 import javax.swing.BorderFactory;
 import javax.swing.border.Border;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Insets;
 import java.util.HashMap;
 import java.util.Map;
@@ -9,8 +10,8 @@ import java.util.Set;
 
 public class UiConstants 
 {
-	public static final int FONT_MEDIUM = 20;
-	public static final int FONT_LARGE = 45;
+	public static final Font FONT_MEDIUM = new Font(Font.SANS_SERIF, Font.PLAIN, 20);
+	public static final Font FONT_LARGE = new Font(Font.SANS_SERIF, Font.PLAIN, 45);
 
 	public static final String FLAG_TRACER = "SHOW_TRACER";
 	public static final String FLAG_RANK = "SHOW_RANK";

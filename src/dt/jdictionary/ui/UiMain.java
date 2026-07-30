@@ -195,7 +195,7 @@ public class UiMain implements ProgressListener
 		root.add(forward, UiUtils.makeGridConstraint(UI_ROW_ENTRY, COL_FWD, false, false, UiUtils.makeInsets(Set.of(Neighbor.LEFT, Neighbor.RIGHT))));
 
 		uiEntry.setName(UI_ENTRY);
-		uiEntry.setFont(UiUtils.makeFont(uiEntry, UiConstants.FONT_MEDIUM));
+		uiEntry.setFont(UiConstants.FONT_MEDIUM);
 		uiEntry.setBorder(UiConstants.TRACER());
 
 		uiEntry.addActionListener(event -> {handleTextEntry(true);});
