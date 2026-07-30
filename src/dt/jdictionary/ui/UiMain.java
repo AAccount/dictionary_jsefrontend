@@ -63,7 +63,6 @@ public class UiMain implements ActionListener, ProgressListener
 	private static final String JMENU_ITEM_UI_DELIM = ";";
 	private static final String FLAG_MENU_UI_PREFIX = "menu flag;";
 
-	private final ExecutorService renderExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 	private DbService db;
 	private final JTextField uiEntry;
 	private final JProgressBar progressBar;
@@ -390,7 +389,7 @@ public class UiMain implements ActionListener, ProgressListener
 				{
 					try 
 					{
-						renderSearchResult(root, new UiChineseLookup().render(get(), renderExecutor));
+						renderSearchResult(root, new UiChineseLookup().render(get()));
 					} 
 					catch (Exception e) 
 					{
@@ -416,7 +415,7 @@ public class UiMain implements ActionListener, ProgressListener
 				{
 					try 
 					{
-						renderSearchResult(root, new UiEnglishLookup().render(get(), renderExecutor));
+						renderSearchResult(root, new UiEnglishLookup().render(get()));
 					} 
 					catch (Exception e) 
 					{
@@ -448,6 +447,8 @@ public class UiMain implements ActionListener, ProgressListener
 		final GridBagConstraints resultConstraints = UiUtils.makeGridConstraint(UI_ROW_RESULT, UI_MAIN_COLUMN, true, true, UiUtils.makeInsets(Set.of(Neighbor.TOP)));
 		resultConstraints.gridwidth = TOTAL_COLUMNS;
 		root.add(result, resultConstraints);
+		root.revalidate();
+		root.repaint();
 	}
 
 	private void renderHistoryMenu()
