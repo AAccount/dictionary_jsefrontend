@@ -16,10 +16,8 @@ import dt.util.ListUtils;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
-class UiList implements ActionListener
+class UiList
 {
 	private static final Logger logger = Logger.getLogger(UiList.class.getName());
 
@@ -118,12 +116,11 @@ class UiList implements ActionListener
 		}
 
 		previousBtn.setText("<");
-		previousBtn.addActionListener(this);
+		previousBtn.addActionListener(e -> {renderPage(pages.goBack());});
 		previousBtn.setEnabled(false);
 		root.add(previousBtn, UiUtils.makeGridConstraint(UI_ROW_UTILITY, UI_COLUMN_BACK, false, false, UiUtils.makeInsets(Set.of(Neighbor.RIGHT))));
-
 		forwardBtn.setText(">");
-		forwardBtn.addActionListener(this);
+		forwardBtn.addActionListener(e -> {renderPage(pages.goFwd());});
 		forwardBtn.setEnabled(true);
 		root.add(forwardBtn, UiUtils.makeGridConstraint(UI_ROW_UTILITY, UI_COLUMN_FORWARD, false, false, UiUtils.makeInsets(Set.of(Neighbor.LEFT, Neighbor.RIGHT))));
 
@@ -131,17 +128,8 @@ class UiList implements ActionListener
 		root.add(pageCounter,UiUtils.makeGridConstraint(UI_ROW_UTILITY, UI_COLUMN_PAGE_COUNTER, false, false, UiUtils.makeInsets(Set.of(Neighbor.LEFT, Neighbor.RIGHT))));
 	}
 
-	@Override
-	public void actionPerformed(ActionEvent arg0) 
+	public void renderPage(List<ChineseSummaryLookup> page) 
 	{
-		final JComponent source = (JComponent)arg0.getSource();
-		if(!List.of(forwardBtn, previousBtn).contains(source))
-		{
-			logger.info("actionPerformed not from forwardBtn or previousBtn " + source);
-			return;
-		}
-
-		final List<ChineseSummaryLookup> page = source == forwardBtn ? pages.goFwd() : pages.goBack();
 		previousBtn.setEnabled(pages.canGoBack());
 		forwardBtn.setEnabled(pages.canGoFwd());
 
