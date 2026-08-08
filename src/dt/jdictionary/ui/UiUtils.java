@@ -5,6 +5,7 @@ import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JTextPane;
+import javax.swing.UIManager;
 
 import dt.util.ChineseText;
 import dt.util.LogUtils;
@@ -60,12 +61,13 @@ class UiUtils
 	public static void renderLabelToGrid(JComponent parent, String text, int row, int col, boolean expandx)
 	{
 		final String renderedText = expandx ? wordWrapHack(text) : text;
-		final JLabel textPane = new JLabel();
-		textPane.setText(renderedText);
-		textPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
+		final String type = expandx ? "text/html" : "text/plain";
+		final JEditorPane textPane = new JEditorPane(type, renderedText);
+		textPane.setEditable(false);
+		textPane.setOpaque(false);
 		textPane.setBorder(UiConstants.TRACER());
-		textPane.setBackground(null);
-
+		// textPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
+		textPane.setFont(UIManager.getFont("Label.font"));
 		if(ChineseText.allChinese(text, true))
 		{
 			textPane.setFont(UiConstants.FONT_MEDIUM);
