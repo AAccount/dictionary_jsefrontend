@@ -226,22 +226,33 @@ public class UiMain implements ProgressListener
 
 		final File file = fc.getSelectedFile();
 		disableEntry("Importing " + file.getName());
-		try
-		{
-			final CedictDump dump = new CedictParser(this).parse(file);
-			db.saveCedictDump(dump, this)
-				.exceptionally(ex -> {
-					logger.severe("problems parsing cedict " + file.getAbsoluteFile() + "\n" + LogUtils.printStackTrace(ex.getCause()));
-					UiUtils.printException(ex);
-					return null;
-				})
-				.thenRunAsync(() -> {enableEntry();}, SwingUtilities::invokeLater);
-		}
-		catch(Exception e)
-		{
-			logger.severe("could not import cedict " + file.getAbsolutePath() + "\n" + LogUtils.printStackTrace(e));
-			UiUtils.printException(e);
-		}
+		final UiMain self = this;
+		final SwingWorker<Void, Void> dbworker = new SwingWorker<>() {
+
+			@Override
+			protected Void doInBackground() throws Exception 
+			{
+				final CedictDump dump = new CedictParser(self).parse(file);	
+				db.saveCedictDump(dump, self);
+				return null;
+			}
+
+			@Override
+			protected void done()
+			{
+				try
+				{
+					enableEntry();
+					get();
+				}
+				catch(Exception e)
+				{
+					logger.severe(LogUtils.printStackTrace(e));
+					UiUtils.printException(e);
+				}
+			}
+		};
+		dbworker.execute();
 	}
 	
 	private void handleMenuSqliteLoadList()
@@ -448,6 +459,6 @@ public class UiMain implements ProgressListener
 	@Override
 	public void onFractionalProgress(String description, long processed, long total)
 	{
-		updateImportProgress(description, processed, total);		
+		SwingUtilities.invokeLater(() -> updateImportProgress(description, processed, total));	
 	}
 }
