@@ -266,24 +266,35 @@ public class UiMain implements ProgressListener
 
 		final File file = fc.getSelectedFile();
 		disableEntry("Loading past known words from: " + file.getName());
-			try
+		final UiMain self = this;
+		final SwingWorker<Void, Void> dbworker = new SwingWorker<>() {
+
+			@Override
+			protected Void doInBackground() throws Exception 
 			{
-				final List<String> wordList = new WordList(this).parse(file);
+				final List<String> wordList = new WordList(self).parse(file);
 				final boolean verifyInDictionary = true;
-				db.savePastHits(wordList, verifyInDictionary)
-					.exceptionally(x -> {
-						logger.severe("could not import past hits " + file.getAbsolutePath() + "\n" + LogUtils.printStackTrace(x.getCause()));
-						UiUtils.printException(x);
-						return null;
-					})
-					.thenRunAsync(() -> {enableEntry();}, SwingUtilities::invokeLater);
+				db.savePastHits(wordList, verifyInDictionary);
+				return null;
 			}
-			catch(Exception e)
+
+			@Override
+			protected void done()
 			{
-				logger.severe("could not import past hits " + file.getAbsolutePath() + "\n" + LogUtils.printStackTrace(e));
-				UiUtils.printException(e);
+				try
+				{
+					enableEntry();
+					get();
+				}
+				catch(Exception e)
+				{
+					logger.severe(LogUtils.printStackTrace(e));
+					UiUtils.printException(e);
+				}
 			}
-			enableEntry();
+		};
+		dbworker.execute();
+		enableEntry();
 
 	}
 	
@@ -298,25 +309,36 @@ public class UiMain implements ProgressListener
 
 		final File file = fc.getSelectedFile();
 		disableEntry("Loading known words from blob: " + file.getName());
-			try
+		final UiMain self = this;
+		final SwingWorker<Void, Void> dbworker = new SwingWorker<>() {
+
+			@Override
+			protected Void doInBackground() throws Exception 
 			{
-				final List<String> sentences = new WordBlob(this).parse(file);
+				final List<String> sentences = new WordBlob(self).parse(file);
 				final List<String> wordList = db.extractCompoundWords(sentences);
 				final boolean verifyInDictionary = false;
-				db.savePastHits(wordList, verifyInDictionary)
-					.exceptionally(x -> {
-						logger.severe("could not import past hits " + file.getAbsolutePath() + "\n" + LogUtils.printStackTrace(x.getCause()));
-						UiUtils.printException(x);
-						return null;
-					})
-					.thenRunAsync(() -> {enableEntry();}, SwingUtilities::invokeLater);
+				db.savePastHits(wordList, verifyInDictionary);
+				return null;
 			}
-			catch(Exception e)
+
+			@Override
+			protected void done()
 			{
-				logger.severe("could not import blob of text " + file.getAbsolutePath() + "\n" + LogUtils.printStackTrace(e));
-				UiUtils.printException(e);
+				try
+				{
+					enableEntry();
+					get();
+				}
+				catch(Exception e)
+				{
+					logger.severe(LogUtils.printStackTrace(e));
+					UiUtils.printException(e);
+				}
 			}
-			enableEntry();
+		};
+		dbworker.execute();
+		enableEntry();
 
 	}
 	
