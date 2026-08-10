@@ -29,7 +29,7 @@ import dt.cedict.CedictParser;
 import dt.jdictionary.App;
 import dt.jdictionary.ExhaustiveChineseLookup;
 import dt.jdictionary.ProgressListener;
-import dt.jdictionary.dbrepo.raw.RawDictionaryRow;
+import dt.jdictionary.dbrepo.DictionaryEntry;
 import dt.jdictionary.dbservice.DbService;
 import dt.jdictionary.extload.WordBlob;
 import dt.jdictionary.extload.WordList;
@@ -391,10 +391,10 @@ public class UiMain implements ProgressListener
 		}
 		else
 		{
-			final SwingWorker<Map<String, List<RawDictionaryRow>>, Void> dbworker = new SwingWorker<>() {
+			final SwingWorker<Map<String, List<DictionaryEntry>>, Void> dbworker = new SwingWorker<>() {
 
 				@Override
-				protected Map<String, List<RawDictionaryRow>> doInBackground() throws Exception 
+				protected Map<String, List<DictionaryEntry>> doInBackground() throws Exception 
 				{
 					return db.lookupEnglish(received);
 				}

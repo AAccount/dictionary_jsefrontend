@@ -10,7 +10,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
-import dt.jdictionary.dbrepo.raw.RawDictionaryRow;
+import dt.jdictionary.dbrepo.DictionaryEntry;
 import dt.jdictionary.ui.UiUtils.Neighbor;
 import dt.util.ListUtils;
 
@@ -39,7 +39,7 @@ class UiList
 	private final int PAGE_SIZE = 10;
 
 	private final JComponent root;
-	private final HistoryManager<List<RawDictionaryRow>> pages;
+	private final HistoryManager<List<DictionaryEntry>> pages;
 	private final String purpose;
 
 	public UiList(String purpose) 
@@ -54,7 +54,7 @@ class UiList
 		this.purpose = purpose;
 	}
 
-	public JComponent render(List<RawDictionaryRow> dbResults)
+	public JComponent render(List<DictionaryEntry> dbResults)
 	{
 		logger.info("start ui list for " + purpose);
 		Collections.sort(dbResults, Collections.reverseOrder());
@@ -66,7 +66,7 @@ class UiList
 		return root;
 	}
 
-	private void renderPageOfResults(List<RawDictionaryRow> results)
+	private void renderPageOfResults(List<DictionaryEntry> results)
 	{
 		UiUtils.removeNamedComponents(root, Set.of(SCROLLVIEW_RESULTS));
 
@@ -89,10 +89,10 @@ class UiList
 		pageCounter.setText((pages.getIndex()+1)+"/"+(pages.getSize()));
 	}
 
-	private void renderSimpleLookup(RawDictionaryRow dbresult, JComponent parent, int row)
+	private void renderSimpleLookup(DictionaryEntry dbresult, JComponent parent, int row)
 	{
 		final int COL_ZH = 0;
-		UiUtils.renderLabelToGrid(parent, dbresult.getZh(), row, COL_ZH, false);
+		UiUtils.renderLabelToGrid(parent, dbresult.getChinese(), row, COL_ZH, false);
 		
 		final int COL_PINYIN = 1;
 		UiUtils.renderLabelToGrid(parent, dbresult.getPinyin(), row, COL_PINYIN, false);
@@ -128,7 +128,7 @@ class UiList
 		root.add(pageCounter,UiUtils.makeGridConstraint(UI_ROW_UTILITY, UI_COLUMN_PAGE_COUNTER, false, false, UiUtils.makeInsets(Set.of(Neighbor.LEFT, Neighbor.RIGHT))));
 	}
 
-	public void renderPage(List<RawDictionaryRow> page) 
+	public void renderPage(List<DictionaryEntry> page) 
 	{
 		previousBtn.setEnabled(pages.canGoBack());
 		forwardBtn.setEnabled(pages.canGoFwd());

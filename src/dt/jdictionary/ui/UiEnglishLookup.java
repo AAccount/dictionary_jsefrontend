@@ -6,12 +6,12 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JTabbedPane;
 
-import dt.jdictionary.dbrepo.raw.RawDictionaryRow;
+import dt.jdictionary.dbrepo.DictionaryEntry;
 
 
 public class UiEnglishLookup
 {
-	public JComponent render(Map<String, List<RawDictionaryRow>> useableCombinations)
+	public JComponent render(Map<String, List<DictionaryEntry>> useableCombinations)
 	{
 		final JTabbedPane notebook = new JTabbedPane();
 		notebook.setBorder(UiConstants.TRACER());
