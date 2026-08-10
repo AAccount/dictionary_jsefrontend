@@ -91,8 +91,8 @@ class UiList
 
 	private void renderSimpleLookup(DictionaryEntry dbresult, JComponent parent, int row)
 	{
-		final int COL_ZH = 0;
-		UiUtils.renderLabelToGrid(parent, dbresult.getChinese(), row, COL_ZH, false);
+		final int COL_CHINESE = 0;
+		UiUtils.renderLabelToGrid(parent, dbresult.getChinese(), row, COL_CHINESE, false);
 		
 		final int COL_PINYIN = 1;
 		UiUtils.renderLabelToGrid(parent, dbresult.getPinyin(), row, COL_PINYIN, false);

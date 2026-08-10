@@ -36,7 +36,7 @@ class UiChineseLookup
 		// Return the raw notebook. Don't prepackage it in a panel.
 		final JTabbedPane notebook = new JTabbedPane();
 		notebook.setBorder(UiConstants.TRACER());
-		notebook.addTab(DEFINITION_TAB, this.renderZhDefinition(dictionaryResult.getDefinition()));
+		notebook.addTab(DEFINITION_TAB, this.renderChineseDefinition(dictionaryResult.getDefinition()));
 		dictionaryResult.getSupplementaries().forEach((label, results) -> {notebook.add(label, renderTab(label, results));});	
 		return notebook;
 	}
@@ -53,7 +53,7 @@ class UiChineseLookup
 		return new UiList(supplementaryName).render(lookups);
 	}
 
-	private JPanel renderZhDefinition(ChineseDefinitionLookup dictionaryResult)
+	private JPanel renderChineseDefinition(ChineseDefinitionLookup dictionaryResult)
 	{
 		logger.info("start single char");
 
@@ -61,7 +61,7 @@ class UiChineseLookup
 		result.setBorder(UiConstants.TRACER());
 
 		final int rowsRendered = renderDictionaryResults(result, dictionaryResult);
-		renderZhCharBig(dictionaryResult.getZh(), result);
+		renderCharacterBig(dictionaryResult.getChinese(), result);
 		UiUtils.renderFiller(result, rowsRendered+1);
 
 		logger.info("end single char");
@@ -82,7 +82,7 @@ class UiChineseLookup
 			row++;
 		}
 
-		if(!dictionaryResult.getZh().equals(dictionaryResult.getSimplified()))
+		if(!dictionaryResult.getChinese().equals(dictionaryResult.getSimplified()))
 		{
 			renderLabelValue(parent, "Simplified", dictionaryResult.getSimplified(), row);
 			row++;
@@ -103,14 +103,14 @@ class UiChineseLookup
 		UiUtils.renderLabelToGrid(parent, value, row, COL_VALUE, true);
 	}
 
-	private void renderZhCharBig(String zhchar, JPanel target)
+	private void renderCharacterBig(String character, JPanel target)
 	{
-		final JTextPane zhPane = new JTextPane();
-		zhPane.setText(zhchar);
-		zhPane.setBorder(UiConstants.TRACER());
-		zhPane.setFont(UiConstants.FONT_LARGE);
-		zhPane.setBackground(null);
-		zhPane.setEditable(false);
+		final JTextPane charPane = new JTextPane();
+		charPane.setText(character);
+		charPane.setBorder(UiConstants.TRACER());
+		charPane.setFont(UiConstants.FONT_LARGE);
+		charPane.setBackground(null);
+		charPane.setEditable(false);
 
 		final int ALL_COLUMNS = 2;
 		final GridBagConstraints constraints = new GridBagConstraints();
@@ -122,6 +122,6 @@ class UiChineseLookup
 		constraints.fill = GridBagConstraints.HORIZONTAL;
 		constraints.insets = UiUtils.makeInsets(Set.of(Neighbor.BOTTOM));
 
-		target.add(zhPane, constraints);
+		target.add(charPane, constraints);
 	}
 }
