@@ -5,12 +5,13 @@ import java.util.Map;
 
 import javax.swing.JComponent;
 import javax.swing.JTabbedPane;
-import dt.jdictionary.ChineseSummaryLookup;
+
+import dt.jdictionary.dbrepo.raw.RawDictionaryRow;
 
 
 public class UiEnglishLookup
 {
-	public JComponent render(Map<String, List<ChineseSummaryLookup>> useableCombinations)
+	public JComponent render(Map<String, List<RawDictionaryRow>> useableCombinations)
 	{
 		final JTabbedPane notebook = new JTabbedPane();
 		notebook.setBorder(UiConstants.TRACER());

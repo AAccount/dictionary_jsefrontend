@@ -12,8 +12,8 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextPane;
 import dt.jdictionary.ChineseDefinitionLookup;
-import dt.jdictionary.ChineseSummaryLookup;
 import dt.jdictionary.ExhaustiveChineseLookup;
+import dt.jdictionary.dbrepo.raw.RawDictionaryRow;
 import dt.jdictionary.dbservice.alternative.SubstringSearch;
 import dt.jdictionary.ui.UiUtils.Neighbor;
 import dt.util.ChineseText;
@@ -41,12 +41,12 @@ class UiChineseLookup
 		return notebook;
 	}
 	
-	private JComponent renderTab(String supplementaryName, List<ChineseSummaryLookup> lookups)
+	private JComponent renderTab(String supplementaryName, List<RawDictionaryRow> lookups)
 	{
 		if(supplementaryName.equals(SubstringSearch.LOOKUP_NAME) && !UiConstants.getFlag(UiConstants.FLAG_ALWAYS_SINGLE_SUBSTRING))
 		{
-			final List<ChineseSummaryLookup> nonSingle = lookups.stream()
-				.filter(result -> ChineseText.trueLength(result.getChinese()) > 1)
+			final List<RawDictionaryRow> nonSingle = lookups.stream()
+				.filter(result -> ChineseText.trueLength(result.getZh()) > 1)
 				.collect(Collectors.toCollection(ArrayList::new));
 			return new UiList(supplementaryName).render(nonSingle.isEmpty() ? lookups : nonSingle);
 		}
