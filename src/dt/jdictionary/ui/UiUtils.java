@@ -4,20 +4,15 @@ import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.JTextPane;
 import javax.swing.UIManager;
 
-import dt.util.ChineseText;
-import dt.util.LogUtils;
+import dt.jdictionary.util.LogUtils;
 
 import java.awt.Font;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
-import java.util.Arrays;
 import java.util.Set;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 class UiUtils 
 {
@@ -68,7 +63,7 @@ class UiUtils
 		textPane.setBorder(UiConstants.TRACER());
 		// textPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
 		textPane.setFont(UIManager.getFont("Label.font"));
-		if(ChineseText.allChinese(text, true))
+		if(allChineseSansJunk(text))
 		{
 			textPane.setFont(UiConstants.FONT_MEDIUM);
 		}
@@ -121,5 +116,12 @@ class UiUtils
 		final String title = e.getClass().getName();
 		final String stackTrace = LogUtils.printStackTrace(e);
 		JOptionPane.showMessageDialog(null, stackTrace, title, JOptionPane.ERROR_MESSAGE);
+	}
+
+	private static boolean allChineseSansJunk(String string)
+	{
+		return string.codePoints().allMatch(codepoint -> 
+			Character.isWhitespace(codepoint) || codepoint == ',' || codepoint == '，' || Character.UnicodeScript.of(codepoint) == Character.UnicodeScript.HAN
+		);
 	}
 }

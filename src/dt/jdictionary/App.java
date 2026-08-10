@@ -10,7 +10,7 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
 import dt.jdictionary.ui.UiMain;
-import dt.util.LogUtils;
+import dt.jdictionary.util.LogUtils;
 
 // V1.7: 2026-07-27: turn simplified input back into possible traditionals
 // V1.6: 2026-07-17: bring back sqlite backend. The in memory db takes forever to start and consumes tons of ram. Also fix some cedict issues.

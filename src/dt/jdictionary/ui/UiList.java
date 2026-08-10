@@ -1,4 +1,5 @@
 package dt.jdictionary.ui;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -12,7 +13,6 @@ import javax.swing.JScrollPane;
 
 import dt.jdictionary.dbrepo.DictionaryEntry;
 import dt.jdictionary.ui.UiUtils.Neighbor;
-import dt.util.ListUtils;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -58,7 +58,7 @@ class UiList
 	{
 		logger.info("start ui list for " + purpose);
 		Collections.sort(dbResults, Collections.reverseOrder());
-		pages.addAllEntries(ListUtils.subdivideList(dbResults, PAGE_SIZE));
+		pages.addAllEntries(subdivideList(dbResults, PAGE_SIZE));
 
 		renderPageNavigation();
 		renderPageOfResults(pages.setIndex(0));
@@ -136,5 +136,18 @@ class UiList
 		renderPageOfResults(page);
 		root.revalidate();
 		root.repaint();
+	}
+
+	private <T> List<List<T>> subdivideList(List<T> original, int subSize)
+	{
+		final List<List<T>> result = new ArrayList<>();
+		int position = 0;
+		while(position < original.size())
+		{
+			final int end = (position + subSize) > original.size() ? original.size() : position + subSize;
+			result.add(original.subList(position, end));
+			position = end;
+		}
+		return result;
 	}
 }

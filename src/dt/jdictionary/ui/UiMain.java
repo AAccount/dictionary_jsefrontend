@@ -26,16 +26,15 @@ import javax.swing.SwingWorker;
 
 import dt.cedict.CedictDump;
 import dt.cedict.CedictParser;
+import dt.cedict.ProgressListener;
 import dt.jdictionary.App;
 import dt.jdictionary.ExhaustiveChineseLookup;
-import dt.jdictionary.ProgressListener;
 import dt.jdictionary.dbrepo.DictionaryEntry;
 import dt.jdictionary.dbservice.DbService;
 import dt.jdictionary.extload.WordBlob;
 import dt.jdictionary.extload.WordList;
 import dt.jdictionary.ui.UiUtils.Neighbor;
-import dt.util.ChineseText;
-import dt.util.LogUtils;
+import dt.jdictionary.util.LogUtils;
 
 public class UiMain implements ProgressListener
 {
@@ -363,14 +362,14 @@ public class UiMain implements ProgressListener
 		logger.info("Input trimmed, to lower case: " + received);
 		
 		final boolean shouldSave = newSearch && UiConstants.getFlag(UiConstants.FLAG_SAVE_HITS);
-		if(ChineseText.hasChinese(received))
+		if(received.codePoints().anyMatch(codepoint -> Character.UnicodeScript.of(codepoint) == Character.UnicodeScript.HAN))
 		{
 			final SwingWorker<ExhaustiveChineseLookup, Void> dbworker = new SwingWorker<>() {
 
 				@Override
 				protected ExhaustiveChineseLookup doInBackground() throws Exception 
 				{
-					return db.lookupChinese(UiConstants.getFlag(UiConstants.FLAG_AUTOSWAP) ? ChineseText.autoSwapChinese(received) : received, shouldSave);
+					return db.lookupChinese(UiConstants.getFlag(UiConstants.FLAG_AUTOSWAP) ? autoSwapChinese(received) : received, shouldSave);
 				}
 
 				@Override
@@ -482,5 +481,30 @@ public class UiMain implements ProgressListener
 	public void onFractionalProgress(String description, long processed, long total)
 	{
 		SwingUtilities.invokeLater(() -> updateImportProgress(description, processed, total));	
+	}
+
+	private String autoSwapChinese(String chinese)
+	{
+		final Map<String, String> autoSwaps = Map.of(
+				"着", "著",
+				"爲", "為",
+				"僞", "偽",
+				"泄", "洩",
+				"枰然", "怦然",
+				"衆","眾",
+				"痹","痺"
+				);
+		
+		String result = chinese;
+		for(final String source : autoSwaps.keySet())
+		{
+			result = result.replace(source, autoSwaps.get(source));
+		}
+		
+		if(!result.equals(chinese))
+		{
+			logger.info("Swapped " + chinese + " for " + result);
+		}
+		return result;
 	}
 }
