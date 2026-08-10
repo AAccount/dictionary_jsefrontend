@@ -233,7 +233,7 @@ public class UiMain implements ProgressListener
 			protected Void doInBackground() throws Exception 
 			{
 				final CedictDump dump = new CedictParser(self).parse(file);	
-				db.saveCedictDump(dump, self);
+				db.saveCedictDump(dump);
 				return null;
 			}
 
