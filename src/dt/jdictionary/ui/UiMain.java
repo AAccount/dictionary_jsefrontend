@@ -57,7 +57,7 @@ public class UiMain implements ProgressListener
 	private static final String JMENU_ITEM_UI_DELIM = ";";
 	private static final String FLAG_MENU_UI_PREFIX = "menu flag";
 
-	private DbService db;
+	private final DbService db;
 	private final JTextField uiEntry;
 	private final JProgressBar progressBar;
 	private final JButton previous;
@@ -69,9 +69,11 @@ public class UiMain implements ProgressListener
 
 	private final HistoryManager<String> historyManager;
 
-	public UiMain()
+	public UiMain() throws ClassNotFoundException, IOException, ParseException, SQLException
 	{
 		logger.info("start constructor");
+		this.db = new DbService();
+
 		historyManager = new HistoryManager<>(HISTORY_MANAGER_MAX);
 
 		final int ENTRY_INITIAL_WIDTH = 20;
@@ -85,7 +87,7 @@ public class UiMain implements ProgressListener
 		logger.info("finish constructor");
 	}
 
-	public void render() throws ClassNotFoundException, SQLException, IOException, ParseException
+	public void render()
 	{
 		logger.info("start render");
 		final JFrame window = new JFrame("Dictionary " + App.VERSION);
@@ -102,7 +104,6 @@ public class UiMain implements ProgressListener
 		window.pack();
 		window.setVisible(true);
 		
-		db = new DbService();
 		logger.info("done render");
 	}
 
