@@ -20,6 +20,10 @@ The front end has several feature flags:
 
 Despite being an English Chinese dictionary, the UI is only available in English as the program is intended and designed by someone with only an English background and zero Chinese experience (where I started).
 
+## Screenshots
+![Dictionary entry](https://github.com/AAccount/dictionary_jsefrontend/blob/master/screenshots/definition%20page.png)
+![Superstring alternate search](https://github.com/AAccount/dictionary_jsefrontend/blob/master/screenshots/superstring.png)
+
 ## Build instructions
 Checkout this repo, dictionary core, and cedict in the same folder.
 
