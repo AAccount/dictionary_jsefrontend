@@ -1,8 +1,15 @@
 # Java Swing Dictionary Frontend
+Front end for the dictionary core repo in Java Swing.
+
 **Note**: on the first run, you must initialize the sqlite db with a cedict file. Use the `SQLite` menu item `Initialize with CEDICT`. I get them from mdbg.net.
 
-## History
-Front end for the dictionary core repo in Java Swing. Swing was chosen to generate portable executables that will run on desktop Linux and occasionally Mac OS. This program was originally written for python gtk at the end of 2020. I was gifted a free Intel Mac in 2022-07, and found Mac Ports an absolute pain to install gtk. It boiled the Mac alive trying compile multiple tool chains and other massive libraries. Further infuriating, is that every minor Mac Ports update would seemingly trigger an entire gcc AND llvm recompile reboiling the Mac. The entire program was ported to Java Swing at the end of 2022 to avoid prematurely trashing a very nice free gift.
+## Motivation
+I wanted an offline dictionary so I would not be dependent on an internet connection, or a web service being up for looking up Chinese while reading manga from sketchy Chinese websites. There were no open source or even closed source programs for desktop Linux. I made an original python gtk program given my previous experience with C++ gtk for the VoIP program. As time passed, I added various search strategies explained in the dictionary core repo that I found helpful.
+
+I was more interested in the literacy aspect vs talking aspect of Chinese because the writing system looks cool. I chose reading manga from sketchy websites vs the flashcard / learning app route based on my grade school experience with the Canadian Ontario French system in Windsor. I found it a complete failure as they taught the same thing every year: count 1-100, colors of the rainbow, say "it's cold". I could not read a kid's French book to save my life. For Chinese, I decided to skip the flashcards and stuff I had in grade school and go straight to reading once enough core vocab could bootstrap the reading process.
+
+## Why Java Swing
+Swing was chosen to generate portable executables that will run on desktop Linux and occasionally Mac OS. This program was originally written for python gtk at the end of 2020. I was gifted a free Intel Mac in 2022-07, and found Mac Ports an absolute pain to install gtk. It boiled the Mac alive trying compile multiple tool chains and other massive libraries. Further infuriating, is that every minor Mac Ports update would seemingly trigger an entire gcc AND llvm recompile reboiling the Mac. The entire program was ported to Java Swing at the end of 2022 to avoid prematurely trashing a very nice free gift.
 
 *This program has never been tested in Windows, but will probably work.*
 
