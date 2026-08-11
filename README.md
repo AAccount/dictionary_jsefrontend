@@ -1,4 +1,5 @@
 # Java Swing Dictionary Frontend
+**Note**: on the first run, you must initialize the sqlite db with a cedict file. Use the `SQLite` menu item `Initialize with CEDICT`. I get them from mdbg.net.
 
 ## History
 Front end for the dictionary core repo in Java Swing. Swing was chosen to generate portable executables that will run on desktop Linux and occasionally Mac OS. This program was originally written for python gtk at the end of 2020. I was gifted a free Intel Mac in 2022-07, and found Mac Ports an absolute pain to install gtk. It boiled the Mac alive trying compile multiple tool chains and other massive libraries. Further infuriating, is that every minor Mac Ports update would seemingly trigger an entire gcc AND llvm recompile reboiling the Mac. The entire program was ported to Java Swing at the end of 2022 to avoid prematurely trashing a very nice free gift.
@@ -16,6 +17,8 @@ The front end has several feature flags:
 - auto swap (default true): fcitx5 is fairly conservative for what it considers traditional Chinese. Unfortunately, this can be "too traditional" sometimes. Convert some of these ultra conservative forms to more normal traditional forms to avoid false negatives: "爲" -> "為", for example.
 - show tracer: (default false) show a blue border around UI elements. Useful for annoying UI debugging.
 - save hits (default true): save to the sqlite db when you last looked up a Chinese word and it had a dictionary entry
+
+Despite being an English Chinese dictionary, the UI is only available in English as the program is intended and designed by someone with only an English background and zero Chinese experience (where I started).
 
 ## Build instructions
 Checkout this repo, dictionary core, and cedict in the same folder.
