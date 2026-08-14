@@ -4,7 +4,7 @@ Front end for the dictionary core repo in Java Swing.
 **Note**: on the first run, you must initialize the sqlite db with a cedict file. Use the `SQLite` menu item `Initialize with CEDICT`. I get them from mdbg.net.
 
 ## Motivation
-I wanted an offline dictionary so I would not be dependent on an internet connection, or a web service being up for looking up Chinese while reading manga from sketchy Chinese websites. There were no open source or even closed source programs for desktop Linux. I made an original python gtk program given my previous experience with C++ gtk for the VoIP program. As time passed, I added various search strategies explained in the dictionary core repo that I found helpful.
+I wanted an offline dictionary to not be dependent on an internet connection, or a web service for reading manga from sketchy Chinese websites. (I rip these and make pdfs.) There were no open source or even closed source programs for desktop Linux. I made an original python gtk program given my previous experience with C++ gtk for the VoIP program. As time passed, I added various search strategies explained in the dictionary core repo that I found helpful.
 
 I was more interested in the literacy aspect vs talking aspect of Chinese because the writing system looks cool. I chose reading manga from sketchy websites vs the flashcard / learning app route based on my grade school experience with the Canadian Ontario French system in Windsor. I found it a complete failure as they taught the same thing every year: count 1-100, colors of the rainbow, say "it's cold". I could not read a kid's French book to save my life. For Chinese, I decided to skip the flashcards and stuff I had in grade school and go straight to reading once enough core vocab could bootstrap the reading process.
 
@@ -14,7 +14,7 @@ Swing was chosen to generate portable executables that will run on desktop Linux
 *This program has never been tested in Windows, but will probably work.*
 
 ## Overview
-This front end does not do much thinking. It simply passes your search to the dictionary core's `DbService.lookupChinese` or `DbService.lookupEnglish`. It then creates tabs for each search result. For Chinese, this means a tab for the dictionary definition of the whole string, and a tab for each alternate search that has >= 1 result. If the whole string has no dictionary entry, that tab renders blank. For English, every possible word combination with >= 1 Chinese entry is shown. If a tab has > 10 entries, it is paginated in groups of 10. See the dictionary core repo for the search strategy.
+This front end does not do much thinking. It simply passes your search to the dictionary core's `DbService.lookupChinese` or `DbService.lookupEnglish`. It then creates tabs for each search result. For Chinese, this means a tab for the dictionary definition of the whole string, and a tab for each alternate search that has >= 1 result. If the whole string has no dictionary entry, that tab renders blank. For English, every possible word combination with >= 1 Chinese entry is shown. If a tab has > 10 entries, it is paginated in groups of 10. See the dictionary core repo for the alternate search strategies.
 
 The front end keeps a forwards, backwards, navigation history of 10 entries. 
 
