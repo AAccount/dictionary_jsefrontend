@@ -16,25 +16,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Pull down the JSE FrontEnd code
+      # 1. Fetch JSE FrontEnd code with full history (No token needed, implicitly handled)
       - name: Checkout JSEFrontEnd
         uses: actions/checkout@v4.2.2
         with:
-          path: JSEFrontEnd
+          fetch-depth: 0
 
-      # 2. Pull down the DictionaryCore code
+      # 2. Fetch DictionaryCore history anonymously (token removed)
       - name: Checkout DictionaryCore
         uses: actions/checkout@v4.2.2
         with:
           repository: AAccount/dictionary_core
           path: DictionaryCore
+          fetch-depth: 0
 
-      # 3. Pull down the CedictParser code
+      # 3. Fetch CedictParser history anonymously (token removed)
       - name: Checkout CedictParser
         uses: actions/checkout@v4.2.2
         with:
           repository: AAccount/dictionary_cedictparser
           path: CedictParser
+          fetch-depth: 0
 
       # 4. Set up the Java JDK
       - name: Set up JDK
