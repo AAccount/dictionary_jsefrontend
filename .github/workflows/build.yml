@@ -69,14 +69,31 @@ jobs:
           # Package the bin contents into a final jar
           jar cfm DictionaryJava.jar manifest.txt -C bin .
 
-      # 8. Create a unique Version Tag based on the exact date and time
+      # NEW STEP 8: Create a custom sources zip file mirroring your local structure
+      - name: Create Custom Sources Archive
+        run: |
+          # Create a clean folder structure to zip up
+          mkdir -p combined_sources/JSEFrontEnd
+          mkdir -p combined_sources/DictionaryCore
+          mkdir -p combined_sources/CedictParser
+          
+          # Copy your src folders into it
+          cp -r JSEFrontEnd/src combined_sources/JSEFrontEnd/
+          cp -r DictionaryCore/src combined_sources/DictionaryCore/
+          cp -r CedictParser/src combined_sources/CedictParser/
+          
+          # Compress the matching sources folder structure
+          cd combined_sources
+          zip -r ../sources.zip .
+
+      # 9. Create a unique Version Tag based on the exact date and time
       - name: Generate Release Tag
         id: tag_gen
         run: |
           TAG_NAME="build-$(date +'%Y.%m.%d-%H%M')"
           echo "generated_tag=$TAG_NAME" >> $GITHUB_OUTPUT
 
-      # 9. Create a GitHub Release and attach the Standalone executable
+      # 10. Create a GitHub Release and attach the Standalone executable
       - name: Deploy GitHub Release
         uses: softprops/action-gh-release@v3
         with:
@@ -85,8 +102,11 @@ jobs:
           body: |
             This release was automatically generated following a commit update.
             
-            **Changes Included:** This build synchronizes the latest modifications across your core dictionary mechanics, database drivers, and frontend application.
+            **Assets included:**
+            * `DictionaryJava.jar`: The fully compiled standalone program.
+            * `sources.zip`: The precise combined Java source code snapshots used to compile this exact runtime artifact.
           draft: false
           prerelease: false
           files: |
-            DictionaryJava.jar      
+            DictionaryJava.jar
+            sources.zip 
