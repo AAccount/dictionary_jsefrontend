@@ -34,12 +34,12 @@ jobs:
 
       # 4. Set up the Java JDK
       - name: Set up JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '21' # Match your local VS Code Java version
           distribution: 'temurin'
 
-      # 6. Gather all java files across folders and compile them
+      # 5. Gather all java files across folders and compile them
       - name: Compile Java Code
         run: |
           mkdir -p bin
@@ -48,15 +48,19 @@ jobs:
           
           # Compile using the JAR file already inside your checked-out DictionaryCore folder
           javac -cp "DictionaryCore/lib/sqlite-jdbc-3.53.2.0.jar" -d bin @sources.txt
-         
-          # Compile everything into the bin directory using the SQLite jar as the classpath
-          javac -cp "lib/sqlite-jdbc-3.53.2.0.jar" -d bin @sources.txt
+
+      # 6. Extract the SQLite JAR into the bin folder for a standalone app
+      - name: Extract Dependencies
+        run: |
+          cd bin
+          jar -xf ../DictionaryCore/lib/sqlite-jdbc-3.53.2.0.jar
+          # Remove the embedded manifest file so it doesn't overwrite your main one
+          rm -rf META-INF/MANIFEST.MF
 
       # 7. Package compiled class files into a single production JAR
       - name: Package JAR file
         run: |
           echo "Main-Class: dt.jdictionary.App" > manifest.txt
-          echo "Class-Path: DictionaryCore/lib/sqlite-jdbc-3.53.2.0.jar" >> manifest.txt
           
           # Package the bin contents into a final jar
           jar cfm DictionaryJava.jar manifest.txt -C bin .
