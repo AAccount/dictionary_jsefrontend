@@ -20,6 +20,7 @@ jobs:
       - name: Checkout JSEFrontEnd
         uses: actions/checkout@v4.2.2
         with:
+          path: JSEFrontEnd
           fetch-depth: 0
 
       # 2. Fetch DictionaryCore history anonymously (token removed)
@@ -42,7 +43,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:
-          java-version: '21' # Match your local VS Code Java version
+          java-version: '21' 
           distribution: 'temurin'
 
       # 5. Gather all java files across folders and compile them
@@ -63,7 +64,7 @@ jobs:
           # Remove the embedded manifest file so it doesn't overwrite your main one
           rm -rf META-INF/MANIFEST.MF
 
-      # 7. Package compiled class files into a single production JAR
+      # 7. Package everything into a single standalone JAR
       - name: Package JAR file
         run: |
           echo "Main-Class: dt.jdictionary.App" > manifest.txt
@@ -71,7 +72,7 @@ jobs:
           # Package the bin contents into a final jar
           jar cfm DictionaryJava.jar manifest.txt -C bin .
 
-      # NEW STEP 8: Create a custom sources zip file mirroring your local structure
+      # 8. Create a custom sources zip file mirroring your local structure
       - name: Create Custom Sources Archive
         run: |
           # Create a clean folder structure to zip up
