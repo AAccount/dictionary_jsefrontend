@@ -1,0 +1,69 @@
+name: Manual Java Workspace Build
+
+on:
+  push:
+    branches:
+      - master
+  repository_dispatch:
+    types: [dependency_updated]
+
+jobs:
+  build-jar:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Pull down the JSE FrontEnd code
+      - name: Checkout JSEFrontEnd
+        uses: actions/checkout@v4
+        with:
+          path: JSEFrontEnd
+
+      # 2. Pull down the DictionaryCore code
+      - name: Checkout DictionaryCore
+        uses: actions/checkout@v4
+        with:
+          repository: AAccount/dictionary_core
+          path: DictionaryCore
+
+      # 3. Pull down the CedictParser code
+      - name: Checkout CedictParser
+        uses: actions/checkout@v4
+        with:
+          repository: AAccount/dictionary_cedictparser
+          path: CedictParser
+
+      # 4. Set up the Java JDK
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21' # Match your local VS Code Java version
+          distribution: 'temurin'
+
+      # 6. Gather all java files across folders and compile them
+      - name: Compile Java Code
+        run: |
+          mkdir -p bin
+          # Find all .java files across the three source directories
+          find CedictParser/src DictionaryCore/src JSEFrontEnd/src -name "*.java" > sources.txt
+          
+          # Compile using the JAR file already inside your checked-out DictionaryCore folder
+          javac -cp "DictionaryCore/lib/sqlite-jdbc-3.53.2.0.jar" -d bin @sources.txt
+         
+          # Compile everything into the bin directory using the SQLite jar as the classpath
+          javac -cp "lib/sqlite-jdbc-3.53.2.0.jar" -d bin @sources.txt
+
+      # 7. Package compiled class files into a single production JAR
+      - name: Package JAR file
+        run: |
+          echo "Main-Class: dt.jdictionary.App" > manifest.txt
+          echo "Class-Path: DictionaryCore/lib/sqlite-jdbc-3.53.2.0.jar" >> manifest.txt
+          
+          # Package the bin contents into a final jar
+          jar cfm DictionaryJava.jar manifest.txt -C bin .
+
+      # 8. Store the compiled Jar file on GitHub
+      - name: Upload Built Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: compiled-dictionary-jar
+          path: DictionaryJava.jar
