@@ -92,50 +92,60 @@ jobs:
       # 9. Extract previous release info and compile cross-repo change logs
       - name: Generate Multi-Repo Release Notes
         id: notes_gen
+        working-directory: JSEFrontEnd
         run: |
           # A. Find the last version tag created on the Frontend Repo
+          # Because working-directory is set to JSEFrontEnd, this natively accesses its git history.
           LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           
-          # Initialize the changelog text file
-          echo "### 🔄 Combined Changelog" > changelog.md
+          # B. Capture current exact commit hashes from sibling folders for the build metadata
+          # The -C flag lets git look inside relative paths without needing to run manual 'cd' commands.
+          CORE_HASH=$(git -C ../DictionaryCore rev-parse --short HEAD)
+          PARSER_HASH=$(git -C ../CedictParser rev-parse --short HEAD)
           
-          # B. Pull logs for JSE Frontend
-          echo -e "\n#### 🖥️ JSE FrontEnd Changes:" >> changelog.md
-          if [ -z "$LATEST_TAG" ]; then
-            git log --oneline -n 10 --pretty=format:"* %s (%an)" >> changelog.md
-          else
-            git log "$LATEST_TAG..HEAD" --pretty=format:"* %s (%an)" >> changelog.md || echo "* Minor maintenance tweaks" >> changelog.md
-          fi
+          # Initialize the changelog text file one directory level up (in the workspace root)
+          echo "### 🔄 Combined Changelog" > ../changelog.md
+          echo "Build Metadata:" >> ../changelog.md
+          echo "* **Dictionary Core Commit:** \`$CORE_HASH\`" >> ../changelog.md
+          echo "* **Cedict Parser Commit:** \`$PARSER_HASH\`" >> ../changelog.md
           
-          # C. Pull logs for DictionaryCore
-          echo -e "\n\n#### 🗃️ Dictionary Core Changes:" >> changelog.md
-          cd DictionaryCore
-          # Find the core commit history relative to the timeframe of our last release
+          # C. Pull logs for JSE Frontend
+          echo -e "\n#### 🖥️ JSE FrontEnd Changes:" >> ../changelog.md
           if [ -z "$LATEST_TAG" ]; then
+            # If no previous release tag exists, fall back to compiling the last 10 commits
             git log --oneline -n 10 --pretty=format:"* %s (%an)" >> ../changelog.md
           else
-            # Grabs core commits since the date of our last frontend release tag
-            TAG_DATE=$(git --git-dir=../.git log -1 --format=%ai "$LATEST_TAG")
-            git log --since="$TAG_DATE" --pretty=format:"* %s (%an)" >> ../changelog.md || echo "* No structural changes" >> ../changelog.md
+            # Grab commits written between the previous tag and our current code state
+            git log "$LATEST_TAG..HEAD" --pretty=format:"* %s (%an)" >> ../changelog.md || echo "* Minor maintenance tweaks" >> ../changelog.md
           fi
-          cd ..
           
-          # D. Pull logs for CedictParser
-          echo -e "\n\n#### ⚙️ Cedict Parser Changes:" >> changelog.md
-          cd CedictParser
+          # D. Pull logs for DictionaryCore
+          echo -e "\n\n#### 🗃️ Dictionary Core Changes (Since Last Release):" >> ../changelog.md
           if [ -z "$LATEST_TAG" ]; then
-            git log --oneline -n 10 --pretty=format:"* %s (%an)" >> ../changelog.md
+            git -C ../DictionaryCore log --oneline -n 10 --pretty=format:"* %s (%an)" >> ../changelog.md
           else
-            TAG_DATE=$(git --git-dir=../.git log -1 --format=%ai "$LATEST_TAG")
-            git log --since="$TAG_DATE" --pretty=format:"* %s (%an)" >> ../changelog.md || echo "* No utility changes" >> ../changelog.md
+            # Extract the absolute timestamp date of the last frontend release tag
+            TAG_DATE=$(git log -1 --format=%ai "$LATEST_TAG")
+            # Query the core subfolder for any updates added since that release date
+            git -C ../DictionaryCore log --since="$TAG_DATE" --pretty=format:"* %s (%an)" >> ../changelog.md || echo "* No structural changes" >> ../changelog.md
           fi
-          cd ..
           
-          # E. Append the asset disclaimer warnings directly onto the note text
-          echo -e "\n\n### 📦 Download Assets" >> changelog.md
-          echo "* **\`DictionaryJava.jar\`** - Fully compiled standalone application." >> changelog.md
-          echo "* **\`sources.zip\`** - **[USE THIS FOR SOURCE CODE]** Contains the combined Java source code snapshots across all 3 dependencies." >> changelog.md
-          echo -e "\n⚠️ **CRITICAL WARNING:** Do *not* download the default \`Source code (.zip)\` links at the bottom of this page. They are missing the core dictionary and parser engines." >> changelog.md
+          # E. Pull logs for CedictParser
+          echo -e "\n\n#### ⚙️ Cedict Parser Changes (Since Last Release):" >> ../changelog.md
+          if [ -z "$LATEST_TAG" ]; then
+            git -C ../CedictParser log --oneline -n 10 --pretty=format:"* %s (%an)" >> ../changelog.md
+          else
+            # Re-read the frontend release date and query the parser subfolder history
+            TAG_DATE=$(git log -1 --format=%ai "$LATEST_TAG")
+            git -C ../CedictParser log --since="$TAG_DATE" --pretty=format:"* %s (%an)" >> ../changelog.md || echo "* No utility changes" >> ../changelog.md
+          fi
+          
+          # F. Append the asset download disclaimer warnings directly onto the note text layout
+          echo -e "\n\n### 📦 Download Assets" >> ../changelog.md
+          echo "* **\`DictionaryJava.jar\`** - Fully compiled standalone application." >> ../changelog.md
+          echo "* **\`sources.zip\`** - **[USE THIS FOR SOURCE CODE]** Contains the combined Java source code snapshots across all 3 dependencies." >> ../changelog.md
+          echo -e "\n⚠️ **CRITICAL WARNING:** Do *not* download the default \`Source code (.zip)\` links at the bottom of this page. They are missing the core dictionary and parser engines." >> ../changelog.md
+
 
       # 10. Create a unique Version Tag based on the exact date and time
       - name: Generate Release Tag
